@@ -1,0 +1,416 @@
+import 'package:flutter/material.dart';
+import 'package:pintarx/models/product/product_group/product_group.dart';
+import 'package:pintarx/services/product_group_service.dart';
+import 'package:pintarx/config/theme.dart';
+import 'package:pintarx/services/status_bar_service.dart';
+import 'product_group_detail_page.dart';
+import 'product_group_form_page.dart';
+
+class ProductGroupListPage extends StatefulWidget {
+  const ProductGroupListPage({Key? key}) : super(key: key);
+
+  @override
+  State<ProductGroupListPage> createState() => _ProductGroupListPageState();
+}
+
+class _ProductGroupListPageState extends State<ProductGroupListPage> {
+  final _productGroupService = ProductGroupService();
+  final _searchController = TextEditingController();
+
+  List<ProductGroup> _groups = [];
+  List<ProductGroup> _filteredGroups = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    StatusBarService.setLightStatusBar();
+    _loadGroups();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadGroups() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final response = await _productGroupService.fetchProductGroups(length: 50);
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (response.success && response.data != null) {
+          _groups = response.data!;
+          _filteredGroups = response.data!;
+        } else {
+          _errorMessage = response.message;
+        }
+      });
+    }
+  }
+
+  void _filterGroups(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredGroups = _groups;
+      } else {
+        _filteredGroups = _groups.where((group) {
+          return group.nama.toLowerCase().contains(query.toLowerCase()) ||
+              group.keterangan.toLowerCase().contains(query.toLowerCase()) ||
+              group.catatan.toLowerCase().contains(query.toLowerCase());
+        }).toList();
+      }
+    });
+  }
+
+  Future<void> _onRefresh() async {
+    await _loadGroups();
+  }
+
+  void _navigateToDetail(ProductGroup group) {
+   Navigator.push(
+     context,
+      MaterialPageRoute(
+        builder: (context) => ProductGroupDetailPage(groupId: group.id),
+      ),
+    ).then((_) => _loadGroups());
+  }
+
+  void _navigateToAdd() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ProductGroupFormPage(),
+      ),
+    ).then((result) {
+      if (result == true) _loadGroups();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            _buildSearchBar(),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _onRefresh,
+                color: AppTheme.primaryColor,
+                child: _buildBody(),
+              ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: _isLoading
+          ? null
+          : FloatingActionButton(
+              onPressed: _navigateToAdd,
+              backgroundColor: AppTheme.brandOrange,
+              child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+            ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(8, 16, 16, 12),
+      child: Row(
+        children: [
+          IconButton(
+            icon: Icon(
+              Icons.arrow_back_rounded,
+              color: AppTheme.primaryColor,
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            "Grup Produk",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      child: Container(
+        height: 44,
+        decoration: BoxDecoration(
+          color: AppTheme.backgroundColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!, width: 1),
+        ),
+        child: TextField(
+          controller: _searchController,
+          onChanged: _filterGroups,
+          style: const TextStyle(fontSize: 14),
+          decoration: InputDecoration(
+            hintText: 'Cari grup produk...',
+            hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+            prefixIcon: Icon(
+              Icons.search_rounded,
+              color: AppTheme.primaryColor,
+              size: 20,
+            ),
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear_rounded, size: 18),
+                    onPressed: () {
+                      _searchController.clear();
+                      _filterGroups('');
+                    },
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return _buildLoadingState();
+    }
+
+    if (_errorMessage != null) {
+      return _buildErrorState();
+    }
+
+    if (_filteredGroups.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      itemCount: _filteredGroups.length,
+      itemBuilder: (context, index) {
+        return _buildGroupCard(_filteredGroups[index]);
+      },
+    );
+  }
+
+  Widget _buildGroupCard(ProductGroup group) {
+    return InkWell(
+      onTap: () => _navigateToDetail(group),
+      borderRadius: BorderRadius.circular(12),
+      splashColor: AppTheme.brandOrange.withOpacity(0.1),
+      highlightColor: AppTheme.brandOrange.withOpacity(0.05),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            )
+          ],
+        ),
+        child: Row(
+          children: [
+            // Avatar dengan gradient orange
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  // colors: [
+                  //   AppTheme.brandOrange,
+                  //   AppTheme.brandOrange.withOpacity(0.7),
+                  // ],
+                  colors: [AppTheme.kotakblue, AppTheme.kotakblue2],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Text(
+                  group.nama.isNotEmpty ? group.nama[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Content: Nama dan Keterangan
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Nama grup
+                  Text(
+                    group.nama,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  // Keterangan (jika ada)
+                  if (group.keterangan.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      group.keterangan,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Icon kategori
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.brandBlue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.category_rounded,
+                color: AppTheme.brandBlue,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Chevron icon
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.grey[400],
+              size: 24,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: AppTheme.brandBlue),
+          const SizedBox(height: 16),
+          Text(
+            'Memuat data grup produk...',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.category_outlined,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Tidak ada grup produk',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _searchController.text.isNotEmpty
+                ? 'Coba kata kunci lain'
+                : 'Tambahkan grup produk baru',
+            style: TextStyle(color: Colors.grey[500], fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 80,
+            color: AppTheme.errorColor,
+          ),
+          const SizedBox(height: AppTheme.paddingMedium),
+          Text(
+            'Terjadi Kesalahan',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: AppTheme.paddingSmall),
+          Text(
+            _errorMessage ?? 'Gagal memuat data',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textSecondary,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppTheme.paddingLarge),
+          ElevatedButton.icon(
+            onPressed: _loadGroups,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Coba Lagi'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.brandBlue,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

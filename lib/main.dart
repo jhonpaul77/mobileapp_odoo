@@ -1,0 +1,62 @@
+import 'package:flutter/material.dart';
+import 'package:pintarx/services/api_service.dart';
+import 'package:pintarx/services/auth_service.dart';
+import 'package:pintarx/pages/auth/intro_page.dart';
+import 'package:pintarx/config/theme.dart';
+// import 'package:intl/date_symbol_data_local.dart'; // Tambahkan ini
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  print('🚀 [MAIN] Initializing services...');
+
+  // Init API service
+  ApiService().init();
+
+  // Load token dari storage dan set ke ApiService (kalau ada)
+  final auth = AuthService();
+  await auth.initialize();
+
+  runApp(const MyApp());
+}
+
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      print('🔁 [MAIN] App resumed → Re-checking token');
+      AuthService().initialize(); // reload token ke ApiService
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Pintar - X',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.light,
+      home: const IntroPage(),
+    );
+  }
+}

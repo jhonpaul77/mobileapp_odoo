@@ -1,0 +1,48 @@
+name: pintarx
+description: A new Flutter project.
+publish_to: 'none'
+version: 1.0.0+3
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Network
+  dio: ^5.4.0
+  
+  # Storage (Aman & Encrypted)
+  # flutter_secure_storage: ^9.0.0
+  flutter_secure_storage: ^9.2.4
+  # shared_preferences: ^2.2.2
+  shared_preferences: ^2.5.3
+  
+  # State Management
+  # provider: ^6.1.1  # atau riverpod/bloc sesuai preferensi
+  provider: ^6.1.5+1
+  
+  # Biometric & PIN
+  local_auth: ^2.1.7
+  
+  flutter_screen_lock: ^9.2.2+2 # Untuk PIN Screen
+  
+  # Utils
+  jwt_decode: ^0.3.1
+  #crypto: ^3.0.3
+  crypto: ^3.0.6
+
+  # Untuk ambil version
+  package_info_plus: ^9.0.0  
+
+  # ✅ BARU: untuk WhatsApp link
+  url_launcher: ^6.3.2
+  intl: ^0.20.2
+  
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
