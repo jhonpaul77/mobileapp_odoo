@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pintarx/pages/sales/transaction/transaction_detail_page.dart';
-import 'package:pintarx/widgets/common/app_header.dart';
 import 'package:pintarx/config/theme.dart';
 
 class TransactionListPage extends StatefulWidget {
@@ -181,27 +180,27 @@ class _TransactionListPageState extends State<TransactionListPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             TextField(
               controller: _searchController,
               onChanged: (value) => setState(() => _searchQuery = value),
               decoration: InputDecoration(
-                hintText: 'Cari SO, customer, status...',
-                prefixIcon: const Icon(Icons.search_rounded),
+                hintText: 'Cari SO, customer...',
+                prefixIcon: const Icon(Icons.search_rounded, size: 20),
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Expanded(
               child: ListView.separated(
                 itemCount: transactions.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final transaction = transactions[index];
 
@@ -227,18 +226,18 @@ class _TransactionListPageState extends State<TransactionListPage> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey[200]!, width: 1),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.03),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(14),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -248,7 +247,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
                                 Text(
                                   transaction['soNumber'] as String,
                                   style: const TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -256,76 +255,78 @@ class _TransactionListPageState extends State<TransactionListPage> {
                                   _formatDate(transaction['tanggal'] as DateTime),
                                   style: TextStyle(
                                     color: Colors.grey[600],
-                                    fontSize: 12,
+                                    fontSize: 11,
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 10),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   children: [
-                                    const Icon(Icons.person_outline_rounded, size: 18, color: AppTheme.primaryColor),
+                                    const Icon(Icons.person_outline_rounded, size: 16, color: AppTheme.primaryColor),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         transaction['customer'] as String,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.phone_rounded, size: 16, color: Colors.grey),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        (transaction['phone'] as String?) ?? '-',
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
                                           fontSize: 13,
                                         ),
                                       ),
                                     ),
                                   ],
                                 ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.phone_rounded, size: 14, color: Colors.grey),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        (transaction['phone'] as String?) ?? '-',
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 10),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
                                   _formatCurrency(transaction['nominal'] as double),
                                   style: const TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w700,
                                     color: AppTheme.successColor,
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primaryColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
+                                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
                                     transaction['status'] as String,
                                     style: const TextStyle(
                                       color: AppTheme.primaryColor,
                                       fontWeight: FontWeight.w600,
+                                      fontSize: 11,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 10),
                             Row(
                               children: [
                                 _buildBadge('Order: ${transaction['orderedCount']}', AppTheme.brandBlue),
@@ -350,16 +351,16 @@ class _TransactionListPageState extends State<TransactionListPage> {
 
   Widget _buildBadge(String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(12),
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         label,
         style: TextStyle(
           color: color,
-          fontSize: 12,
+          fontSize: 10,
           fontWeight: FontWeight.w600,
         ),
       ),

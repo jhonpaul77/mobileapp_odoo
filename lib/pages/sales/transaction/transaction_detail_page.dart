@@ -21,7 +21,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
   }
 
   String _formatDate(DateTime date) {
-    return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
   }
 
   String _formatCurrency(double value) {
@@ -30,37 +30,6 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
       (match) => '.',
     );
     return 'Rp $formatted';
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 3,
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 5,
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _openEditPage() async {
@@ -78,32 +47,30 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
   }
 
   int _estimateShipping() {
-    final province = transaction['deliveryProvince'] as String? ?? '';
-    final city = transaction['deliveryCity'] as String? ?? '';
-    final subdistrict = transaction['deliverySubdistrict'] as String? ?? '';
+    final district = transaction['deliveryDistrict'] as String? ?? '';
 
-    if (province.trim().isEmpty || city.trim().isEmpty || subdistrict.trim().isEmpty) {
+    if (district.trim().isEmpty) {
       return 0;
     }
 
     const baseFee = 10000;
     const provinceFee = 5000;
     const cityFee = 3000;
-    const subdistrictFee = 2000;
-    return baseFee + provinceFee + cityFee + subdistrictFee;
+    const districtFee = 2000;
+    return baseFee + provinceFee + cityFee + districtFee;
   }
 
   @override
   Widget build(BuildContext context) {
     final date = transaction['tanggal'] as DateTime;
-    final status = transaction['status'] as String? ?? '-';
+    final status = (transaction['status'] as String?) ?? (transaction['salesStatus'] as String?) ?? 'Pending';
+    final customer = transaction['customer'] as String? ?? '-';
     final phone = transaction['phone'] as String? ?? '-';
     final items = (transaction['items'] as List<Map<String, dynamic>>?) ?? [];
     final address = transaction['deliveryAddress'] as String? ?? '-';
     final province = transaction['deliveryProvince'] as String? ?? '-';
     final city = transaction['deliveryCity'] as String? ?? '-';
-    final subdistrict = transaction['deliverySubdistrict'] as String? ?? '-';
-    final salesRep = transaction['salesRep'] as String? ?? '-';
+    final district = transaction['deliveryDistrict'] as String? ?? '-';
     final paymentTerms = transaction['paymentTerms'] as String? ?? '-';
     final isEditable = status.toLowerCase() == 'open';
 
@@ -113,113 +80,370 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
         return false;
       },
       child: Scaffold(
-        backgroundColor: AppTheme.backgroundColor,
+        backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
-          title: Text('Detail ${transaction['soNumber'] as String}'),
+          title: const Text('Transaction Detail', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
           backgroundColor: AppTheme.primaryColor,
+          elevation: 0,
+          centerTitle: false,
           actions: [
             if (isEditable)
-              IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                tooltip: 'Edit Transaksi',
-                onPressed: _openEditPage,
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: TextButton(
+                  onPressed: _openEditPage,
+                  child: const Text(
+                    'Edit',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                ),
               ),
           ],
         ),
         body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        transaction['soNumber'] as String,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Status Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green[300]!, width: 1),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          status,
-                          style: const TextStyle(
-                            color: AppTheme.primaryColor,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _formatDate(date),
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
+                      child: const Icon(Icons.check, color: Colors.white, size: 18),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildInfoRow('Customer', transaction['customer'] as String),
-                  _buildInfoRow('Phone', phone),
-                  _buildInfoRow('Nominal', _formatCurrency(transaction['nominal'] as double)),
-                  _buildInfoRow('Order', '${transaction['orderedCount']} kali'),
-                  _buildInfoRow('Canceled', '${transaction['canceledCount']} kali'),
-                  _buildInfoRow('Sales Rep', salesRep),
-                  _buildInfoRow('Payment Terms', paymentTerms),
-                  _buildInfoRow('Delivery', address),
-                  _buildInfoRow('Provinsi', province),
-                  _buildInfoRow('Kabupaten/Kota', city),
-                  _buildInfoRow('Kecamatan', subdistrict),
-                ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _formatDate(date),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        status,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            if (_estimateShipping() > 0)
+              const SizedBox(height: 16),
+
+              // Main Info Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
-                margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey[300]!, width: 1),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Perkiraan Ongkir',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                    // Header with No. Transaksi
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Transaction No',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              transaction['noTransaksi'] as String? ?? '-',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Order Time',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatDate(date),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
+                    Divider(color: Colors.grey[200], height: 1),
+                    const SizedBox(height: 16),
+
+                    // Grid Info
+                    _buildInfoGrid([
+                      {
+                        'label': 'Customer',
+                        'value': customer,
+                      },
+                      {
+                        'label': 'Phone',
+                        'value': phone,
+                      },
+                    ]),
+                    const SizedBox(height: 12),
+                    _buildInfoGrid([
+                      {
+                        'label': 'Payment Terms',
+                        'value': paymentTerms,
+                      },
+                    ]),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Sender/Receiver Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      _formatCurrency(_estimateShipping().toDouble()),
+                      'Delivery Address',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.location_on, size: 18, color: AppTheme.primaryColor),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                district.isEmpty ? '-' : district,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '$city, $province',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                address,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[700],
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Items Card
+              if (items.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Items',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...items.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final item = entry.value;
+                        final isLast = index == items.length - 1;
+                        
+                        return Column(
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item['product'] as String? ?? '-',
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Qty: ${item['qty']} | Price: ${_formatCurrency((item['price'] as double?) ?? 0.0)}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _formatCurrency(((item['qty'] as int?) ?? 0) * ((item['price'] as double?) ?? 0.0).toDouble()),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (!isLast)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                child: Divider(color: Colors.grey[200], height: 1),
+                              ),
+                          ],
+                        );
+                      }).toList(),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 16),
+
+              // Total Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Total',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    Text(
+                      _formatCurrency(transaction['nominal'] as double? ?? 0.0),
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: AppTheme.primaryColor,
                       ),
@@ -227,60 +451,71 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                   ],
                 ),
               ),
-            Text(
-              'Item SO',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...items.map((item) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey[200]!, width: 1),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item['product'] as String,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Qty: ${item['qty']} x ${_formatCurrency(item['price'] as double)}',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      _formatCurrency((item['qty'] as int) * (item['price'] as double)),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ],
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
+
+  Widget _buildInfoGrid(List<Map<String, String>> items) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: items.asMap().entries.map((entry) {
+        final index = entry.key;
+        final item = entry.value;
+        final isLast = index == items.length - 1;
+
+        return Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item['label'] ?? '',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                item['value'] ?? '-',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value, {bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: isBold ? 14 : 13,
+            fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
+            color: isBold ? Colors.black87 : Colors.grey[700],
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: isBold ? 14 : 13,
+            fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
+            color: isBold ? AppTheme.primaryColor : Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
 }
