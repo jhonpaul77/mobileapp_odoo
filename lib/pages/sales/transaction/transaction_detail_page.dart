@@ -60,25 +60,75 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     return baseFee + provinceFee + cityFee + districtFee;
   }
 
-  void _printTransaction() async {
-    try {
-      // Show dialog that print functionality is in progress
-      _showSuccessMessage('Print ke Bluetooth printer sedang dipersiapkan');
-    } catch (e) {
-      _showErrorMessage('Error: ${e.toString()}');
-    }
-  }
+  void _printTransaction() {
+    final transaction = this.transaction;
+    final date = transaction['tanggal'] as DateTime;
+    final customer = transaction['customer'] as String? ?? '-';
+    final items = (transaction['items'] as List<Map<String, dynamic>>?) ?? [];
+    final nominal = transaction['nominal'] as double? ?? 0.0;
 
-  void _showErrorMessage(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Preview Cetak'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'RECEIPT TRANSAKSI',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const Divider(),
+                Text('No. Transaksi: ${transaction['noTransaksi']}', style: const TextStyle(fontSize: 12)),
+                Text('Tanggal: ${_formatDate(date)}', style: const TextStyle(fontSize: 12)),
+                const SizedBox(height: 8),
+                Text('Customer: $customer', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                const SizedBox(height: 8),
+                const Text('DETAIL ITEM', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                const Divider(),
+                ...items.map((item) {
+                  final product = item['product'] as String? ?? '-';
+                  final qty = item['qty'] as int? ?? 0;
+                  final price = item['price'] as double? ?? 0.0;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(product, style: const TextStyle(fontSize: 11)),
+                      Text('Qty: $qty | Harga: ${_formatCurrency(price)}', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                      Text('Subtotal: ${_formatCurrency(qty * price)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                    ],
+                  );
+                }).toList(),
+                const Divider(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('TOTAL:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    Text(_formatCurrency(nominal), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primaryColor)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Catatan: Fitur print Bluetooth akan tersedia di versi berikutnya. Untuk sekarang, gunakan fungsi screenshot untuk menyimpan.',
+                  style: TextStyle(fontSize: 10, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showSuccessMessage(String message) {

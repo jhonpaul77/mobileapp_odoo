@@ -28,9 +28,6 @@ dependencies:
   
   flutter_screen_lock: ^9.2.2+2 # Untuk PIN Screen
   
-  # Bluetooth Thermal Printer
-  esc_pos_bluetooth: ^0.4.1
-  
   # Utils
   jwt_decode: ^0.3.1
   #crypto: ^3.0.3
