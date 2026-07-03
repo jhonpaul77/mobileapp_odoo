@@ -300,7 +300,7 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
     return Column(
       children: [
         Text(
-          'App Pintar-X',
+          'Next Sales Pro+',
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
             fontSize: 32,
             fontWeight: FontWeight.bold,
@@ -320,7 +320,7 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            'Made By pintarbisnis.id',
+            'Made By nextnusantara.com',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: AppTheme.primaryColor,
               fontWeight: FontWeight.w600,

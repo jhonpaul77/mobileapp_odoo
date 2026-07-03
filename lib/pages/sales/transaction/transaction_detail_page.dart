@@ -60,6 +60,39 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     return baseFee + provinceFee + cityFee + districtFee;
   }
 
+  void _printTransaction() async {
+    try {
+      // Show dialog that print functionality is in progress
+      _showSuccessMessage('Print ke Bluetooth printer sedang dipersiapkan');
+    } catch (e) {
+      _showErrorMessage('Error: ${e.toString()}');
+    }
+  }
+
+  void _showErrorMessage(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  void _showSuccessMessage(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final date = transaction['tanggal'] as DateTime;
@@ -74,10 +107,12 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     final paymentTerms = transaction['paymentTerms'] as String? ?? '-';
     final isEditable = status.toLowerCase() == 'open';
 
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.of(context).pop(transaction);
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Navigator.of(context).pop(transaction);
+        }
       },
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
@@ -87,6 +122,14 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
           elevation: 0,
           centerTitle: false,
           actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: IconButton(
+                icon: const Icon(Icons.print_rounded, color: Colors.white),
+                onPressed: _printTransaction,
+                tooltip: 'Print',
+              ),
+            ),
             if (isEditable)
               Padding(
                 padding: const EdgeInsets.only(right: 8),

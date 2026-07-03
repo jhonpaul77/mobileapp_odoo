@@ -4,8 +4,8 @@ import 'package:pintarx/config/theme.dart';
 import 'package:pintarx/widgets/common/app_header.dart';
 import 'package:pintarx/widgets/common/section_header.dart';
 import 'package:pintarx/services/status_bar_service.dart';
-import 'package:pintarx/pages/home/home_page.dart';
 import 'package:pintarx/pages/sales/customer/customer_list_page.dart';
+import 'package:pintarx/pages/sales/product/product_list_page.dart';
 import 'package:pintarx/pages/sales/transaction/sales_page.dart';
 import 'package:pintarx/pages/sales/transaction/transaction_list_page.dart';
 
@@ -123,7 +123,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
         border: Border.all(color: Colors.grey[200]!, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 2),
           )
@@ -199,9 +199,9 @@ class _PenjualanPageState extends State<PenjualanPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -218,102 +218,6 @@ class _PenjualanPageState extends State<PenjualanPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatsCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 2),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.trending_up_rounded, color: AppTheme.primaryColor, size: 20),
-              const SizedBox(width: 8),
-              const Text(
-                "Statistik Penjualan",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem(
-                  "Transaksi",
-                  "234",
-                  Icons.shopping_cart_rounded,
-                  Colors.blue,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: color),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: color,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -356,20 +260,28 @@ class _PenjualanPageState extends State<PenjualanPage> {
   Widget _buildMenuCard(Map<String, dynamic> menu) {
     return GestureDetector(
       onTap: () {
-         if (menu["route"] == "customers") {
-     Navigator.push(
-       context,
-       MaterialPageRoute(
-         builder: (context) => const CustomerListPage(),
-       ),
-     );
-   }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${menu["title"]} - Coming Soon'),
-            duration: const Duration(milliseconds: 800),
-          ),
-        );
+        if (menu["route"] == "transactions") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const TransactionListPage(),
+            ),
+          );
+        } else if (menu["route"] == "customers") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CustomerListPage(),
+            ),
+          );
+        } else if (menu["route"] == "products") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProductListPage(),
+            ),
+          );
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -382,7 +294,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: (menu["gradient"] as List<Color>)[0].withOpacity(0.3),
+              color: (menu["gradient"] as List<Color>)[0].withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             )
@@ -393,7 +305,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.25),
+                color: Colors.white.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -418,7 +330,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
                   Text(
                     menu["subtitle"],
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.85),
+                      color: Colors.white.withValues(alpha: 0.85),
                       fontSize: 12,
                     ),
                   ),
@@ -427,7 +339,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
             ),
             Icon(
               Icons.arrow_forward_rounded,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               size: 20,
             ),
           ],
