@@ -46,19 +46,63 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     }
   }
 
-  int _estimateShipping() {
-    final district = transaction['deliveryDistrict'] as String? ?? '';
-
-    if (district.trim().isEmpty) {
-      return 0;
-    }
-
-    const baseFee = 10000;
-    const provinceFee = 5000;
-    const cityFee = 3000;
-    const districtFee = 2000;
-    return baseFee + provinceFee + cityFee + districtFee;
+  void _changeStatusToOpen() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Ubah Status ke Open'),
+          content: const Text('Apakah Anda yakin ingin mengubah status transaksi ini dari Cancel menjadi Open? Transaksi akan dapat diedit kembali.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() {
+                  transaction['status'] = 'Open';
+                });
+                _showSuccessMessage('Status berhasil diubah ke Open');
+              },
+              child: const Text('Ubah', style: TextStyle(color: Colors.blue)),
+            ),
+          ],
+        );
+      },
+    );
   }
+
+  void _changeStatusToCancel() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Ubah Status ke Cancel'),
+          content: const Text('Apakah Anda yakin ingin membatalkan transaksi ini? Status akan berubah dari Confirm menjadi Cancel.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() {
+                  transaction['status'] = 'Cancel';
+                });
+                _showSuccessMessage('Transaksi berhasil dibatalkan');
+              },
+              child: const Text('Batalkan', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
 
   void _printTransaction() {
     final transaction = this.transaction;
@@ -156,6 +200,8 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     final district = transaction['deliveryDistrict'] as String? ?? '-';
     final paymentTerms = transaction['paymentTerms'] as String? ?? '-';
     final isEditable = status.toLowerCase() == 'open';
+    final isCancel = status.toLowerCase() == 'cancel';
+    final isConfirm = status.toLowerCase() == 'confirm';
 
     return PopScope(
       canPop: false,
@@ -180,6 +226,28 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                 tooltip: 'Print',
               ),
             ),
+            if (isCancel)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: TextButton(
+                  onPressed: _changeStatusToOpen,
+                  child: const Text(
+                    'Buka',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            if (isConfirm)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: TextButton(
+                  onPressed: _changeStatusToCancel,
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
             if (isEditable)
               Padding(
                 padding: const EdgeInsets.only(right: 8),
@@ -454,6 +522,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                         final index = entry.key;
                         final item = entry.value;
                         final isLast = index == items.length - 1;
+                        final analyticAccount = item['analyticAccount'] as String? ?? '';
                         
                         return Column(
                           children: [
@@ -472,6 +541,17 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                                           color: Colors.black87,
                                         ),
                                       ),
+                                      if (analyticAccount.isNotEmpty) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          analyticAccount,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey[600],
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
                                       const SizedBox(height: 4),
                                       Text(
                                         'Qty: ${item['qty']} | Price: ${_formatCurrency((item['price'] as double?) ?? 0.0)}',
@@ -588,27 +668,5 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {bool isBold = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: isBold ? 14 : 13,
-            fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
-            color: isBold ? Colors.black87 : Colors.grey[700],
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: isBold ? 14 : 13,
-            fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
-            color: isBold ? AppTheme.primaryColor : Colors.black87,
-          ),
-        ),
-      ],
-    );
-  }
+
 }

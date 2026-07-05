@@ -43,15 +43,14 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
     _itemControllers = _items.map((item) {
       return {
         'product': TextEditingController(text: item['product'] as String? ?? ''),
+        'analyticAccount': TextEditingController(text: item['analyticAccount'] as String? ?? ''),
         'qty': TextEditingController(text: (item['qty']?.toString() ?? '')),
         'price': TextEditingController(text: (item['price'] as double?)?.toStringAsFixed(0) ?? ''),
       };
     }).toList();
   }
 
-  String _formatDate(DateTime date) {
-    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
-  }
+
 
   @override
   void dispose() {
@@ -72,6 +71,7 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
     final controllers = _itemControllers[index];
     final item = _items[index];
     item['product'] = controllers['product']!.text.trim();
+    item['analyticAccount'] = controllers['analyticAccount']!.text.trim();
     item['qty'] = int.tryParse(controllers['qty']!.text.replaceAll('.', '')) ?? item['qty'];
     item['price'] = double.tryParse(controllers['price']!.text.replaceAll('.', '')) ?? item['price'];
   }
@@ -119,6 +119,7 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
     updated['items'] = _items
         .map((item) => {
               'product': item['product'] as String? ?? '',
+              'analyticAccount': item['analyticAccount'] as String? ?? '',
               'qty': item['qty'] as int? ?? 0,
               'price': item['price'] as double? ?? 0.0,
             })
@@ -131,11 +132,13 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
     setState(() {
       _items.add({
         'product': '',
+        'analyticAccount': '',
         'qty': 1,
         'price': 0.0,
       });
       _itemControllers.add({
         'product': TextEditingController(text: ''),
+        'analyticAccount': TextEditingController(text: ''),
         'qty': TextEditingController(text: '1'),
         'price': TextEditingController(text: '0'),
       });
@@ -307,6 +310,11 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
             controllers['product']!,
             onChanged: (_) => _syncItem(index),
           ),
+          _buildEditField(
+            'Analytic Account',
+            controllers['analyticAccount']!,
+            onChanged: (_) => _syncItem(index),
+          ),
           Row(
             children: [
               Expanded(
@@ -338,9 +346,6 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
 
   @override
   Widget build(BuildContext context) {
-    final date = widget.transaction['tanggal'] as DateTime;
-    final status = (widget.transaction['status'] as String?) ?? 'Open';
-
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
