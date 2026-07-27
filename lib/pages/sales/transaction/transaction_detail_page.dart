@@ -74,34 +74,6 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     );
   }
 
-  void _changeStatusToCancel() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Ubah Status ke Cancel'),
-          content: const Text('Apakah Anda yakin ingin membatalkan transaksi ini? Status akan berubah dari Confirm menjadi Cancel.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Batal'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                setState(() {
-                  transaction['status'] = 'Cancel';
-                });
-                _showSuccessMessage('Transaksi berhasil dibatalkan');
-              },
-              child: const Text('Batalkan', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
 
 
   void _printTransaction() {
@@ -201,7 +173,6 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     final paymentTerms = transaction['paymentTerms'] as String? ?? '-';
     final isEditable = status.toLowerCase() == 'open';
     final isCancel = status.toLowerCase() == 'cancel';
-    final isConfirm = status.toLowerCase() == 'confirm';
 
     return PopScope(
       canPop: false,
@@ -233,17 +204,6 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                   onPressed: _changeStatusToOpen,
                   child: const Text(
                     'Buka',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            if (isConfirm)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: TextButton(
-                  onPressed: _changeStatusToCancel,
-                  child: const Text(
-                    'Cancel',
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -521,7 +481,6 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                       ...items.asMap().entries.map((entry) {
                         final index = entry.key;
                         final item = entry.value;
-                        final isLast = index == items.length - 1;
                         final analyticAccount = item['analyticAccount'] as String? ?? '';
                         
                         return Column(
@@ -574,7 +533,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                                 ),
                               ],
                             ),
-                            if (!isLast)
+                            if (index < items.length - 1)
                               Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                                 child: Divider(color: Colors.grey[200], height: 1),
@@ -636,9 +595,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: items.asMap().entries.map((entry) {
-        final index = entry.key;
         final item = entry.value;
-        final isLast = index == items.length - 1;
 
         return Expanded(
           child: Column(
