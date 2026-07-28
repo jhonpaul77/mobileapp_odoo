@@ -25,14 +25,17 @@ class SalesOrderProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   String _searchQuery = '';
+  String? _statusFilter; // null, 'Open', 'Confirm', 'Cancel'
 
   List<SalesOrder> get orders =>
-      _searchQuery.isEmpty ? _orders : _filteredOrders;
+      _searchQuery.isEmpty && _statusFilter == null ? _orders : _filteredOrders;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get hasError => _errorMessage != null;
   bool get isEmpty => orders.isEmpty;
   int get ordersCount => orders.length;
+  String get searchQuery => _searchQuery;
+  String? get statusFilter => _statusFilter;
 
   Future<void> fetchSalesOrders() async {
     _isLoading = true;
@@ -75,19 +78,64 @@ class SalesOrderProvider extends ChangeNotifier {
 
   void searchOrders(String query) {
     _searchQuery = query.trim().toLowerCase();
-    if (_searchQuery.isEmpty) {
-      _filteredOrders = _orders;
-    } else {
-      _filteredOrders = _orders.where((order) {
+    _applyFilters();
+  }
+
+  void setStatusFilter(String? status) {
+    _statusFilter = status;
+    _applyFilters();
+  }
+
+  void _applyFilters() {
+    List<SalesOrder> filtered = _orders;
+
+    // Apply status filter
+    if (_statusFilter != null && _statusFilter!.isNotEmpty) {
+      filtered = filtered.where((order) {
+        // Map API states to display labels
+        final displayLabel = _getDisplayLabel(order.state);
+        return displayLabel.toLowerCase() == _statusFilter!.toLowerCase();
+      }).toList();
+    }
+
+    // Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered.where((order) {
         return order.name.toLowerCase().contains(_searchQuery) ||
             order.customerName.toLowerCase().contains(_searchQuery);
       }).toList();
     }
+
+    _filteredOrders = filtered;
     notifyListeners();
+  }
+
+  String _getDisplayLabel(String apiState) {
+    // Map API states to display labels
+    // API states: draft, sent, sale, done, cancel
+    // Display labels: Open, Confirm, Cancel
+    switch (apiState.toLowerCase()) {
+      case 'draft':
+      case 'sent':
+        return 'Open';
+      case 'sale':
+      case 'done':
+        return 'Confirm';
+      case 'cancel':
+        return 'Cancel';
+      default:
+        return 'Open';
+    }
   }
 
   void clearSearch() {
     _searchQuery = '';
+    _applyFilters();
+  }
+
+  void clearFilters() {
+    _searchQuery = '';
+    _statusFilter = null;
     _filteredOrders = _orders;
     notifyListeners();
   }

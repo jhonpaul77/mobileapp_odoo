@@ -4,12 +4,29 @@ import 'order_line.dart';
 ///
 /// Represents Odoo sales order data structure
 /// Based on API: GET /get_sale_order
+///
+/// API Response Example:
+/// {
+///   "id": 4223,
+///   "name": "S00031",
+///   "partner_id": 32763,
+///   "date_order": "2026-07-22",
+///   "amount_total": 85000.0,
+///   "warehouse_id": 1,
+///   "kurir_id": false,
+///   "awb": false,
+///   "state": "draft",
+///   "order_lines": [...]
+/// }
 class SalesOrder {
   final int id;
   final String name;
-  final List<dynamic>? partnerId; // [id, customer_name]
+  final dynamic partnerId; // Can be int or [id, name]
   final String dateOrder;
   final double amountTotal;
+  final dynamic warehouseId; // Can be int or [id, name]
+  final dynamic kurirId; // Can be false or int/array
+  final dynamic awb; // Can be false or string
   final String state;
   final List<OrderLine> orderLines;
 
@@ -19,40 +36,89 @@ class SalesOrder {
     this.partnerId,
     required this.dateOrder,
     required this.amountTotal,
+    this.warehouseId,
+    this.kurirId,
+    this.awb,
     required this.state,
     required this.orderLines,
   });
 
   factory SalesOrder.fromJson(Map<String, dynamic> json) {
-    // Parse order lines
-    final orderLinesJson = json['order_line'] as List<dynamic>? ?? [];
+    // Parse order lines from 'order_lines' field
+    final orderLinesJson = json['order_lines'] as List<dynamic>? ??
+        json['order_line'] as List<dynamic>? ??
+        [];
     final orderLines = orderLinesJson
         .map((line) => OrderLine.fromJson(line as Map<String, dynamic>))
         .toList();
 
     return SalesOrder(
-      id: json['id'] as int,
+      id: _parseInt(json['id']),
       name: json['name'] as String,
-      partnerId: json['partner_id'] as List<dynamic>?,
+      partnerId: json['partner_id'], // Can be int or array
       dateOrder: json['date_order'] as String,
       amountTotal: (json['amount_total'] as num?)?.toDouble() ?? 0.0,
+      warehouseId: json['warehouse_id'],
+      kurirId: json['kurir_id'],
+      awb: json['awb'],
       state: json['state'] as String? ?? 'draft',
       orderLines: orderLines,
     );
   }
 
-  /// Get customer name from partnerId array
-  String get customerName => partnerId != null && partnerId!.length > 1
-      ? partnerId![1] as String
-      : 'Unknown Customer';
+  /// Helper: Parse int from dynamic value
+  static int _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is String) return int.parse(value);
+    throw Exception('Cannot parse id: $value');
+  }
+
+  /// Get customer name from partnerId
+  String get customerName {
+    if (partnerId == null || partnerId == false) return 'Unknown Customer';
+    if (partnerId is List && partnerId.length > 1) {
+      return partnerId[1] as String;
+    }
+    return 'Customer #$partnerId';
+  }
 
   /// Get customer ID
-  int? get customerId =>
-      partnerId != null && partnerId!.isNotEmpty ? partnerId![0] as int : null;
+  int? get customerId {
+    if (partnerId == null || partnerId == false) return null;
+    if (partnerId is int) return partnerId;
+    if (partnerId is List && partnerId.isNotEmpty) {
+      return partnerId[0] as int;
+    }
+    return null;
+  }
+
+  /// Get warehouse name
+  String? get warehouseName {
+    if (warehouseId == null || warehouseId == false) return null;
+    if (warehouseId is List && warehouseId.length > 1) {
+      return warehouseId[1] as String;
+    }
+    return null;
+  }
+
+  /// Get kurir name
+  String? get kurirName {
+    if (kurirId == null || kurirId == false) return null;
+    if (kurirId is List && kurirId.length > 1) {
+      return kurirId[1] as String;
+    }
+    return null;
+  }
+
+  /// Get AWB number
+  String? get awbNumber {
+    if (awb == null || awb == false) return null;
+    return awb.toString();
+  }
 
   /// Get status label in Indonesian
   String get stateLabel {
-    switch (state) {
+    switch (state.toLowerCase()) {
       case 'draft':
         return 'Draft';
       case 'sent':
@@ -70,7 +136,7 @@ class SalesOrder {
 
   /// Get status color
   int get stateColor {
-    switch (state) {
+    switch (state.toLowerCase()) {
       case 'draft':
         return 0xFFFFA726; // Orange
       case 'sent':
@@ -110,5 +176,21 @@ class SalesOrder {
     final month = date.month.toString().padLeft(2, '0');
     final year = date.year;
     return '$day/$month/$year';
+  }
+
+  /// Convert to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'partner_id': partnerId,
+      'date_order': dateOrder,
+      'amount_total': amountTotal,
+      'warehouse_id': warehouseId,
+      'kurir_id': kurirId,
+      'awb': awb,
+      'state': state,
+      'order_lines': orderLines.map((line) => line.toJson()).toList(),
+    };
   }
 }

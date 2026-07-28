@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:pintarx/config/theme.dart';
 import 'package:pintarx/features/customer/presentation/pages/customer_list_page.dart';
 import 'package:pintarx/features/product/presentation/pages/product_list_page.dart';
+import 'package:pintarx/features/sales_order/presentation/pages/sales_order_list_page.dart';
 import 'package:pintarx/pages/sales/transaction/sales_page.dart';
-import 'package:pintarx/pages/sales/transaction/transaction_list_page.dart';
 import 'package:pintarx/services/status_bar_service.dart';
 import 'package:pintarx/widgets/common/app_header.dart';
 import 'package:pintarx/widgets/common/section_header.dart';
@@ -173,7 +173,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const TransactionListPage(),
+                        builder: (context) => const SalesOrderListPage(),
                       ),
                     );
                   },
@@ -263,7 +263,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const TransactionListPage(),
+              builder: (context) => const SalesOrderListPage(),
             ),
           );
         } else if (menu["route"] == "customers") {
