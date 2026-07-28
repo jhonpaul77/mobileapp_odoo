@@ -1,0 +1,12 @@
+{
+  "database": "demotest",
+  "url": "https://demoerp.riztastore.id",
+  "company": "",
+  "language": "id",
+  "theme": "light",
+  "api_version": "1.0",
+  "timeout": 30,
+  "warehouse": "",
+  "printer": "",
+  "currency": "IDR"
+}
