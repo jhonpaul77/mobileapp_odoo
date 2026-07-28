@@ -32,6 +32,14 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
     }
   }
 
+  /// Format field value - convert false/null to "-"
+  String _formatFieldValue(dynamic value) {
+    if (value == null || value == false) {
+      return '-';
+    }
+    return value.toString();
+  }
+
   void _printTransaction() {
     showDialog(
       context: context,
@@ -67,7 +75,7 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Product ID: ${line.productId}',
+                      Text(line.productName,
                           style: const TextStyle(fontSize: 11)),
                       Text(
                           'Qty: ${line.productUomQty} | Harga: ${_currencyFormat.format(line.priceUnit)}',
@@ -354,18 +362,18 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
                   _buildInfoGrid([
                     {
                       'label': 'Warehouse ID',
-                      'value': order.warehouseId?.toString() ?? '-',
+                      'value': _formatFieldValue(order.warehouseId),
                     },
                     {
                       'label': 'Kurir ID',
-                      'value': order.kurirId?.toString() ?? '-',
+                      'value': _formatFieldValue(order.kurirId),
                     },
                   ]),
                   const SizedBox(height: 12),
                   _buildInfoGrid([
                     {
                       'label': 'AWB',
-                      'value': order.awb?.toString() ?? '-',
+                      'value': _formatFieldValue(order.awb),
                     },
                   ]),
                 ],
@@ -463,7 +471,7 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Product ID: ${line.productId}',
+                                      line.productName,
                                       style: const TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
