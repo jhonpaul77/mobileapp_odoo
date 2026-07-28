@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:pintarx/config/theme.dart';
+import 'package:pintarx/features/customer/presentation/providers/customer_provider.dart';
+import 'package:pintarx/features/product/presentation/providers/product_provider.dart';
+import 'package:pintarx/features/sales_order/presentation/providers/sales_order_provider.dart';
+import 'package:pintarx/pages/auth/intro_page.dart';
 import 'package:pintarx/services/api_service.dart';
 import 'package:pintarx/services/auth_service.dart';
-import 'package:pintarx/pages/auth/intro_page.dart';
-import 'package:pintarx/config/theme.dart';
+import 'package:provider/provider.dart';
 // import 'package:intl/date_symbol_data_local.dart'; // Tambahkan ini
 
 void main() async {
@@ -50,13 +54,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Pintar - X',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
-      home: const IntroPage(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(create: (_) => CustomerProvider()),
+        ChangeNotifierProvider(create: (_) => SalesOrderProvider()),
+      ],
+      child: MaterialApp(
+        title: 'Pintar - X',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.light,
+        home: const IntroPage(),
+      ),
     );
   }
 }

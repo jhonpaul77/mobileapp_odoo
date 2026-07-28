@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:pintarx/models/organization/organization.dart';
 import 'package:pintarx/models/organization/organization_response.dart';
 import 'api_service.dart';
 import '../config/api_config.dart';

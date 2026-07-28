@@ -227,7 +227,7 @@ class _ProductGroupFormPageState extends State<ProductGroupFormPage> {
         gradient: LinearGradient(
           colors: _isEditMode
               ? [Colors.orange[400]!, Colors.orange[600]!]
-              : [AppTheme.brandOrange, AppTheme.brandOrange.withOpacity(0.7)],
+              : [AppTheme.brandOrange, AppTheme.brandOrange.withValues(alpha: 0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -235,7 +235,7 @@ class _ProductGroupFormPageState extends State<ProductGroupFormPage> {
         boxShadow: [
           BoxShadow(
             color: (_isEditMode ? Colors.orange[400]! : AppTheme.brandOrange)
-                .withOpacity(0.3),
+                .withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -247,10 +247,10 @@ class _ProductGroupFormPageState extends State<ProductGroupFormPage> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 width: 3,
               ),
             ),
@@ -277,7 +277,7 @@ class _ProductGroupFormPageState extends State<ProductGroupFormPage> {
                 : 'Lengkapi form untuk menambahkan grup produk',
             style: TextStyle(
               fontSize: 13,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
             textAlign: TextAlign.center,
           ),
@@ -294,7 +294,7 @@ class _ProductGroupFormPageState extends State<ProductGroupFormPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -308,7 +308,7 @@ class _ProductGroupFormPageState extends State<ProductGroupFormPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.brandOrange.withOpacity(0.1),
+                  color: AppTheme.brandOrange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -400,7 +400,7 @@ class _ProductGroupFormPageState extends State<ProductGroupFormPage> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
+                color: iconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Icon(
@@ -496,8 +496,8 @@ class _ProductGroupFormPageState extends State<ProductGroupFormPage> {
               ),
               elevation: _isLoading ? 0 : 2,
               shadowColor: _isEditMode
-                  ? Colors.orange.withOpacity(0.3)
-                  : AppTheme.brandOrange.withOpacity(0.3),
+                  ? Colors.orange.withValues(alpha: 0.3)
+                  : AppTheme.brandOrange.withValues(alpha: 0.3),
             ),
             child: _isLoading
                 ? const SizedBox(

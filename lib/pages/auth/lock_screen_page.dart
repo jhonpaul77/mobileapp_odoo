@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../services/secure_storage_service.dart';
-import '../../services/biometric_service.dart';
+
 import '../../services/auth_service.dart';
+import '../../services/biometric_service.dart';
+import '../../services/secure_storage_service.dart';
 import '../home/home_page.dart';
 import 'login_page.dart';
 
@@ -13,13 +14,13 @@ class LockScreenPage extends StatefulWidget {
   State<LockScreenPage> createState() => _LockScreenPageState();
 }
 
-class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStateMixin {
+class _LockScreenPageState extends State<LockScreenPage>
+    with TickerProviderStateMixin {
   final _storage = SecureStorageService();
   final _biometric = BiometricService();
   final _authService = AuthService();
 
   String _pinInput = '';
-  String _correctPin = '';
   bool _isNavigating = false;
   bool _isPinError = false;
   bool _isLoading = true;
@@ -37,7 +38,7 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
   @override
   void initState() {
     super.initState();
-    
+
     // Setup animations
     _shakeController = AnimationController(
       duration: const Duration(milliseconds: 500),
@@ -50,7 +51,7 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
       parent: _shakeController,
       curve: Curves.elasticIn,
     ));
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
@@ -59,7 +60,7 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
       parent: _fadeController,
       curve: Curves.easeIn,
     );
-    
+
     _scaleController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -68,7 +69,7 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
       parent: _scaleController,
       curve: Curves.easeInOut,
     );
-    
+
     Future.delayed(const Duration(milliseconds: 300), _checkSessionAndAuth);
   }
 
@@ -95,26 +96,25 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
 
     // Check session validity
     final hasToken = await _authService.isLoggedIn();
-    
+
     if (!hasToken) {
       if (!mounted) return;
       _forceLogout();
       return;
     }
 
-    // Store correct PIN for verification
-    setState(() {
-      _correctPin = pin;
-      _isLoading = false;
-    });
-
     // Check biometric availability
     _isBiometricEnabled = await _biometric.isBiometricEnabled();
-    
+
     // Start animations
     _fadeController.forward();
     _scaleController.forward();
-    
+
+    // Update loading state
+    setState(() {
+      _isLoading = false;
+    });
+
     // Try biometric auth first if enabled
     if (_isBiometricEnabled && mounted) {
       Future.delayed(const Duration(milliseconds: 500), _tryBiometricAuth);
@@ -136,9 +136,9 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
 
   void _onPinInput(String number) {
     if (_pinInput.length >= 6) return;
-    
+
     HapticFeedback.lightImpact();
-    
+
     setState(() {
       _pinInput += number;
       _isPinError = false;
@@ -151,9 +151,9 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
 
   void _onPinDelete() {
     if (_pinInput.isEmpty) return;
-    
+
     HapticFeedback.lightImpact();
-    
+
     setState(() {
       _pinInput = _pinInput.substring(0, _pinInput.length - 1);
       _isPinError = false;
@@ -162,7 +162,7 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
 
   Future<void> _verifyPin() async {
     final isValid = await _storage.verifyPin(_pinInput);
-    
+
     if (isValid) {
       // Success animation
       _scaleController.reverse().then((_) {
@@ -175,12 +175,12 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
         _failedAttempts++;
         _pinInput = '';
       });
-      
+
       HapticFeedback.heavyImpact();
       _shakeController.forward().then((_) {
         _shakeController.reset();
       });
-      
+
       if (_failedAttempts >= _maxAttempts) {
         _handleMaxRetries();
       } else {
@@ -191,10 +191,11 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
 
   void _showErrorSnackBar() {
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('PIN salah! Sisa percobaan: ${_maxAttempts - _failedAttempts}'),
+        content: Text(
+            'PIN salah! Sisa percobaan: ${_maxAttempts - _failedAttempts}'),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -315,9 +316,9 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
     final isDark = theme.brightness == Brightness.dark;
-    
-    return WillPopScope(
-      onWillPop: () async => false,
+
+    return PopScope(
+      canPop: false,
       child: Scaffold(
         body: Container(
           decoration: BoxDecoration(
@@ -326,11 +327,11 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
               end: Alignment.bottomRight,
               colors: isDark
                   ? [
-                      primaryColor.withOpacity(0.3),
-                      primaryColor.withOpacity(0.1),
+                      primaryColor.withValues(alpha: 0.3),
+                      primaryColor.withValues(alpha: 0.1),
                     ]
                   : [
-                      primaryColor.withOpacity(0.9),
+                      primaryColor.withValues(alpha: 0.9),
                       primaryColor,
                     ],
             ),
@@ -379,8 +380,6 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
   }
 
   Widget _buildLoadingScreen(ThemeData theme) {
-    final isDark = theme.brightness == Brightness.dark;
-    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -389,7 +388,7 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -417,16 +416,15 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
   }
 
   Widget _buildHeader(ThemeData theme) {
-    final isDark = theme.brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.white;
-    
+    const textColor = Colors.white;
+
     return Column(
       children: [
         Container(
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -449,7 +447,7 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
           'Masukkan PIN untuk melanjutkan',
           style: TextStyle(
             fontSize: 16,
-            color: textColor.withOpacity(0.9),
+            color: textColor.withValues(alpha: 0.9),
           ),
         ),
         if (_failedAttempts > 0) ...[
@@ -457,7 +455,7 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.2),
+              color: Colors.orange.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -487,14 +485,14 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
           decoration: BoxDecoration(
             color: _isPinError
                 ? Colors.red.shade300
-                : (index < _pinInput.length 
-                    ? Colors.white 
-                    : Colors.white.withOpacity(0.3)),
+                : (index < _pinInput.length
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.3)),
             shape: BoxShape.circle,
             boxShadow: index < _pinInput.length
                 ? [
                     BoxShadow(
-                      color: Colors.white.withOpacity(0.5),
+                      color: Colors.white.withValues(alpha: 0.5),
                       blurRadius: 8,
                       spreadRadius: 1,
                     ),
@@ -515,7 +513,7 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.2),
+            color: Colors.red.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Text(
@@ -543,7 +541,9 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _isBiometricEnabled ? _buildBiometricButton(theme) : const SizedBox(width: 72),
+            _isBiometricEnabled
+                ? _buildBiometricButton(theme)
+                : const SizedBox(width: 72),
             const SizedBox(width: 16),
             _buildNumberButton('0', theme),
             const SizedBox(width: 16),
@@ -572,16 +572,16 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
       child: InkWell(
         onTap: () => _onPinInput(number),
         borderRadius: BorderRadius.circular(36),
-        splashColor: Colors.white.withOpacity(0.3),
-        highlightColor: Colors.white.withOpacity(0.1),
+        splashColor: Colors.white.withValues(alpha: 0.3),
+        highlightColor: Colors.white.withValues(alpha: 0.1),
         child: Container(
           width: 72,
           height: 72,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             shape: BoxShape.circle,
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -606,17 +606,17 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
       child: InkWell(
         onTap: _pinInput.isNotEmpty ? _onPinDelete : null,
         borderRadius: BorderRadius.circular(36),
-        splashColor: Colors.white.withOpacity(0.3),
-        highlightColor: Colors.white.withOpacity(0.1),
+        splashColor: Colors.white.withValues(alpha: 0.3),
+        highlightColor: Colors.white.withValues(alpha: 0.1),
         child: Container(
           width: 72,
           height: 72,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: _pinInput.isNotEmpty 
-                  ? Colors.white.withOpacity(0.5)
-                  : Colors.white.withOpacity(0.2),
+              color: _pinInput.isNotEmpty
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : Colors.white.withValues(alpha: 0.2),
               width: 1.5,
             ),
           ),
@@ -626,7 +626,7 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
               size: 24,
               color: _pinInput.isNotEmpty
                   ? Colors.white
-                  : Colors.white.withOpacity(0.5),
+                  : Colors.white.withValues(alpha: 0.5),
             ),
           ),
         ),
@@ -640,16 +640,16 @@ class _LockScreenPageState extends State<LockScreenPage> with TickerProviderStat
       child: InkWell(
         onTap: _tryBiometricAuth,
         borderRadius: BorderRadius.circular(36),
-        splashColor: Colors.white.withOpacity(0.3),
-        highlightColor: Colors.white.withOpacity(0.1),
+        splashColor: Colors.white.withValues(alpha: 0.3),
+        highlightColor: Colors.white.withValues(alpha: 0.1),
         child: Container(
           width: 72,
           height: 72,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             shape: BoxShape.circle,
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
               width: 1,
             ),
           ),

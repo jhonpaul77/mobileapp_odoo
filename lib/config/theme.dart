@@ -111,7 +111,7 @@ class AppTheme {
     cardTheme: CardThemeData(
       color: cardColor,
       elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.1),
+      shadowColor: Colors.black.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(borderRadiusMedium),
       ),
@@ -240,7 +240,7 @@ class AppTheme {
     
     // Chip Theme
     chipTheme: ChipThemeData(
-      backgroundColor: primaryLight.withOpacity(0.2),
+      backgroundColor: primaryLight.withValues(alpha: 0.2),
       labelStyle: const TextStyle(color: primaryDark),
       padding: const EdgeInsets.symmetric(
         horizontal: paddingSmall,
@@ -378,7 +378,7 @@ class AppTheme {
   // Box Shadow untuk Card/Container
   static List<BoxShadow> cardShadow = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.08),
+      color: Colors.black.withValues(alpha: 0.08),
       blurRadius: 8,
       offset: const Offset(0, 2),
     ),
@@ -387,7 +387,7 @@ class AppTheme {
   // Card shadow soft (untuk form, features card)
   static List<BoxShadow> softCardShadow = [
     BoxShadow(
-      color: primaryColor.withOpacity(0.04),
+      color: primaryColor.withValues(alpha: 0.04),
       blurRadius: 20,
       offset: const Offset(0, 4),
     ),
@@ -396,7 +396,7 @@ class AppTheme {
   // Button shadow
   static List<BoxShadow> buttonShadow = [
     BoxShadow(
-      color: primaryColor.withOpacity(0.3),
+      color: primaryColor.withValues(alpha: 0.3),
       blurRadius: 20,
       offset: const Offset(0, 8),
     ),
@@ -431,7 +431,7 @@ class AppTheme {
     end: Alignment.bottomCenter,
     colors: [
       surfaceColor,
-      primaryColor.withOpacity(0.03),
+      primaryColor.withValues(alpha: 0.03),
     ],
   );
   
@@ -440,7 +440,7 @@ class AppTheme {
     color: surfaceColor,
     borderRadius: BorderRadius.circular(20),
     border: Border.all(
-      color: primaryColor.withOpacity(0.1),
+      color: primaryColor.withValues(alpha: 0.1),
       width: 1,
     ),
     boxShadow: softCardShadow,
@@ -448,10 +448,10 @@ class AppTheme {
   
   // Info box decoration
   static BoxDecoration infoBoxDecoration = BoxDecoration(
-    color: infoColor.withOpacity(0.08),
+    color: infoColor.withValues(alpha: 0.08),
     borderRadius: BorderRadius.circular(14),
     border: Border.all(
-      color: infoColor.withOpacity(0.2),
+      color: infoColor.withValues(alpha: 0.2),
     ),
   );
 }

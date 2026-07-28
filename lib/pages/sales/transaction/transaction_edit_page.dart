@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pintarx/config/theme.dart';
 import 'package:pintarx/models/location_picker.dart';
+
 import 'location_picker_page.dart';
 
 class TransactionEditPage extends StatefulWidget {
@@ -27,30 +28,39 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
   void initState() {
     super.initState();
     final transaction = widget.transaction;
-    _customerController = TextEditingController(text: transaction['customer'] as String? ?? '');
-    _phoneController = TextEditingController(text: (transaction['phone'] as String?)?.trim() ?? '');
-    _paymentTermsController = TextEditingController(text: transaction['paymentTerms'] as String? ?? '');
-    _provinceController = TextEditingController(text: transaction['deliveryProvince'] as String? ?? '');
-    _cityController = TextEditingController(text: transaction['deliveryCity'] as String? ?? '');
-    _districtController = TextEditingController(text: transaction['deliveryDistrict'] as String? ?? '');
-    _fullAddressController = TextEditingController(text: transaction['deliveryAddress'] as String? ?? '');
+    _customerController =
+        TextEditingController(text: transaction['customer'] as String? ?? '');
+    _phoneController = TextEditingController(
+        text: (transaction['phone'] as String?)?.trim() ?? '');
+    _paymentTermsController = TextEditingController(
+        text: transaction['paymentTerms'] as String? ?? '');
+    _provinceController = TextEditingController(
+        text: transaction['deliveryProvince'] as String? ?? '');
+    _cityController = TextEditingController(
+        text: transaction['deliveryCity'] as String? ?? '');
+    _districtController = TextEditingController(
+        text: transaction['deliveryDistrict'] as String? ?? '');
+    _fullAddressController = TextEditingController(
+        text: transaction['deliveryAddress'] as String? ?? '');
 
     _items = (transaction['items'] as List<dynamic>?)
-            ?.map((item) => Map<String, dynamic>.from(item as Map<String, dynamic>))
+            ?.map((item) =>
+                Map<String, dynamic>.from(item as Map<String, dynamic>))
             .toList() ??
         [];
 
     _itemControllers = _items.map((item) {
       return {
-        'product': TextEditingController(text: item['product'] as String? ?? ''),
-        'analyticAccount': TextEditingController(text: item['analyticAccount'] as String? ?? ''),
+        'product':
+            TextEditingController(text: item['product'] as String? ?? ''),
+        'analyticAccount': TextEditingController(
+            text: item['analyticAccount'] as String? ?? ''),
         'qty': TextEditingController(text: (item['qty']?.toString() ?? '')),
-        'price': TextEditingController(text: (item['price'] as double?)?.toStringAsFixed(0) ?? ''),
+        'price': TextEditingController(
+            text: (item['price'] as double?)?.toStringAsFixed(0) ?? ''),
       };
     }).toList();
   }
-
-
 
   @override
   void dispose() {
@@ -62,7 +72,9 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
     _districtController.dispose();
     _fullAddressController.dispose();
     for (final controllers in _itemControllers) {
-      controllers.values.forEach((controller) => controller.dispose());
+      for (final controller in controllers.values) {
+        controller.dispose();
+      }
     }
     super.dispose();
   }
@@ -72,8 +84,11 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
     final item = _items[index];
     item['product'] = controllers['product']!.text.trim();
     item['analyticAccount'] = controllers['analyticAccount']!.text.trim();
-    item['qty'] = int.tryParse(controllers['qty']!.text.replaceAll('.', '')) ?? item['qty'];
-    item['price'] = double.tryParse(controllers['price']!.text.replaceAll('.', '')) ?? item['price'];
+    item['qty'] = int.tryParse(controllers['qty']!.text.replaceAll('.', '')) ??
+        item['qty'];
+    item['price'] =
+        double.tryParse(controllers['price']!.text.replaceAll('.', '')) ??
+            item['price'];
   }
 
   int _estimateShipping() {
@@ -90,9 +105,9 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
 
   String _formatCurrency(double value) {
     final formatted = value.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (match) => '.',
-    );
+          RegExp(r'\B(?=(\d{3})+(?!\d))'),
+          (match) => '.',
+        );
     return 'Rp $formatted';
   }
 
@@ -222,10 +237,13 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
             style: const TextStyle(fontSize: 12, color: Colors.black87),
             decoration: InputDecoration(
               prefixText: prefixText,
-              prefixIcon: icon != null ? Icon(icon, size: 16, color: AppTheme.primaryColor) : null,
+              prefixIcon: icon != null
+                  ? Icon(icon, size: 16, color: AppTheme.primaryColor)
+                  : null,
               filled: true,
               fillColor: Colors.grey[50],
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(6),
                 borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
@@ -236,7 +254,8 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(6),
-                borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
+                borderSide:
+                    const BorderSide(color: AppTheme.primaryColor, width: 1.5),
               ),
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
             ),
@@ -356,7 +375,8 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
-          title: const Text('Edit Transaksi', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
+          title: const Text('Edit Transaksi',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
           backgroundColor: AppTheme.primaryColor,
           elevation: 0,
           centerTitle: false,
@@ -391,12 +411,14 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
                       children: [
                         Expanded(
                           flex: 1,
-                          child: _buildEditField('Telepon', _phoneController, keyboardType: TextInputType.phone),
+                          child: _buildEditField('Telepon', _phoneController,
+                              keyboardType: TextInputType.phone),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           flex: 1,
-                          child: _buildEditField('Syarat Bayar', _paymentTermsController),
+                          child: _buildEditField(
+                              'Syarat Bayar', _paymentTermsController),
                         ),
                       ],
                     ),
@@ -433,7 +455,8 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
                         decoration: BoxDecoration(
                           color: Colors.grey[50],
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.grey[300]!, width: 1),
+                          border:
+                              Border.all(color: Colors.grey[300]!, width: 1),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withValues(alpha: 0.02),
@@ -447,20 +470,25 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
                             Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                color: AppTheme.primaryColor
+                                    .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: Icon(Icons.location_on, size: 14, color: AppTheme.primaryColor),
+                              child: Icon(Icons.location_on,
+                                  size: 14, color: AppTheme.primaryColor),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: _provinceController.text.isEmpty
                                   ? Text(
                                       'Pilih Lokasi',
-                                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                                      style: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: 12),
                                     )
                                   : Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           _districtController.text,
@@ -486,7 +514,8 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
                             Icon(
                               Icons.arrow_forward_ios,
                               size: 12,
-                              color: AppTheme.primaryColor.withValues(alpha: 0.5),
+                              color:
+                                  AppTheme.primaryColor.withValues(alpha: 0.5),
                             ),
                           ],
                         ),
@@ -507,16 +536,23 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2), width: 1),
+                          border: Border.all(
+                              color:
+                                  AppTheme.primaryColor.withValues(alpha: 0.2),
+                              width: 1),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.local_shipping, size: 14, color: AppTheme.primaryColor),
+                            Icon(Icons.local_shipping,
+                                size: 14, color: AppTheme.primaryColor),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
                                 'Ongkir: ${_formatCurrency(_estimateShipping().toDouble())}',
-                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.primaryColor),
+                                style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.primaryColor),
                               ),
                             ),
                           ],
@@ -524,7 +560,8 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
                       ),
                     ],
                     const SizedBox(height: 8),
-                    _buildEditField('Alamat Lengkap', _fullAddressController, maxLines: 2),
+                    _buildEditField('Alamat Lengkap', _fullAddressController,
+                        maxLines: 2),
                   ],
                 ),
               ),
@@ -550,19 +587,25 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
                   children: [
                     _buildSectionTitle('Detail Item'),
                     const SizedBox(height: 12),
-                    ...List.generate(_items.length, (index) => _buildItemLine(index)),
+                    ...List.generate(
+                        _items.length, (index) => _buildItemLine(index)),
                     const SizedBox(height: 4),
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: _addItemLine,
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Tambah Item', style: TextStyle(fontSize: 12)),
+                        label: const Text('Tambah Item',
+                            style: TextStyle(fontSize: 12)),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTheme.primaryColor,
                           padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          side: BorderSide(color: AppTheme.primaryColor.withValues(alpha: 0.3), width: 1.5),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                          side: BorderSide(
+                              color:
+                                  AppTheme.primaryColor.withValues(alpha: 0.3),
+                              width: 1.5),
                         ),
                       ),
                     ),
@@ -579,12 +622,16 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
                     elevation: 2,
                   ),
                   child: const Text(
                     'Confirm',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Colors.white),
                   ),
                 ),
               ),

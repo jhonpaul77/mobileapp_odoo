@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../services/secure_storage_service.dart';
+
 import '../../services/biometric_service.dart';
+import '../../services/secure_storage_service.dart';
 import '../home/home_page.dart';
 
 class SetupPinPage extends StatefulWidget {
@@ -11,16 +12,17 @@ class SetupPinPage extends StatefulWidget {
   State<SetupPinPage> createState() => _SetupPinPageState();
 }
 
-class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMixin {
+class _SetupPinPageState extends State<SetupPinPage>
+    with TickerProviderStateMixin {
   final _storage = SecureStorageService();
   final _biometric = BiometricService();
-  
+
   String _pinInput = '';
   String _confirmPin = '';
   bool _isConfirming = false;
   bool _isPinError = false;
   bool _isBiometricAvailable = false;
-  
+
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
   late AnimationController _fadeController;
@@ -30,7 +32,7 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
   void initState() {
     super.initState();
     _checkBiometric();
-    
+
     // Setup animations
     _shakeController = AnimationController(
       duration: const Duration(milliseconds: 500),
@@ -43,7 +45,7 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
       parent: _shakeController,
       curve: Curves.elasticIn,
     ));
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -52,7 +54,7 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
       parent: _fadeController,
       curve: Curves.easeIn,
     );
-    
+
     _fadeController.forward();
   }
 
@@ -70,10 +72,10 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
 
   void _onPinInput(String number) {
     HapticFeedback.lightImpact();
-    
+
     if (_isConfirming) {
       if (_confirmPin.length >= 6) return;
-      
+
       setState(() {
         _confirmPin += number;
         _isPinError = false;
@@ -86,7 +88,7 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
       }
     } else {
       if (_pinInput.length >= 6) return;
-      
+
       setState(() {
         _pinInput += number;
         _isPinError = false;
@@ -108,7 +110,7 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
 
   void _onPinDelete() {
     HapticFeedback.lightImpact();
-    
+
     if (_isConfirming) {
       if (_confirmPin.isEmpty) return;
       setState(() {
@@ -128,9 +130,9 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
     if (_pinInput == _confirmPin) {
       // Save PIN using your existing service
       await _storage.savePin(_pinInput);
-      
+
       if (!mounted) return;
-      
+
       if (_isBiometricAvailable) {
         _showBiometricDialog();
       } else {
@@ -143,7 +145,7 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
         _confirmPin = '';
         _isConfirming = false;
       });
-      
+
       HapticFeedback.heavyImpact();
       _shakeController.forward().then((_) {
         _shakeController.reset();
@@ -153,9 +155,9 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
 
   void _showBiometricDialog() async {
     final biometricType = await _biometric.getBiometricTypeString();
-    
+
     if (!mounted) return;
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -230,7 +232,7 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -239,11 +241,11 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
             end: Alignment.bottomRight,
             colors: isDark
                 ? [
-                    primaryColor.withOpacity(0.3),
-                    primaryColor.withOpacity(0.1),
+                    primaryColor.withValues(alpha: 0.3),
+                    primaryColor.withValues(alpha: 0.1),
                   ]
                 : [
-                    primaryColor.withOpacity(0.9),
+                    primaryColor.withValues(alpha: 0.9),
                     primaryColor,
                   ],
           ),
@@ -281,9 +283,8 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
   }
 
   Widget _buildHeader(ThemeData theme) {
-    final isDark = theme.brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.white;
-    
+    const textColor = Colors.white;
+
     return Column(
       children: [
         AnimatedSwitcher(
@@ -293,7 +294,7 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -326,7 +327,7 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
             key: ValueKey(_isConfirming),
             style: TextStyle(
               fontSize: 16,
-              color: textColor.withOpacity(0.9),
+              color: textColor.withValues(alpha: 0.9),
             ),
             textAlign: TextAlign.center,
           ),
@@ -337,8 +338,7 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
 
   Widget _buildPinDots(ThemeData theme) {
     final currentLength = _isConfirming ? _confirmPin.length : _pinInput.length;
-    final isDark = theme.brightness == Brightness.dark;
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(6, (index) {
@@ -351,14 +351,14 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
           decoration: BoxDecoration(
             color: _isPinError
                 ? Colors.red.shade300
-                : (index < currentLength 
-                    ? Colors.white 
-                    : Colors.white.withOpacity(0.3)),
+                : (index < currentLength
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.3)),
             shape: BoxShape.circle,
             boxShadow: index < currentLength
                 ? [
                     BoxShadow(
-                      color: Colors.white.withOpacity(0.5),
+                      color: Colors.white.withValues(alpha: 0.5),
                       blurRadius: 8,
                       spreadRadius: 1,
                     ),
@@ -379,7 +379,7 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.2),
+            color: Colors.red.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Text(
@@ -431,23 +431,21 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
   }
 
   Widget _buildNumberButton(String number, ThemeData theme) {
-    final isDark = theme.brightness == Brightness.dark;
-    
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () => _onPinInput(number),
         borderRadius: BorderRadius.circular(36),
-        splashColor: Colors.white.withOpacity(0.3),
-        highlightColor: Colors.white.withOpacity(0.1),
+        splashColor: Colors.white.withValues(alpha: 0.3),
+        highlightColor: Colors.white.withValues(alpha: 0.1),
         child: Container(
           width: 72,
           height: 72,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             shape: BoxShape.circle,
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -468,24 +466,23 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
 
   Widget _buildDeleteButton(ThemeData theme) {
     final currentLength = _isConfirming ? _confirmPin.length : _pinInput.length;
-    final isDark = theme.brightness == Brightness.dark;
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: currentLength > 0 ? _onPinDelete : null,
         borderRadius: BorderRadius.circular(36),
-        splashColor: Colors.white.withOpacity(0.3),
-        highlightColor: Colors.white.withOpacity(0.1),
+        splashColor: Colors.white.withValues(alpha: 0.3),
+        highlightColor: Colors.white.withValues(alpha: 0.1),
         child: Container(
           width: 72,
           height: 72,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: currentLength > 0 
-                  ? Colors.white.withOpacity(0.5)
-                  : Colors.white.withOpacity(0.2),
+              color: currentLength > 0
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : Colors.white.withValues(alpha: 0.2),
               width: 1.5,
             ),
           ),
@@ -495,7 +492,7 @@ class _SetupPinPageState extends State<SetupPinPage> with TickerProviderStateMix
               size: 24,
               color: currentLength > 0
                   ? Colors.white
-                  : Colors.white.withOpacity(0.5),
+                  : Colors.white.withValues(alpha: 0.5),
             ),
           ),
         ),

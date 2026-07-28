@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:pintarx/models/product/product_group/product_group.dart';
 import 'package:pintarx/models/product/product_group/product_group_response.dart';
 import 'api_service.dart';
 import '../config/api_config.dart';

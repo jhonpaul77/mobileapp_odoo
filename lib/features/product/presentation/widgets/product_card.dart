@@ -25,8 +25,8 @@ class ProductCard extends StatelessWidget {
     );
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12.0),
-      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 8.0),
+      elevation: 1,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
       ),
@@ -34,24 +34,26 @@ class ProductCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(10.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 60,
-                height: 60,
+                width: 50,
+                height: 50,
                 decoration: BoxDecoration(
                   color: Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
-                  Icons.inventory_2_outlined,
-                  size: 32,
+                  product.isStorable
+                      ? Icons.inventory_2_outlined
+                      : Icons.shopping_bag_outlined,
+                  size: 26,
                   color: Colors.blue.shade700,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,8 +61,9 @@ class ProductCard extends StatelessWidget {
                     Text(
                       product.name,
                       style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -69,7 +72,7 @@ class ProductCard extends StatelessWidget {
                     if (product.defaultCode != null)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
+                          horizontal: 6,
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
@@ -79,27 +82,28 @@ class ProductCard extends StatelessWidget {
                         child: Text(
                           product.defaultCode!,
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 10,
                             color: Colors.black87,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           currencyFormatter.format(product.listPrice),
                           style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
                             color: Colors.green,
                           ),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                            horizontal: 6,
+                            vertical: 3,
                           ),
                           decoration: BoxDecoration(
                             color: product.isStorable
@@ -110,12 +114,14 @@ class ProductCard extends StatelessWidget {
                               color: product.isStorable
                                   ? Colors.green.shade200
                                   : Colors.orange.shade200,
+                              width: 1,
                             ),
                           ),
                           child: Text(
-                            product.isStorable ? 'Stokable' : 'Konsumsi',
+                            product.isStorable ? 'Stok' : 'Jasa',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
                               color: product.isStorable
                                   ? Colors.green.shade700
                                   : Colors.orange.shade700,

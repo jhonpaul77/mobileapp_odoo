@@ -300,8 +300,8 @@ class _OrganizationListPageState extends State<OrganizationListPage> {
     return InkWell(
       onTap: () => _navigateToDetail(organization),
       borderRadius: BorderRadius.circular(12),
-      splashColor: AppTheme.primaryColor.withOpacity(0.1),
-      highlightColor: AppTheme.primaryColor.withOpacity(0.05),
+      splashColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+      highlightColor: AppTheme.primaryColor.withValues(alpha: 0.05),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -314,7 +314,7 @@ class _OrganizationListPageState extends State<OrganizationListPage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             )

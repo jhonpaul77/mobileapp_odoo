@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/widgets/common/app_header.dart';
-import 'package:pintarx/widgets/common/section_header.dart';
-import 'package:pintarx/services/status_bar_service.dart';
-import 'package:pintarx/pages/sales/customer/customer_list_page.dart';
-import 'package:pintarx/pages/sales/product/product_list_page.dart';
+import 'package:pintarx/features/customer/presentation/pages/customer_list_page.dart';
+import 'package:pintarx/features/product/presentation/pages/product_list_page.dart';
 import 'package:pintarx/pages/sales/transaction/sales_page.dart';
 import 'package:pintarx/pages/sales/transaction/transaction_list_page.dart';
-
+import 'package:pintarx/services/status_bar_service.dart';
+import 'package:pintarx/widgets/common/app_header.dart';
+import 'package:pintarx/widgets/common/section_header.dart';
 
 class PenjualanPage extends StatefulWidget {
   const PenjualanPage({super.key});
@@ -150,21 +149,20 @@ class _PenjualanPageState extends State<PenjualanPage> {
           Row(
             children: [
               Expanded(
-  child: _buildQuickActionButton(
-    "Transaksi Baru",
-    Icons.add_shopping_cart_rounded,
-    AppTheme.successColor,
-    () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const SalesPage(),
-        ),
-      );
-    },
-  ),
-),
-
+                child: _buildQuickActionButton(
+                  "Transaksi Baru",
+                  Icons.add_shopping_cart_rounded,
+                  AppTheme.successColor,
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SalesPage(),
+                      ),
+                    );
+                  },
+                ),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildQuickActionButton(
@@ -250,7 +248,8 @@ class _PenjualanPageState extends State<PenjualanPage> {
     return Column(
       children: menus.asMap().entries.map((entry) {
         return Padding(
-          padding: EdgeInsets.only(bottom: entry.key == menus.length - 1 ? 0 : 12),
+          padding:
+              EdgeInsets.only(bottom: entry.key == menus.length - 1 ? 0 : 12),
           child: _buildMenuCard(entry.value),
         );
       }).toList(),
@@ -294,7 +293,8 @@ class _PenjualanPageState extends State<PenjualanPage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: (menu["gradient"] as List<Color>)[0].withValues(alpha: 0.3),
+              color:
+                  (menu["gradient"] as List<Color>)[0].withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             )

@@ -43,15 +43,15 @@ class MenuUtama extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
             colors: [
-              Color(menu["color"] as int).withOpacity(0.9),
-              Color(menu["color"] as int).withOpacity(0.7),
+              Color(menu["color"] as int).withValues(alpha: 0.9),
+              Color(menu["color"] as int).withValues(alpha: 0.7),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           boxShadow: [
             BoxShadow(
-              color: Color(menu["color"] as int).withOpacity(0.2),
+              color: Color(menu["color"] as int).withValues(alpha: 0.2),
               blurRadius: 12,
               offset: const Offset(0, 4),
             )
@@ -63,7 +63,7 @@ class MenuUtama extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(

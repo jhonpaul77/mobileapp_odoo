@@ -133,7 +133,7 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
             end: Alignment.bottomCenter,
             colors: [
               Colors.white,
-              AppTheme.primaryColor.withOpacity(0.03),
+              AppTheme.primaryColor.withValues(alpha: 0.03),
             ],
           ),
         ),
@@ -230,7 +230,7 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 30,
                       offset: const Offset(0, 10),
                     ),
@@ -273,7 +273,7 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.25),
+            color: AppTheme.primaryColor.withValues(alpha: 0.25),
             blurRadius: 24,
             offset: const Offset(0, 8),
             spreadRadius: 0,
@@ -316,7 +316,7 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
             vertical: 4,
           ),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.08),
+            color: AppTheme.primaryColor.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -354,12 +354,12 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.1),
+          color: AppTheme.primaryColor.withValues(alpha: 0.1),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.04),
+            color: AppTheme.primaryColor.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -398,8 +398,8 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AppTheme.primaryLight.withOpacity(0.15),
-                AppTheme.primaryColor.withOpacity(0.15),
+                AppTheme.primaryLight.withValues(alpha: 0.15),
+                AppTheme.primaryColor.withValues(alpha: 0.15),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
@@ -449,7 +449,7 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.3),
+            color: AppTheme.primaryColor.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),

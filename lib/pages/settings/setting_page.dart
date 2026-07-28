@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:pintarx/config/theme.dart';
-
 // import semua page yang diperlukan
 import 'package:pintarx/pages/settings/location/location_list_page.dart';
-import 'package:pintarx/pages/settings/product_category/product_category_list_page.dart';
-import 'package:pintarx/pages/settings/product_group/product_group_list_page.dart';
 // import 'package:pintarx/pages/master/product_measurement_page.dart';
 import 'package:pintarx/pages/settings/organization/organization_list_page.dart';
+import 'package:pintarx/pages/settings/product_category/product_category_list_page.dart';
+import 'package:pintarx/pages/settings/product_group/product_group_list_page.dart';
 // import 'package:pintarx/pages/master/role_page.dart';
 // import 'package:pintarx/pages/master/user_page.dart';
 
@@ -59,7 +58,8 @@ class SettingPage extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const ProductCategoryListPage()),
+                MaterialPageRoute(
+                    builder: (_) => const ProductCategoryListPage()),
               );
             },
           ),
@@ -147,7 +147,6 @@ class SettingPage extends StatelessWidget {
     required String title,
     required String subtitle,
     VoidCallback? onTap,
-    Widget? trailing,
   }) {
     return InkWell(
       onTap: onTap,
@@ -161,7 +160,7 @@ class SettingPage extends StatelessWidget {
           border: Border.all(color: Colors.grey[200]!, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             )

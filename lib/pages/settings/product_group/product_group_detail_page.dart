@@ -365,7 +365,7 @@ class _ProductGroupDetailPageState extends State<ProductGroupDetailPage> {
         gradient: LinearGradient(
           colors: [
             AppTheme.brandOrange,
-            AppTheme.brandOrange.withOpacity(0.7),
+            AppTheme.brandOrange.withValues(alpha: 0.7),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -373,7 +373,7 @@ class _ProductGroupDetailPageState extends State<ProductGroupDetailPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.brandOrange.withOpacity(0.3),
+            color: AppTheme.brandOrange.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -386,10 +386,10 @@ class _ProductGroupDetailPageState extends State<ProductGroupDetailPage> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 width: 3,
               ),
             ),
@@ -425,10 +425,10 @@ class _ProductGroupDetailPageState extends State<ProductGroupDetailPage> {
               vertical: 8,
             ),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.25),
+              color: Colors.white.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -467,7 +467,7 @@ class _ProductGroupDetailPageState extends State<ProductGroupDetailPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -481,7 +481,7 @@ class _ProductGroupDetailPageState extends State<ProductGroupDetailPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.brandOrange.withOpacity(0.1),
+                  color: AppTheme.brandOrange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -531,7 +531,7 @@ class _ProductGroupDetailPageState extends State<ProductGroupDetailPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -598,7 +598,7 @@ class _ProductGroupDetailPageState extends State<ProductGroupDetailPage> {
         Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.1),
+            color: iconColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(

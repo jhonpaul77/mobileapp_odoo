@@ -166,7 +166,7 @@ class DummyData {
     },
     {
       "title": "Inventory",
-      "icon": Icons.warehouse_rounded,
+      "icon": Icons.inventory_2_rounded,
       "color": 0xFF8B5CF6,
       "route": "inventory"
     },

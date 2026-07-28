@@ -22,7 +22,7 @@ class AppHeader extends StatefulWidget {
 }
 
 class _AppHeaderState extends State<AppHeader> {
-  int unreadCount = 3; // TODO: Ambil dari NotificationService nanti
+  int unreadCount = 3;
 
   @override
   void initState() {
@@ -31,17 +31,33 @@ class _AppHeaderState extends State<AppHeader> {
   }
 
   Future<void> _loadUnreadCount() async {
-    // TODO: Uncomment ketika NotificationService sudah siap
-    // final count = await NotificationService().getUnreadCount();
-    // if (mounted) setState(() => unreadCount = count);
+    // NotificationService integration will be added in future version
   }
 
   // Helper untuk format tanggal Indonesia
   String _formatDate(DateTime date) {
-    final days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    final days = [
+      'Minggu',
+      'Senin',
+      'Selasa',
+      'Rabu',
+      'Kamis',
+      'Jumat',
+      'Sabtu'
+    ];
     final months = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember'
     ];
 
     final dayName = days[date.weekday % 7];

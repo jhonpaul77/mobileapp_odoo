@@ -132,7 +132,7 @@ class _SalesPageState extends State<SalesPage> {
                     labelText: "Customer",
                     border: OutlineInputBorder(),
                   ),
-                  value: _selectedCustomer,
+                  initialValue: _selectedCustomer,
                   items: _customers
                       .map((c) => DropdownMenuItem<String>(
                             value: c['id']!,
@@ -187,7 +187,7 @@ class _SalesPageState extends State<SalesPage> {
                               Expanded(
                                 flex: 4,
                                 child: DropdownButtonFormField<String>(
-                                  value: d.productId.isEmpty ? null : d.productId,
+                                  initialValue: d.productId.isEmpty ? null : d.productId,
                                   decoration:
                                       const InputDecoration(border: InputBorder.none),
                                   items: _products

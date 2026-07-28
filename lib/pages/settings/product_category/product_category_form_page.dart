@@ -210,7 +210,7 @@ class _ProductCategoryFormPageState extends State<ProductCategoryFormPage> {
         boxShadow: [
           BoxShadow(
             color: (_isEditMode ? Colors.orange[300]! : const Color(0xFF84fab0))
-                .withOpacity(0.3),
+                .withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -222,10 +222,10 @@ class _ProductCategoryFormPageState extends State<ProductCategoryFormPage> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 width: 3,
               ),
             ),
@@ -252,7 +252,7 @@ class _ProductCategoryFormPageState extends State<ProductCategoryFormPage> {
                 : 'Lengkapi form untuk menambahkan kategori',
             style: TextStyle(
               fontSize: 13,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
             textAlign: TextAlign.center,
           ),
@@ -269,7 +269,7 @@ class _ProductCategoryFormPageState extends State<ProductCategoryFormPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -283,7 +283,7 @@ class _ProductCategoryFormPageState extends State<ProductCategoryFormPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -372,7 +372,7 @@ class _ProductCategoryFormPageState extends State<ProductCategoryFormPage> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
+                color: iconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Icon(
@@ -467,8 +467,8 @@ class _ProductCategoryFormPageState extends State<ProductCategoryFormPage> {
               ),
               elevation: _isLoading ? 0 : 2,
               shadowColor: _isEditMode 
-                  ? Colors.orange.withOpacity(0.3)
-                  : AppTheme.primaryColor.withOpacity(0.3),
+                  ? Colors.orange.withValues(alpha: 0.3)
+                  : AppTheme.primaryColor.withValues(alpha: 0.3),
             ),
             child: _isLoading
                 ? const SizedBox(

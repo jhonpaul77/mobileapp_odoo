@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:pintarx/models/location/location.dart';
 import 'package:pintarx/models/location/location_response.dart';
 import 'api_service.dart';
 import '../config/api_config.dart';

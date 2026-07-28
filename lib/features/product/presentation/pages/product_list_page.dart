@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../config/theme.dart';
 import '../providers/product_provider.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_search_bar.dart';
+// import 'product_detail_page.dart'; // Hidden for now
 
 /// Product List Page
 ///
@@ -25,154 +27,201 @@ class _ProductListPageState extends State<ProductListPage> {
     });
   }
 
-  Future<void> _handleRefresh() async {
-    await context.read<ProductProvider>().fetchProducts();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Produk'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
+        title: const Text(
+          'Daftar Produk',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+          ),
+        ),
+        backgroundColor: AppTheme.primaryColor,
         elevation: 0,
+        centerTitle: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      body: Column(
+      body: Consumer<ProductProvider>(
+        builder: (context, provider, child) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Column(
+              children: [
+                // Search Bar
+                const ProductSearchBar(),
+                const SizedBox(height: 14),
+
+                // Product List
+                Expanded(
+                  child: _buildBody(provider),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBody(ProductProvider provider) {
+    // Loading state
+    if (provider.isLoading && provider.products.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text(
+              'Memuat data produk...',
+              style: TextStyle(color: AppTheme.textSecondary),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Error state
+    if (provider.hasError) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 64,
+              color: AppTheme.errorColor,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Terjadi Kesalahan',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                provider.errorMessage ?? 'Unknown error',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () => provider.fetchProducts(),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Coba Lagi'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Empty state
+    if (provider.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              provider.searchQuery.isEmpty
+                  ? Icons.inventory_2_outlined
+                  : Icons.search_off,
+              size: 64,
+              color: Colors.grey[300],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              provider.searchQuery.isEmpty
+                  ? 'Belum ada produk'
+                  : 'Tidak ada hasil pencarian',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+            ),
+            if (provider.searchQuery.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => provider.clearSearch(),
+                child: const Text('Clear pencarian'),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    // Product list
+    return RefreshIndicator(
+      onRefresh: () => provider.fetchProducts(),
+      child: Column(
         children: [
-          const ProductSearchBar(),
-          Expanded(
-            child: Consumer<ProductProvider>(
-              builder: (context, provider, child) {
-                if (provider.isLoading && provider.products.isEmpty) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-
-                if (provider.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            size: 64,
-                            color: Colors.red,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Error',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            provider.errorMessage ?? 'Terjadi kesalahan',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.grey),
-                          ),
-                          const SizedBox(height: 24),
-                          ElevatedButton.icon(
-                            onPressed: _handleRefresh,
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('Coba Lagi'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                if (provider.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            provider.searchQuery.isEmpty
-                                ? Icons.inventory_2_outlined
-                                : Icons.search_off,
-                            size: 64,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            provider.searchQuery.isEmpty
-                                ? 'Belum ada produk'
-                                : 'Produk tidak ditemukan',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            provider.searchQuery.isEmpty
-                                ? 'Produk akan muncul di sini'
-                                : 'Coba kata kunci lain',
-                            style: const TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: _handleRefresh,
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 8.0,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '${provider.productsCount} Produk',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            if (provider.searchQuery.isNotEmpty)
-                              TextButton.icon(
-                                onPressed: () {
-                                  provider.clearSearch();
-                                },
-                                icon: const Icon(Icons.close, size: 16),
-                                label: const Text('Clear'),
-                              ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          itemCount: provider.products.length,
-                          itemBuilder: (context, index) {
-                            final product = provider.products[index];
-                            return ProductCard(
-                              product: product,
-                              onTap: () {
-                                // TODO: Navigate to product detail page
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Product: ${product.name}',
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+          // Product count
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${provider.productsCount} Produk',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
                   ),
+                ),
+                if (provider.searchQuery.isNotEmpty)
+                  TextButton.icon(
+                    onPressed: () => provider.clearSearch(),
+                    icon: const Icon(Icons.close, size: 16),
+                    label: const Text('Clear'),
+                  ),
+              ],
+            ),
+          ),
+          // Product list
+          Expanded(
+            child: ListView.builder(
+              itemCount: provider.products.length,
+              itemBuilder: (context, index) {
+                final product = provider.products[index];
+                return ProductCard(
+                  product: product,
+                  onTap: () {
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //   const SnackBar(
+                    //     content: Text('Fitur detail produk akan segera hadir'),
+                    //     duration: Duration(seconds: 2),
+                    //   ),
+                    // );
+
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (context) =>
+                    //         ProductDetailPage(product: product),
+                    //   ),
+                    // );
+                  },
                 );
               },
             ),

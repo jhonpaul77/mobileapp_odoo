@@ -220,8 +220,8 @@ class _ProductGroupListPageState extends State<ProductGroupListPage> {
     return InkWell(
       onTap: () => _navigateToDetail(group),
       borderRadius: BorderRadius.circular(12),
-      splashColor: AppTheme.brandOrange.withOpacity(0.1),
-      highlightColor: AppTheme.brandOrange.withOpacity(0.05),
+      splashColor: AppTheme.brandOrange.withValues(alpha: 0.1),
+      highlightColor: AppTheme.brandOrange.withValues(alpha: 0.05),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -231,7 +231,7 @@ class _ProductGroupListPageState extends State<ProductGroupListPage> {
           border: Border.all(color: Colors.grey[200]!, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             )
@@ -247,7 +247,7 @@ class _ProductGroupListPageState extends State<ProductGroupListPage> {
                 gradient: LinearGradient(
                   // colors: [
                   //   AppTheme.brandOrange,
-                  //   AppTheme.brandOrange.withOpacity(0.7),
+                  //   AppTheme.brandOrange.withValues(alpha: 0.7),
                   // ],
                   colors: [AppTheme.kotakblue, AppTheme.kotakblue2],
                   begin: Alignment.topLeft,
@@ -304,7 +304,7 @@ class _ProductGroupListPageState extends State<ProductGroupListPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.brandBlue.withOpacity(0.1),
+                color: AppTheme.brandBlue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(

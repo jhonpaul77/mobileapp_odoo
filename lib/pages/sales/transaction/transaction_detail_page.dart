@@ -26,9 +26,9 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
 
   String _formatCurrency(double value) {
     final formatted = value.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (match) => '.',
-    );
+          RegExp(r'\B(?=(\d{3})+(?!\d))'),
+          (match) => '.',
+        );
     return 'Rp $formatted';
   }
 
@@ -52,7 +52,8 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Ubah Status ke Open'),
-          content: const Text('Apakah Anda yakin ingin mengubah status transaksi ini dari Cancel menjadi Open? Transaksi akan dapat diedit kembali.'),
+          content: const Text(
+              'Apakah Anda yakin ingin mengubah status transaksi ini dari Cancel menjadi Open? Transaksi akan dapat diedit kembali.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -74,7 +75,35 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     );
   }
 
-
+  void _changeStatusToCancel() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Ubah Status ke Cancel'),
+          content: const Text(
+              'Apakah Anda yakin ingin membatalkan transaksi ini? Status akan berubah dari Confirm menjadi Cancel.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() {
+                  transaction['status'] = 'Cancel';
+                });
+                _showSuccessMessage('Transaksi berhasil dibatalkan');
+              },
+              child:
+                  const Text('Batalkan', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   void _printTransaction() {
     final transaction = this.transaction;
@@ -96,15 +125,22 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                 Text(
                   'RECEIPT TRANSAKSI',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const Divider(),
-                Text('No. Transaksi: ${transaction['noTransaksi']}', style: const TextStyle(fontSize: 12)),
-                Text('Tanggal: ${_formatDate(date)}', style: const TextStyle(fontSize: 12)),
+                Text('No. Transaksi: ${transaction['noTransaksi']}',
+                    style: const TextStyle(fontSize: 12)),
+                Text('Tanggal: ${_formatDate(date)}',
+                    style: const TextStyle(fontSize: 12)),
                 const SizedBox(height: 8),
-                Text('Customer: $customer', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                Text('Customer: $customer',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 12)),
                 const SizedBox(height: 8),
-                const Text('DETAIL ITEM', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                const Text('DETAIL ITEM',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 const Divider(),
                 ...items.map((item) {
                   final product = item['product'] as String? ?? '-';
@@ -114,8 +150,12 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(product, style: const TextStyle(fontSize: 11)),
-                      Text('Qty: $qty | Harga: ${_formatCurrency(price)}', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
-                      Text('Subtotal: ${_formatCurrency(qty * price)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                      Text('Qty: $qty | Harga: ${_formatCurrency(price)}',
+                          style:
+                              TextStyle(fontSize: 10, color: Colors.grey[600])),
+                      Text('Subtotal: ${_formatCurrency(qty * price)}',
+                          style: const TextStyle(
+                              fontSize: 11, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 4),
                     ],
                   );
@@ -124,8 +164,14 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('TOTAL:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                    Text(_formatCurrency(nominal), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primaryColor)),
+                    const Text('TOTAL:',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 12)),
+                    Text(_formatCurrency(nominal),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: AppTheme.primaryColor)),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -162,7 +208,9 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
   @override
   Widget build(BuildContext context) {
     final date = transaction['tanggal'] as DateTime;
-    final status = (transaction['status'] as String?) ?? (transaction['salesStatus'] as String?) ?? 'Pending';
+    final status = (transaction['status'] as String?) ??
+        (transaction['salesStatus'] as String?) ??
+        'Pending';
     final customer = transaction['customer'] as String? ?? '-';
     final phone = transaction['phone'] as String? ?? '-';
     final items = (transaction['items'] as List<Map<String, dynamic>>?) ?? [];
@@ -173,6 +221,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     final paymentTerms = transaction['paymentTerms'] as String? ?? '-';
     final isEditable = status.toLowerCase() == 'open';
     final isCancel = status.toLowerCase() == 'cancel';
+    final isConfirm = status.toLowerCase() == 'confirm';
 
     return PopScope(
       canPop: false,
@@ -184,7 +233,8 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
-          title: const Text('Transaction Detail', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
+          title: const Text('Transaction Detail',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
           backgroundColor: AppTheme.primaryColor,
           elevation: 0,
           centerTitle: false,
@@ -204,7 +254,20 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                   onPressed: _changeStatusToOpen,
                   child: const Text(
                     'Buka',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            if (isConfirm)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: TextButton(
+                  onPressed: _changeStatusToCancel,
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -215,7 +278,8 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                   onPressed: _openEditPage,
                   child: const Text(
                     'Edit',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -244,7 +308,8 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                         color: Colors.green,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Icon(Icons.check, color: Colors.white, size: 18),
+                      child: const Icon(Icons.check,
+                          color: Colors.white, size: 18),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -263,7 +328,8 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: AppTheme.primaryColor,
                         borderRadius: BorderRadius.circular(6),
@@ -407,7 +473,8 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.location_on, size: 18, color: AppTheme.primaryColor),
+                        Icon(Icons.location_on,
+                            size: 18, color: AppTheme.primaryColor),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -481,8 +548,10 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                       ...items.asMap().entries.map((entry) {
                         final index = entry.key;
                         final item = entry.value;
-                        final analyticAccount = item['analyticAccount'] as String? ?? '';
-                        
+                        final isLast = index == items.length - 1;
+                        final analyticAccount =
+                            item['analyticAccount'] as String? ?? '';
+
                         return Column(
                           children: [
                             Row(
@@ -490,7 +559,8 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         item['product'] as String? ?? '-',
@@ -524,7 +594,9 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
-                                  _formatCurrency(((item['qty'] as int?) ?? 0) * ((item['price'] as double?) ?? 0.0).toDouble()),
+                                  _formatCurrency(((item['qty'] as int?) ?? 0) *
+                                      ((item['price'] as double?) ?? 0.0)
+                                          .toDouble()),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 13,
@@ -533,10 +605,12 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                                 ),
                               ],
                             ),
-                            if (index < items.length - 1)
+                            if (!isLast)
                               Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                child: Divider(color: Colors.grey[200], height: 1),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                child:
+                                    Divider(color: Colors.grey[200], height: 1),
                               ),
                           ],
                         );
@@ -594,9 +668,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
   Widget _buildInfoGrid(List<Map<String, String>> items) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: items.asMap().entries.map((entry) {
-        final item = entry.value;
-
+      children: items.map((item) {
         return Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -624,6 +696,4 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
       }).toList(),
     );
   }
-
-
 }

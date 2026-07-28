@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+
 import '../config/api_config.dart';
 import 'interceptors/token_interceptor.dart';
 
@@ -34,7 +35,7 @@ class ApiService {
       logPrint: (object) {
         final log = object.toString();
         if (log.length > 800) {
-          print(log.substring(0, 800) + '...[truncated]');
+          print('${log.substring(0, 800)}...[truncated]');
         } else {
           print(log);
         }
@@ -57,5 +58,12 @@ class ApiService {
   void removeAuthToken() {
     dio.options.headers.remove('Authorization');
     print('🚫 [API] Auth token removed');
+  }
+
+  void updateBaseUrl(String newBaseUrl) {
+    if (_dio != null) {
+      _dio!.options.baseUrl = newBaseUrl;
+      print('🔄 [API] Base URL updated to: $newBaseUrl');
+    }
   }
 }

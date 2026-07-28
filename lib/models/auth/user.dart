@@ -21,16 +21,16 @@ class User {
   }
 
   Map<String, dynamic> toJson() => {
-    'uuid': uuid,
-    'username': username,
-    'organization': organization,
-    'roles': roles,
-  };
+        'uuid': uuid,
+        'username': username,
+        'organization': organization,
+        'roles': roles,
+      };
 
   factory User.fromJson(Map<String, dynamic> json) => User(
-    uuid: json['uuid'],
-    username: json['username'],
-    organization: json['organization'],
-    roles: List<String>.from(json['roles']),
-  );
+        uuid: json['uuid'] ?? '',
+        username: json['username'] ?? '',
+        organization: json['organization'] ?? '',
+        roles: json['roles'] != null ? List<String>.from(json['roles']) : [],
+      );
 }
