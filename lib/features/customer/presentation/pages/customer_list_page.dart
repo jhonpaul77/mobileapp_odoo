@@ -6,7 +6,7 @@ import '../providers/customer_provider.dart';
 import '../widgets/customer_card.dart';
 import '../widgets/customer_search_bar.dart';
 import 'customer_create_page.dart';
-// import 'customer_detail_page.dart'; // Hidden for now
+import 'customer_detail_page.dart';
 
 /// CustomerListPage - Presentation Layer
 ///
@@ -228,22 +228,13 @@ class _CustomerListPageState extends State<CustomerListPage> {
                 return CustomerCard(
                   customer: customer,
                   onTap: () {
-                    // TODO: Detail Customer Page (Hidden for now)
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content:
-                            Text('Fitur detail customer akan segera hadir'),
-                        duration: Duration(seconds: 2),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            CustomerDetailPage(customer: customer),
                       ),
                     );
-
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) =>
-                    //         CustomerDetailPage(customer: customer),
-                    //   ),
-                    // );
                   },
                 );
               },

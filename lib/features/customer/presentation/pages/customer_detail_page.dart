@@ -2,12 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../config/theme.dart';
+import '../../../../services/config_service.dart';
+import '../../../../services/secure_storage_service.dart';
+import '../../../location/data/datasources/location_remote_datasource.dart';
 import '../../domain/entities/customer.dart';
+
+/// Helper class to hold customer details with resolved names
+class CustomerDetails {
+  final Customer customer;
+  final String? districtName;
+  final String? cityName;
+  final String? stateName;
+
+  CustomerDetails({
+    required this.customer,
+    this.districtName,
+    this.cityName,
+    this.stateName,
+  });
+}
 
 /// CustomerDetailPage - Display detailed customer information
 ///
 /// Shows all customer data from Odoo API in a beautiful layout
-class CustomerDetailPage extends StatelessWidget {
+class CustomerDetailPage extends StatefulWidget {
   final Customer customer;
 
   const CustomerDetailPage({
@@ -16,7 +34,101 @@ class CustomerDetailPage extends StatelessWidget {
   });
 
   @override
+  State<CustomerDetailPage> createState() => _CustomerDetailPageState();
+}
+
+class _CustomerDetailPageState extends State<CustomerDetailPage> {
+  late Future<CustomerDetails> _customerDetailsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _customerDetailsFuture = _loadCustomerDetails();
+  }
+
+  Future<CustomerDetails> _loadCustomerDetails() async {
+    try {
+      final configService = ConfigService();
+      final storage = SecureStorageService();
+
+      final config = await configService.load();
+      final db = config['database'] as String?;
+      final apiKey = await storage.getAccessToken();
+
+      if (db == null || apiKey == null) {
+        return CustomerDetails(customer: widget.customer);
+      }
+
+      final locationDatasource = LocationRemoteDataSource();
+
+      // Load location names
+      String? districtName;
+      String? cityName;
+      String? stateName;
+
+      if (widget.customer.districtId != null) {
+        districtName = await locationDatasource.getDistrictName(
+          districtId: widget.customer.districtId!,
+          db: db,
+          apiKey: apiKey,
+        );
+      }
+
+      if (widget.customer.cityId != null) {
+        cityName = await locationDatasource.getCityName(
+          cityId: widget.customer.cityId!,
+          db: db,
+          apiKey: apiKey,
+        );
+      }
+
+      if (widget.customer.stateId != null) {
+        stateName = await locationDatasource.getStateName(
+          stateId: widget.customer.stateId!,
+          db: db,
+          apiKey: apiKey,
+        );
+      }
+
+      return CustomerDetails(
+        customer: widget.customer,
+        districtName: districtName,
+        cityName: cityName,
+        stateName: stateName,
+      );
+    } catch (e) {
+      print('❌ Error loading customer details: $e');
+      return CustomerDetails(customer: widget.customer);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    return FutureBuilder<CustomerDetails>(
+      future: _customerDetailsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: AppTheme.primaryColor,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            body: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        final details = snapshot.data ?? CustomerDetails(customer: widget.customer);
+        return _buildDetailPage(details);
+      },
+    );
+  }
+
+  Widget _buildDetailPage(CustomerDetails details) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: CustomScrollView(
@@ -67,7 +179,7 @@ class CustomerDetailPage extends StatelessWidget {
                       const SizedBox(height: 40),
                       // Avatar
                       Hero(
-                        tag: 'customer-${customer.id}',
+                        tag: 'customer-${widget.customer.id}',
                         child: Container(
                           width: 80,
                           height: 80,
@@ -84,8 +196,8 @@ class CustomerDetailPage extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text(
-                              customer.name.isNotEmpty
-                                  ? customer.name[0].toUpperCase()
+                              widget.customer.name.isNotEmpty
+                                  ? widget.customer.name[0].toUpperCase()
                                   : '?',
                               style: const TextStyle(
                                 fontSize: 36,
@@ -101,7 +213,7 @@ class CustomerDetailPage extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
-                          customer.name,
+                          widget.customer.name,
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
@@ -124,7 +236,7 @@ class CustomerDetailPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          'ID: ${customer.id}',
+                          'ID: ${widget.customer.id}',
                           style: const TextStyle(
                             fontSize: 13,
                             color: Colors.white,
@@ -147,7 +259,7 @@ class CustomerDetailPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Quick Actions
-                  _buildQuickActions(context),
+                  _buildQuickActions(),
                   const SizedBox(height: 20),
 
                   // Contact Information Section
@@ -161,13 +273,13 @@ class CustomerDetailPage extends StatelessWidget {
                   _buildSectionHeader(
                       'Informasi Alamat', Icons.location_on_rounded),
                   const SizedBox(height: 12),
-                  _buildAddressSection(),
+                  _buildAddressSection(details),
                   const SizedBox(height: 20),
 
                   // Additional Information
                   _buildSectionHeader('Informasi Tambahan', Icons.info_rounded),
                   const SizedBox(height: 12),
-                  _buildAdditionalInfo(),
+                  _buildAdditionalInfo(details),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -179,7 +291,8 @@ class CustomerDetailPage extends StatelessWidget {
   }
 
   /// Build quick action buttons
-  Widget _buildQuickActions(BuildContext context) {
+  Widget _buildQuickActions() {
+    final customer = widget.customer;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -303,6 +416,7 @@ class CustomerDetailPage extends StatelessWidget {
 
   /// Build contact information section
   Widget _buildContactSection() {
+    final customer = widget.customer;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -342,13 +456,15 @@ class CustomerDetailPage extends StatelessWidget {
   }
 
   /// Build address information section
-  Widget _buildAddressSection() {
+  Widget _buildAddressSection(CustomerDetails details) {
+    final customer = details.customer;
     final hasAddress =
         (customer.street != null && customer.street!.isNotEmpty) ||
-            (customer.city != null && customer.city!.isNotEmpty) ||
-            customer.stateName != null ||
-            customer.countryName != null ||
-            (customer.zip != null && customer.zip!.isNotEmpty);
+            (customer.street2 != null && customer.street2!.isNotEmpty) ||
+            (customer.zip != null && customer.zip!.isNotEmpty) ||
+            details.districtName != null ||
+            details.cityName != null ||
+            details.stateName != null;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -370,28 +486,18 @@ class CustomerDetailPage extends StatelessWidget {
                   ),
                 if (customer.street != null &&
                     customer.street!.isNotEmpty &&
-                    customer.city != null &&
-                    customer.city!.isNotEmpty)
+                    customer.street2 != null &&
+                    customer.street2!.isNotEmpty)
                   const Divider(height: 24),
-                if (customer.city != null && customer.city!.isNotEmpty)
+                if (customer.street2 != null && customer.street2!.isNotEmpty)
                   _buildDetailRow(
-                    icon: Icons.location_city_rounded,
-                    iconColor: Colors.purple,
-                    label: 'Kota',
-                    value: customer.city!,
+                    icon: Icons.home_work_rounded,
+                    iconColor: Colors.deepOrange,
+                    label: 'Alamat Lanjutan',
+                    value: customer.street2!,
+                    onCopy: () => _copyToClipboard(customer.street2!),
                   ),
-                if (customer.city != null &&
-                    customer.city!.isNotEmpty &&
-                    customer.stateName != null)
-                  const Divider(height: 24),
-                if (customer.stateName != null)
-                  _buildDetailRow(
-                    icon: Icons.map_rounded,
-                    iconColor: Colors.teal,
-                    label: 'Provinsi',
-                    value: customer.stateName!,
-                  ),
-                if (customer.stateName != null &&
+                if ((customer.street2 != null && customer.street2!.isNotEmpty) &&
                     (customer.zip != null && customer.zip!.isNotEmpty))
                   const Divider(height: 24),
                 if (customer.zip != null && customer.zip!.isNotEmpty)
@@ -400,16 +506,35 @@ class CustomerDetailPage extends StatelessWidget {
                     iconColor: Colors.indigo,
                     label: 'Kode POS',
                     value: customer.zip!,
+                    onCopy: () => _copyToClipboard(customer.zip!),
                   ),
                 if ((customer.zip != null && customer.zip!.isNotEmpty) &&
-                    customer.countryName != null)
+                    details.districtName != null)
                   const Divider(height: 24),
-                if (customer.countryName != null)
+                if (details.districtName != null)
                   _buildDetailRow(
-                    icon: Icons.public_rounded,
-                    iconColor: AppTheme.primaryColor,
-                    label: 'Negara',
-                    value: customer.countryName!,
+                    icon: Icons.location_on_rounded,
+                    iconColor: Colors.red,
+                    label: 'Kelurahan',
+                    value: details.districtName!,
+                  ),
+                if ((details.districtName != null) && details.cityName != null)
+                  const Divider(height: 24),
+                if (details.cityName != null)
+                  _buildDetailRow(
+                    icon: Icons.location_city_rounded,
+                    iconColor: Colors.purple,
+                    label: 'Kota',
+                    value: details.cityName!,
+                  ),
+                if ((details.cityName != null) && details.stateName != null)
+                  const Divider(height: 24),
+                if (details.stateName != null)
+                  _buildDetailRow(
+                    icon: Icons.map_rounded,
+                    iconColor: Colors.teal,
+                    label: 'Provinsi',
+                    value: details.stateName!,
                   ),
               ],
             )
@@ -418,7 +543,8 @@ class CustomerDetailPage extends StatelessWidget {
   }
 
   /// Build additional information section
-  Widget _buildAdditionalInfo() {
+  Widget _buildAdditionalInfo(CustomerDetails details) {
+    final customer = details.customer;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -435,6 +561,14 @@ class CustomerDetailPage extends StatelessWidget {
             value: customer.id.toString(),
             onCopy: () => _copyToClipboard(customer.id.toString()),
           ),
+          if (customer.userId != null) const Divider(height: 24),
+          if (customer.userId != null)
+            _buildDetailRow(
+              icon: Icons.person_rounded,
+              iconColor: Colors.blue,
+              label: 'User ID',
+              value: customer.userId.toString(),
+            ),
           const Divider(height: 24),
           _buildDetailRow(
             icon: Icons.location_on_rounded,
@@ -642,7 +776,7 @@ class CustomerDetailPage extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Hapus Customer'),
-        content: Text('Yakin ingin menghapus ${customer.name}?'),
+        content: Text('Yakin ingin menghapus ${widget.customer.name}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

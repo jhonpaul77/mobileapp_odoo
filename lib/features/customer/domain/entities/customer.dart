@@ -5,24 +5,30 @@
 class Customer {
   final int id;
   final String name;
-  final String? phone;
-  final String? street;
-  final String? city;
-  final List<dynamic>? stateId; // [id, name]
-  final String? zip;
-  final List<dynamic>? countryId; // [id, name]
   final String? email;
+  final String? phone;
+  final int? userId;
+  final String? street;
+  final String? street2;
+  final int? districtId;
+  final int? cityId;
+  final int? stateId;
+  final String? zip;
+  final int? countryId;
 
   Customer({
     required this.id,
     required this.name,
+    this.email,
     this.phone,
+    this.userId,
     this.street,
-    this.city,
+    this.street2,
+    this.districtId,
+    this.cityId,
     this.stateId,
     this.zip,
     this.countryId,
-    this.email,
   });
 
   /// Factory constructor from JSON (Odoo API response)
@@ -30,13 +36,16 @@ class Customer {
     return Customer(
       id: _parseInt(json['id']),
       name: json['name'] as String,
-      phone: _parseStringOrFalse(json['phone']),
-      street: _parseStringOrFalse(json['street']),
-      city: _parseStringOrFalse(json['city']),
-      stateId: _parseArrayOrFalse(json['state_id']),
-      zip: _parseStringOrFalse(json['zip']),
-      countryId: _parseArrayOrFalse(json['country_id']),
       email: _parseStringOrFalse(json['email']),
+      phone: _parseStringOrFalse(json['phone']),
+      userId: _parseIntOrNull(json['user_id']),
+      street: _parseStringOrFalse(json['street']),
+      street2: _parseStringOrFalse(json['street2']),
+      districtId: _parseIntOrNull(json['district_id']),
+      cityId: _parseIntOrNull(json['city_id']),
+      stateId: _parseIntOrNull(json['state_id']),
+      zip: _parseStringOrFalse(json['zip']),
+      countryId: _parseIntOrNull(json['country_id']),
     );
   }
 
@@ -47,17 +56,18 @@ class Customer {
     throw Exception('Cannot parse id: $value');
   }
 
+  /// Helper: Parse int or null (handles false values)
+  static int? _parseIntOrNull(dynamic value) {
+    if (value == null || value == false) return null;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
   /// Helper: Parse string or false (Odoo returns false for empty fields)
   static String? _parseStringOrFalse(dynamic value) {
     if (value == null || value == false) return null;
     return value.toString();
-  }
-
-  /// Helper: Parse array or false (Odoo returns false for empty relational fields)
-  static List<dynamic>? _parseArrayOrFalse(dynamic value) {
-    if (value == null || value == false) return null;
-    if (value is List) return value;
-    return null;
   }
 
   /// Convert to JSON for API requests
@@ -65,30 +75,24 @@ class Customer {
     return {
       'id': id,
       'name': name,
-      'phone': phone,
-      'street': street,
-      'city': city,
-      'state_id': stateId != null && stateId!.isNotEmpty ? stateId![0] : null,
-      'zip': zip,
       'email': email,
+      'phone': phone,
+      'user_id': userId,
+      'street': street,
+      'street2': street2,
+      'district_id': districtId,
+      'city_id': cityId,
+      'state_id': stateId,
+      'zip': zip,
+      'country_id': countryId,
     };
   }
-
-  /// Get state name from state_id array
-  String? get stateName =>
-      stateId != null && stateId!.length > 1 ? stateId![1] as String : null;
-
-  /// Get country name from country_id array
-  String? get countryName => countryId != null && countryId!.length > 1
-      ? countryId![1] as String
-      : null;
 
   /// Get full address as single string
   String get fullAddress {
     final parts = <String>[];
     if (street != null && street!.isNotEmpty) parts.add(street!);
-    if (city != null && city!.isNotEmpty) parts.add(city!);
-    if (stateName != null) parts.add(stateName!);
+    if (street2 != null && street2!.isNotEmpty) parts.add(street2!);
     if (zip != null && zip!.isNotEmpty) parts.add(zip!);
     return parts.join(', ');
   }
@@ -97,24 +101,30 @@ class Customer {
   Customer copyWith({
     int? id,
     String? name,
-    String? phone,
-    String? street,
-    String? city,
-    List<dynamic>? stateId,
-    String? zip,
-    List<dynamic>? countryId,
     String? email,
+    String? phone,
+    int? userId,
+    String? street,
+    String? street2,
+    int? districtId,
+    int? cityId,
+    int? stateId,
+    String? zip,
+    int? countryId,
   }) {
     return Customer(
       id: id ?? this.id,
       name: name ?? this.name,
+      email: email ?? this.email,
       phone: phone ?? this.phone,
+      userId: userId ?? this.userId,
       street: street ?? this.street,
-      city: city ?? this.city,
+      street2: street2 ?? this.street2,
+      districtId: districtId ?? this.districtId,
+      cityId: cityId ?? this.cityId,
       stateId: stateId ?? this.stateId,
       zip: zip ?? this.zip,
       countryId: countryId ?? this.countryId,
-      email: email ?? this.email,
     );
   }
 }

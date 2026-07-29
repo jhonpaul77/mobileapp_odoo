@@ -10,6 +10,12 @@ import '../../domain/entities/district.dart';
 /// Mengikuti pola yang sama dengan ProductRemoteDataSource
 class LocationRemoteDataSource {
   final Dio _dio;
+  
+  // Cache untuk mengurangi API calls
+  final Map<int, String> _districtNameCache = {};
+  final Map<int, String> _cityNameCache = {};
+  final Map<int, String> _stateNameCache = {};
+  final Map<int, String> _countryNameCache = {};
 
   LocationRemoteDataSource({Dio? dio}) : _dio = dio ?? ApiService().dio;
 
@@ -193,6 +199,13 @@ class LocationRemoteDataSource {
       }
 
       print('✅ [LOCATION_DS] All districts loaded: ${jsonList.length}');
+      
+      // Cache district names
+      for (final item in jsonList) {
+        final district = District.fromJson(item as Map<String, dynamic>);
+        _districtNameCache[district.id] = district.name;
+      }
+      
       return jsonList
           .map((item) => District.fromJson(item as Map<String, dynamic>))
           .toList();
@@ -203,6 +216,106 @@ class LocationRemoteDataSource {
     } catch (e) {
       print('❌ [LOCATION_DS] Unexpected error: $e');
       throw Exception('Unexpected error while fetching all districts: $e');
+    }
+  }
+
+  /// Get district name by ID
+  Future<String> getDistrictName({
+    required int districtId,
+    required String db,
+    required String apiKey,
+  }) async {
+    // Check cache first
+    if (_districtNameCache.containsKey(districtId)) {
+      return _districtNameCache[districtId]!;
+    }
+
+    try {
+      final districts = await getAllDistricts(db: db, apiKey: apiKey);
+      final district = districts.firstWhere(
+        (d) => d.id == districtId,
+        orElse: () => District(id: districtId, name: 'Unknown', code: '', cityId: 0),
+      );
+      _districtNameCache[districtId] = district.name;
+      return district.name;
+    } catch (e) {
+      print('❌ [LOCATION_DS] Error getting district name: $e');
+      return 'District #$districtId';
+    }
+  }
+
+  /// Get city name by ID
+  Future<String> getCityName({
+    required int cityId,
+    required String db,
+    required String apiKey,
+  }) async {
+    // Check cache first
+    if (_cityNameCache.containsKey(cityId)) {
+      return _cityNameCache[cityId]!;
+    }
+
+    try {
+      final cities = await getCities(db: db, apiKey: apiKey);
+      final city = cities.firstWhere(
+        (c) => c.id == cityId,
+        orElse: () => City(id: cityId, name: 'Unknown', code: '', stateId: 0),
+      );
+      _cityNameCache[cityId] = city.name;
+      return city.name;
+    } catch (e) {
+      print('❌ [LOCATION_DS] Error getting city name: $e');
+      return 'City #$cityId';
+    }
+  }
+
+  /// Get state name by ID
+  Future<String> getStateName({
+    required int stateId,
+    required String db,
+    required String apiKey,
+  }) async {
+    // Check cache first
+    if (_stateNameCache.containsKey(stateId)) {
+      return _stateNameCache[stateId]!;
+    }
+
+    try {
+      final states = await getStates(db: db, apiKey: apiKey);
+      final state = states.firstWhere(
+        (s) => s.id == stateId,
+        orElse: () => State(id: stateId, name: 'Unknown', code: '', countryId: 0),
+      );
+      _stateNameCache[stateId] = state.name;
+      return state.name;
+    } catch (e) {
+      print('❌ [LOCATION_DS] Error getting state name: $e');
+      return 'State #$stateId';
+    }
+  }
+
+  /// Get country name by ID
+  Future<String> getCountryName({
+    required int countryId,
+    required String db,
+    required String apiKey,
+  }) async {
+    // Check cache first
+    if (_countryNameCache.containsKey(countryId)) {
+      return _countryNameCache[countryId]!;
+    }
+
+    try {
+      print('🔄 [LOCATION_DS] Fetching country name for ID: $countryId...');
+      
+      // Try to get from countries list if available
+      // For now, return placeholder - can be enhanced if endpoint exists
+      final countryName = 'Country #$countryId';
+      _countryNameCache[countryId] = countryName;
+      return countryName;
+    } catch (e) {
+      print('❌ [LOCATION_DS] Error getting country name: $e');
+      return 'Country #$countryId';
     }
   }
 }

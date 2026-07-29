@@ -104,10 +104,10 @@ class CustomerProvider extends ChangeNotifier {
       _filteredCustomers = _customers.where((customer) {
         final name = customer.name.toLowerCase();
         final phone = customer.phone?.toLowerCase() ?? '';
-        final city = customer.city?.toLowerCase() ?? '';
+        final street = customer.street?.toLowerCase() ?? '';
         return name.contains(_searchQuery) ||
             phone.contains(_searchQuery) ||
-            city.contains(_searchQuery);
+            street.contains(_searchQuery);
       }).toList();
     }
 

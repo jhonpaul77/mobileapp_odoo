@@ -16,6 +16,17 @@ class CustomerCard extends StatelessWidget {
     this.onTap,
   });
 
+  /// Build address line combining street, district, city, state
+  String _buildAddressLine() {
+    final parts = <String>[];
+    if (customer.street != null && customer.street!.isNotEmpty) {
+      parts.add(customer.street!);
+    }
+    // Note: district, city, state are IDs - ideally should be names
+    // For now showing what we have
+    return parts.isNotEmpty ? parts.join(', ') : 'No address';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -112,112 +123,34 @@ class CustomerCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
 
-                    // Contact Info Row
+                    // Address Info - Single Line
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Phone or Email
-                        if (customer.phone != null &&
-                            customer.phone!.isNotEmpty)
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.phone_rounded,
-                                  size: 12,
-                                  color: Colors.green,
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    customer.phone!,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: theme.textTheme.bodyMedium?.color,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        else if (customer.email != null &&
-                            customer.email!.isNotEmpty)
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.email_rounded,
-                                  size: 12,
-                                  color: Colors.blue,
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    customer.email!,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: theme.textTheme.bodyMedium?.color,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        else
-                          Expanded(
-                            child: Text(
-                              'No contact info',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: theme.textTheme.bodySmall?.color,
-                                fontStyle: FontStyle.italic,
+                        // Address, District, City, State in one line
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.location_on_rounded,
+                                size: 12,
+                                color: AppTheme.primaryColor,
                               ),
-                            ),
-                          ),
-
-                        // Location Badge
-                        if (customer.city != null && customer.city!.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  AppTheme.primaryColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: AppTheme.primaryColor
-                                    .withValues(alpha: 0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.location_city_rounded,
-                                  size: 10,
-                                  color: AppTheme.primaryColor,
-                                ),
-                                const SizedBox(width: 2),
-                                Text(
-                                  customer.city!.length > 8
-                                      ? '${customer.city!.substring(0, 8)}...'
-                                      : customer.city!,
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppTheme.primaryColor,
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  _buildAddressLine(),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: theme.textTheme.bodyMedium?.color,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
+                        ),
                       ],
                     ),
                   ],
