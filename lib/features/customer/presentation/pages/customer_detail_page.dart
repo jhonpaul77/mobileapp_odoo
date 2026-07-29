@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../config/theme.dart';
 import '../../../../services/config_service.dart';
+import '../../../../services/sales_service.dart';
 import '../../../../services/secure_storage_service.dart';
 import '../../../location/data/datasources/location_remote_datasource.dart';
+import '../../../sales_order/domain/entities/sales_order.dart';
+import '../../../sales_order/presentation/pages/sales_order_detail_page.dart';
 import '../../domain/entities/customer.dart';
 
 /// Helper class to hold customer details with resolved names
@@ -122,7 +127,8 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
           );
         }
 
-        final details = snapshot.data ?? CustomerDetails(customer: widget.customer);
+        final details =
+            snapshot.data ?? CustomerDetails(customer: widget.customer);
         return _buildDetailPage(details);
       },
     );
@@ -224,26 +230,6 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      // Customer ID
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          'ID: ${widget.customer.id}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -280,6 +266,20 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                   _buildSectionHeader('Informasi Tambahan', Icons.info_rounded),
                   const SizedBox(height: 12),
                   _buildAdditionalInfo(details),
+                  const SizedBox(height: 20),
+
+                  // Debug Info Section
+                  _buildSectionHeader(
+                      'Debug Info (Raw Data)', Icons.bug_report_rounded),
+                  const SizedBox(height: 12),
+                  _buildDebugInfo(),
+                  const SizedBox(height: 20),
+
+                  // Sales History Section
+                  _buildSectionHeader(
+                      'Riwayat Penjualan', Icons.shopping_bag_rounded),
+                  const SizedBox(height: 12),
+                  _buildSalesHistory(),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -308,18 +308,17 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
       ),
       child: Row(
         children: [
-          if (customer.phone != null && customer.phone!.isNotEmpty)
-            Expanded(
-              child: _buildActionButton(
-                icon: Icons.phone_rounded,
-                label: 'Telepon',
-                color: Colors.green,
-                onTap: () {
-                  _makePhoneCall(context, customer.phone!);
-                },
-              ),
+          Expanded(
+            child: _buildActionButton(
+              icon: Icons.phone_rounded,
+              label: 'Telepon',
+              color: Colors.green,
+              onTap: () {
+                _makePhoneCall(context, customer.phone);
+              },
             ),
-          if (customer.phone != null && customer.phone!.isNotEmpty)
+          ),
+          if (customer.email != null && customer.email!.isNotEmpty)
             const SizedBox(width: 12),
           if (customer.email != null && customer.email!.isNotEmpty)
             Expanded(
@@ -332,18 +331,6 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                 },
               ),
             ),
-          if (customer.email != null && customer.email!.isNotEmpty)
-            const SizedBox(width: 12),
-          Expanded(
-            child: _buildActionButton(
-              icon: Icons.message_rounded,
-              label: 'Chat',
-              color: Colors.orange,
-              onTap: () {
-                _sendMessage(context);
-              },
-            ),
-          ),
         ],
       ),
     );
@@ -464,7 +451,8 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
             (customer.zip != null && customer.zip!.isNotEmpty) ||
             details.districtName != null ||
             details.cityName != null ||
-            details.stateName != null;
+            details.stateName != null ||
+            customer.fullAddress.isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -476,6 +464,23 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
       child: hasAddress
           ? Column(
               children: [
+                if (customer.fullAddress.isNotEmpty)
+                  _buildDetailRow(
+                    icon: Icons.location_on_rounded,
+                    iconColor: Colors.red,
+                    label: 'Alamat Lengkap',
+                    value: customer.fullAddress,
+                    onCopy: () => _copyToClipboard(customer.fullAddress),
+                  ),
+                if (customer.fullAddress.isNotEmpty &&
+                    ((customer.street != null && customer.street!.isNotEmpty) ||
+                        (customer.street2 != null &&
+                            customer.street2!.isNotEmpty) ||
+                        (customer.zip != null && customer.zip!.isNotEmpty) ||
+                        details.districtName != null ||
+                        details.cityName != null ||
+                        details.stateName != null))
+                  const Divider(height: 24),
                 if (customer.street != null && customer.street!.isNotEmpty)
                   _buildDetailRow(
                     icon: Icons.home_rounded,
@@ -497,7 +502,8 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                     value: customer.street2!,
                     onCopy: () => _copyToClipboard(customer.street2!),
                   ),
-                if ((customer.street2 != null && customer.street2!.isNotEmpty) &&
+                if ((customer.street2 != null &&
+                        customer.street2!.isNotEmpty) &&
                     (customer.zip != null && customer.zip!.isNotEmpty))
                   const Divider(height: 24),
                 if (customer.zip != null && customer.zip!.isNotEmpty)
@@ -513,8 +519,8 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                   const Divider(height: 24),
                 if (details.districtName != null)
                   _buildDetailRow(
-                    icon: Icons.location_on_rounded,
-                    iconColor: Colors.red,
+                    icon: Icons.location_city_rounded,
+                    iconColor: Colors.purple,
                     label: 'Kelurahan',
                     value: details.districtName!,
                   ),
@@ -523,7 +529,7 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                 if (details.cityName != null)
                   _buildDetailRow(
                     icon: Icons.location_city_rounded,
-                    iconColor: Colors.purple,
+                    iconColor: Colors.blue,
                     label: 'Kota',
                     value: details.cityName!,
                   ),
@@ -561,25 +567,117 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
             value: customer.id.toString(),
             onCopy: () => _copyToClipboard(customer.id.toString()),
           ),
-          if (customer.userId != null) const Divider(height: 24),
-          if (customer.userId != null)
-            _buildDetailRow(
-              icon: Icons.person_rounded,
-              iconColor: Colors.blue,
-              label: 'User ID',
-              value: customer.userId.toString(),
+        ],
+      ),
+    );
+  }
+
+  /// Build debug info section - shows raw data from API
+  Widget _buildDebugInfo() {
+    final customer = widget.customer;
+
+    String formatValue(dynamic value) {
+      if (value == null || value == false) return '-';
+      return value.toString();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info_outline, size: 16, color: Colors.orange[700]),
+              const SizedBox(width: 8),
+              Text(
+                'Data mentah dari API (untuk debugging)',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.orange[700],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildDebugRow('ID', customer.id.toString()),
+          _buildDebugRow('Name', formatValue(customer.name)),
+          _buildDebugRow('Email', formatValue(customer.email)),
+          _buildDebugRow('Phone', formatValue(customer.phone)),
+          _buildDebugRow('User ID', formatValue(customer.userId)),
+          _buildDebugRow('Street', formatValue(customer.street)),
+          _buildDebugRow('Street2', formatValue(customer.street2)),
+          _buildDebugRow('District ID', formatValue(customer.districtId)),
+          _buildDebugRow('City ID', formatValue(customer.cityId)),
+          _buildDebugRow('State ID', formatValue(customer.stateId)),
+          _buildDebugRow('ZIP', formatValue(customer.zip)),
+          _buildDebugRow('Country ID', formatValue(customer.countryId)),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.yellow[100],
+              borderRadius: BorderRadius.circular(6),
             ),
-          const Divider(height: 24),
-          _buildDetailRow(
-            icon: Icons.location_on_rounded,
-            iconColor: Colors.red,
-            label: 'Alamat Lengkap',
-            value: customer.fullAddress.isNotEmpty
-                ? customer.fullAddress
-                : 'Tidak ada alamat',
-            onCopy: customer.fullAddress.isNotEmpty
-                ? () => _copyToClipboard(customer.fullAddress)
-                : null,
+            child: Row(
+              children: [
+                Icon(Icons.lightbulb_outline,
+                    size: 14, color: Colors.orange[700]),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Nilai "null" atau "false" dari API ditampilkan sebagai "-"',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.orange[900],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build debug row for displaying raw data
+  Widget _buildDebugRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+          ),
+          const Text(
+            ': ',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 11,
+                color: value == '-' ? Colors.red[300] : Colors.black87,
+                fontFamily: 'monospace',
+              ),
+            ),
           ),
         ],
       ),
@@ -677,6 +775,123 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
     );
   }
 
+  /// Build sales history section with accordion
+  Widget _buildSalesHistory() {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _loadSalesHistory(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (snapshot.hasError || snapshot.data == null) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: _buildEmptyState('Gagal memuat riwayat penjualan'),
+          );
+        }
+
+        final result = snapshot.data!;
+        if (result['Success'] != true) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: _buildEmptyState('Tidak ada riwayat penjualan'),
+          );
+        }
+
+        final orders = result['Data']['items'] as List;
+        if (orders.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: _buildEmptyState('Belum ada transaksi penjualan'),
+          );
+        }
+
+        return _SalesHistoryAccordion(
+          orders: orders,
+          customerId: widget.customer.id,
+        );
+      },
+    );
+  }
+
+  /// Load sales history for this customer
+  Future<Map<String, dynamic>> _loadSalesHistory() async {
+    try {
+      final salesService = SalesService();
+      final result = await salesService.getSaleOrders();
+
+      if (result['Success'] == true) {
+        final allOrders = result['Data']['items'] as List;
+
+        // Filter orders for this customer
+        final customerOrders = allOrders.where((order) {
+          final partnerId = order['partner_id'];
+
+          // Handle different formats of partner_id
+          if (partnerId is int) {
+            return partnerId == widget.customer.id;
+          } else if (partnerId is List && partnerId.isNotEmpty) {
+            return partnerId[0] == widget.customer.id;
+          }
+
+          return false;
+        }).toList();
+
+        // Sort by date (newest first)
+        customerOrders.sort((a, b) {
+          final dateA =
+              DateTime.tryParse(a['date_order'] ?? '') ?? DateTime(1970);
+          final dateB =
+              DateTime.tryParse(b['date_order'] ?? '') ?? DateTime(1970);
+          return dateB.compareTo(dateA);
+        });
+
+        return {
+          'Success': true,
+          'Data': {
+            'items': customerOrders,
+            'total': customerOrders.length,
+          },
+        };
+      }
+
+      return result;
+    } catch (e) {
+      print('❌ Error loading sales history: $e');
+      return {
+        'Success': false,
+        'Message': 'Error: $e',
+        'Data': {'items': [], 'total': 0},
+      };
+    }
+  }
+
   /// Show more options bottom sheet
   void _showMoreOptions(BuildContext context) {
     showModalBottomSheet(
@@ -737,37 +952,196 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
   /// Copy to clipboard
   void _copyToClipboard(String text) async {
     await Clipboard.setData(ClipboardData(text: text));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 12),
+              Text('Tersalin: $text'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   /// Make phone call
-  void _makePhoneCall(BuildContext context, String phone) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Menelepon: $phone')),
-    );
-    // TODO: Implement actual phone call using url_launcher
+  void _makePhoneCall(BuildContext context, String? phone) async {
+    // Validate phone exists
+    if (phone == null || phone.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Tidak ada nomor telepon untuk customer ini',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      print('📞 [PHONE CALL] Input phone: "$phone"');
+
+      // Format phone number
+      String formattedPhone = phone.trim();
+
+      // Remove any non-digit characters except + at the beginning
+      formattedPhone = formattedPhone.replaceAll(RegExp(r'[^\d+]'), '');
+
+      print('📞 [PHONE CALL] Cleaned phone: "$formattedPhone"');
+
+      // Handle Indonesian format
+      if (formattedPhone.startsWith('0')) {
+        formattedPhone = formattedPhone.substring(1);
+      }
+      if (!formattedPhone.startsWith('+')) {
+        formattedPhone = '+62$formattedPhone';
+      }
+
+      print('📞 [PHONE CALL] Final formatted: "$formattedPhone"');
+
+      final Uri phoneUri = Uri(scheme: 'tel', path: formattedPhone);
+
+      print('📞 [PHONE CALL] URI: $phoneUri');
+
+      if (await canLaunchUrl(phoneUri)) {
+        await launchUrl(phoneUri);
+        print('✅ [PHONE CALL] Successfully launched');
+      } else {
+        print('❌ [PHONE CALL] Cannot launch URL');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'Tidak dapat membuka aplikasi telepon\nNomor: $formattedPhone'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('❌ [PHONE CALL] Error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error membuka telepon: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   /// Send email
-  void _sendEmail(BuildContext context, String email) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Mengirim email ke: $email')),
-    );
-    // TODO: Implement actual email using url_launcher
-  }
+  void _sendEmail(BuildContext context, String email) async {
+    try {
+      final Uri emailUri = Uri(
+        scheme: 'mailto',
+        path: email,
+        query: 'subject=Inquiry&body=',
+      );
 
-  /// Send message
-  void _sendMessage(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Fitur chat akan segera hadir')),
-    );
+      if (await canLaunchUrl(emailUri)) {
+        await launchUrl(emailUri);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tidak dapat membuka aplikasi email'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   /// Share customer
-  void _shareCustomer(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Fitur share akan segera hadir')),
-    );
-    // TODO: Implement share using share_plus package
+  void _shareCustomer(BuildContext context) async {
+    final customer = widget.customer;
+
+    // Format customer information
+    final StringBuffer shareText = StringBuffer();
+    shareText.writeln('📇 Customer Information');
+    shareText.writeln('━━━━━━━━━━━━━━━━━━━━');
+    shareText.writeln('👤 Name: ${customer.name}');
+    // shareText.writeln('🆔 ID: ${customer.id}');
+
+    if (customer.phone != null && customer.phone!.isNotEmpty) {
+      shareText.writeln('📞 Phone: ${customer.phone}');
+    }
+
+    if (customer.email != null && customer.email!.isNotEmpty) {
+      shareText.writeln('📧 Email: ${customer.email}');
+    }
+
+    if (customer.fullAddress.isNotEmpty) {
+      shareText.writeln('📍 Address: ${customer.fullAddress}');
+    }
+
+    shareText.writeln('━━━━━━━━━━━━━━━━━━━━');
+    shareText.writeln('\nShared from Mobile App Odoo');
+
+    // Copy to clipboard as alternative to share
+    await Clipboard.setData(ClipboardData(text: shareText.toString()));
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                    'Informasi customer tersalin ke clipboard!\nAnda bisa paste di aplikasi lain.'),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: 'OK',
+            textColor: Colors.white,
+            onPressed: () {},
+          ),
+        ),
+      );
+    }
   }
 
   /// Confirm delete
@@ -786,10 +1160,435 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
             onPressed: () {
               Navigator.pop(context);
               Navigator.pop(context);
-              // TODO: Implement delete customer API
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Sales History Accordion Widget
+class _SalesHistoryAccordion extends StatefulWidget {
+  final List<dynamic> orders;
+  final int customerId;
+
+  const _SalesHistoryAccordion({
+    required this.orders,
+    required this.customerId,
+  });
+
+  @override
+  State<_SalesHistoryAccordion> createState() => _SalesHistoryAccordionState();
+}
+
+class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
+  final Set<int> _expandedIndices = {};
+  final _currencyFormat =
+      NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+
+  String _formatDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  String _getStateLabel(String state) {
+    switch (state.toLowerCase()) {
+      case 'draft':
+        return 'Open';
+      case 'sent':
+        return 'Open';
+      case 'sale':
+        return 'Confirm';
+      case 'done':
+        return 'Confirm';
+      case 'cancel':
+        return 'Cancel';
+      default:
+        return state;
+    }
+  }
+
+  Color _getStateColor(String state) {
+    switch (state.toLowerCase()) {
+      case 'draft':
+      case 'sent':
+        return const Color(0xFFFFA726); // Orange
+      case 'sale':
+      case 'done':
+        return const Color(0xFF66BB6A); // Green
+      case 'cancel':
+        return const Color(0xFFEF5350); // Red
+      default:
+        return const Color(0xFF757575); // Grey
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Calculate totals
+    final totalOrders = widget.orders.length;
+    final totalAmount = widget.orders.fold<double>(
+      0.0,
+      (sum, order) =>
+          sum + ((order['amount_total'] as num?)?.toDouble() ?? 0.0),
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        children: [
+          // Summary Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.05),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Total Transaksi',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$totalOrders pesanan',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  height: 40,
+                  width: 1,
+                  color: Colors.grey[300],
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Total Nilai',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _currencyFormat.format(totalAmount),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.successColor,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Orders List
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: widget.orders.length,
+            separatorBuilder: (context, index) => Divider(
+              height: 1,
+              color: Colors.grey[200],
+            ),
+            itemBuilder: (context, index) {
+              final order = widget.orders[index];
+              final isExpanded = _expandedIndices.contains(index);
+              final orderLines = (order['order_line'] as List?) ?? [];
+              final state = order['state'] as String? ?? 'draft';
+              final stateLabel = _getStateLabel(state);
+              final stateColor = _getStateColor(state);
+
+              return Column(
+                children: [
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        if (isExpanded) {
+                          _expandedIndices.remove(index);
+                        } else {
+                          _expandedIndices.add(index);
+                        }
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header Row
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      order['name'] as String,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _formatDate(
+                                          order['date_order'] as String),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                isExpanded
+                                    ? Icons.keyboard_arrow_up_rounded
+                                    : Icons.keyboard_arrow_down_rounded,
+                                color: Colors.grey[400],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Amount and Status Row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _currencyFormat.format(
+                                  (order['amount_total'] as num?)?.toDouble() ??
+                                      0.0,
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.successColor,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: stateColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  stateLabel,
+                                  style: TextStyle(
+                                    color: stateColor,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          // Expanded Content
+                          if (isExpanded) ...[
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        'Order Items',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.brandBlue
+                                              .withValues(alpha: 0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          '${orderLines.length} item(s)',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppTheme.brandBlue,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ...orderLines.map((line) {
+                                    final productName =
+                                        line['product_name'] as String? ??
+                                            'Unknown';
+                                    final qty =
+                                        (line['product_uom_qty'] as num?)
+                                                ?.toDouble() ??
+                                            0.0;
+                                    final price = (line['price_unit'] as num?)
+                                            ?.toDouble() ??
+                                        0.0;
+                                    final subtotal = qty * price;
+
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 6,
+                                            height: 6,
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.brandBlue,
+                                              borderRadius:
+                                                  BorderRadius.circular(3),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  productName,
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  'Qty: ${qty.toInt()} × ${_currencyFormat.format(price)}',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Text(
+                                            _currencyFormat.format(subtotal),
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                                  const SizedBox(height: 8),
+                                  ElevatedButton.icon(
+                                    onPressed: () async {
+                                      try {
+                                        final salesOrder =
+                                            SalesOrder.fromJson(order);
+                                        await Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                SalesOrderDetailPage(
+                                              order: salesOrder,
+                                            ),
+                                          ),
+                                        );
+                                      } catch (e) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text('Error: $e'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    icon: const Icon(Icons.visibility_rounded,
+                                        size: 16),
+                                    label: const Text('Lihat Detail'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.primaryColor,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                      textStyle: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

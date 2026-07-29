@@ -73,6 +73,15 @@ class ApiConfig {
   static const String getProductSale =
       '/get_product_sale'; // GET - Get all products for sale
 
+  // ✅ SALES ORDER ENDPOINTS - ODOO
+  static const String getSaleOrder =
+      '/get_sale_order'; // GET - Get all sales orders
+
+  // ✅ LOCATION ENDPOINTS - ODOO
+  static const String getState = '/get_state'; // GET - Get all states/provinces
+  static const String getCity = '/get_city'; // GET - Get all cities
+  static const String getDistrict = '/get_district'; // GET - Get all districts
+
   // ✅ SALES ENDPOINTS - TAMBAHAN
   static const String sales = '$apiVersion/sales'; // POST - Create
   //static const String sales = "/sales";

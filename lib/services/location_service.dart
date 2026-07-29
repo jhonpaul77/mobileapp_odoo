@@ -1,8 +1,20 @@
 import 'package:dio/dio.dart';
-import 'package:pintarx/models/location/location_response.dart';
-import 'api_service.dart';
-import '../config/api_config.dart';
 
+import '../config/api_config.dart';
+import '../models/location/location_response.dart';
+import 'api_service.dart';
+
+/// LocationService - Service untuk operasi warehouse/storage location (LEGACY)
+///
+/// ⚠️ NOTE: This is NOT for State/City/District location!
+/// For State/City/District, use OdooLocationService instead.
+///
+/// **LEGACY ENDPOINTS**:
+/// - GET `/api/v1/location/fetch` - Get all locations with pagination
+/// - GET `/api/v1/location/get/:id` - Get single location by ID
+/// - POST `/api/v1/location` - Create new location
+/// - PUT `/api/v1/location` - Update existing location
+/// - DELETE `/api/v1/location/:id` - Delete location
 class LocationService {
   final _api = ApiService().dio;
 
@@ -12,10 +24,11 @@ class LocationService {
     int start = 0,
   }) async {
     try {
-      print('📍 [LOCATION] Fetching locations...');
-      print('📍 [LOCATION] URL: ${ApiConfig.baseUrl}${ApiConfig.locationFetch}');
-      print('📍 [LOCATION] Params: length=$length, start=$start');
-      
+      print('🔍 [LOCATION] Fetching locations...');
+      print(
+          '🔍 [LOCATION] URL: ${ApiConfig.baseUrl}${ApiConfig.locationFetch}');
+      print('🔍 [LOCATION] Params: length=$length, start=$start');
+
       final response = await _api.get(
         ApiConfig.locationFetch,
         queryParameters: {
@@ -24,13 +37,13 @@ class LocationService {
         },
       );
 
-      print('📍 [LOCATION] Response status: ${response.statusCode}');
-      print('📍 [LOCATION] Response data: ${response.data}');
+      print('🔍 [LOCATION] Response status: ${response.statusCode}');
 
       final locationResponse = LocationResponse.fromJsonList(response.data);
-      
+
       if (locationResponse.success) {
-        print('✅ [LOCATION] Fetched ${locationResponse.data?.length ?? 0} locations');
+        print(
+            '✅ [LOCATION] Fetched ${locationResponse.data?.length ?? 0} locations');
       } else {
         print('⚠️ [LOCATION] Fetch warning: ${locationResponse.message}');
       }
@@ -39,10 +52,11 @@ class LocationService {
     } on DioException catch (e) {
       print('❌ [LOCATION] Fetch error: ${e.message}');
       print('❌ [LOCATION] Status: ${e.response?.statusCode}');
-      print('❌ [LOCATION] Response: ${e.response?.data}');
+
       return LocationResponse(
         success: false,
-        message: e.response?.data['Message'] ?? 'Failed to fetch locations: ${e.message}',
+        message: e.response?.data['Message'] ??
+            'Failed to fetch locations: ${e.message}',
       );
     } catch (e) {
       print('❌ [LOCATION] Unexpected error: $e');
@@ -53,53 +67,84 @@ class LocationService {
     }
   }
 
-  // ✅ GET - Get single location by ID (path parameter)
+  // ✅ GET - Get single location by ID
   Future<LocationResponse> getLocationDetail(String locationId) async {
     try {
-      print('📍 [LOCATION] Getting detail for: $locationId');
-      
+      print('🔍 [LOCATION] Getting detail for: $locationId');
+      print(
+          '🔍 [LOCATION] URL: ${ApiConfig.baseUrl}${ApiConfig.locationGet}/$locationId');
+
       final response = await _api.get(
         '${ApiConfig.locationGet}/$locationId',
       );
 
-      final locationResponse = LocationResponse.fromJsonSingle(response.data);
-      
-      if (locationResponse.success) {
-        print('✅ [LOCATION] Detail loaded: ${locationResponse.singleData?.nama}');
-      }
+      print('🔍 [LOCATION] Response status: ${response.statusCode}');
+      print('🔍 [LOCATION] Response data: ${response.data}');
 
-      return locationResponse;
+      if (response.statusCode == 200 && response.data["Success"] == true) {
+        final locationResponse = LocationResponse.fromJsonSingle(response.data);
+        print(
+            '✅ [LOCATION] Detail loaded: ${locationResponse.singleData?.nama}');
+        return locationResponse;
+      } else {
+        return LocationResponse(
+          success: false,
+          message: response.data["Message"] ?? 'Gagal mengambil data',
+        );
+      }
     } on DioException catch (e) {
       print('❌ [LOCATION] Detail error: ${e.message}');
+      print('❌ [LOCATION] Status: ${e.response?.statusCode}');
+
       return LocationResponse(
         success: false,
-        message: e.response?.data['Message'] ?? 'Failed to get location detail',
+        message:
+            e.response?.data["Message"] ?? 'Terjadi kesalahan (DioException)',
+      );
+    } catch (e) {
+      print('❌ [LOCATION] Unexpected error: $e');
+      return LocationResponse(
+        success: false,
+        message: 'Unexpected error: $e',
       );
     }
   }
 
-  // ✅ LOOKUP - Search/lookup locations
-  Future<LocationResponse> lookupLocations({String? keyword}) async {
+  // ✅ LOOKUP - Search locations
+  Future<LocationResponse> lookupLocations({String? query}) async {
     try {
-      print('📍 [LOCATION] Looking up locations... (keyword: $keyword)');
-      
+      print('🔍 [LOCATION] Looking up locations...');
+      print(
+          '🔍 [LOCATION] URL: ${ApiConfig.baseUrl}${ApiConfig.locationLookup}');
+
       final response = await _api.get(
         ApiConfig.locationLookup,
-        queryParameters: keyword != null ? {'keyword': keyword} : null,
+        queryParameters: query != null ? {'query': query} : null,
       );
 
+      print('🔍 [LOCATION] Response status: ${response.statusCode}');
+
       final locationResponse = LocationResponse.fromJsonList(response.data);
-      
+
       if (locationResponse.success) {
-        print('✅ [LOCATION] Found ${locationResponse.data?.length ?? 0} locations');
+        print(
+            '✅ [LOCATION] Found ${locationResponse.data?.length ?? 0} locations');
       }
 
       return locationResponse;
     } on DioException catch (e) {
       print('❌ [LOCATION] Lookup error: ${e.message}');
+
       return LocationResponse(
         success: false,
-        message: e.response?.data['Message'] ?? 'Failed to lookup locations',
+        message: e.response?.data['Message'] ??
+            'Failed to lookup locations: ${e.message}',
+      );
+    } catch (e) {
+      print('❌ [LOCATION] Unexpected error: $e');
+      return LocationResponse(
+        success: false,
+        message: 'Unexpected error: $e',
       );
     }
   }
@@ -108,26 +153,26 @@ class LocationService {
   Future<LocationResponse> createLocation({
     required String kode,
     required String nama,
-    required String catatan,
+    String? catatan,
   }) async {
     try {
-      print('📍 [LOCATION] Creating location: $nama');
-      print('📍 [LOCATION] URL: ${ApiConfig.baseUrl}${ApiConfig.locationCreate}');
-      print('📍 [LOCATION] Data: kode=$kode, nama=$nama');
-      
+      print('🔍 [LOCATION] Creating location: $nama');
+      print(
+          '🔍 [LOCATION] URL: ${ApiConfig.baseUrl}${ApiConfig.locationCreate}');
+
       final response = await _api.post(
         ApiConfig.locationCreate,
         data: {
           'kode': kode,
           'nama': nama,
-          'catatan': catatan,
+          'catatan': catatan?.isNotEmpty == true ? catatan : '-',
         },
       );
 
-      print('📍 [LOCATION] Create response: ${response.data}');
+      print('🔍 [LOCATION] Create response: ${response.data}');
 
       final locationResponse = LocationResponse.fromJsonSingle(response.data);
-      
+
       if (locationResponse.success) {
         print('✅ [LOCATION] Created successfully');
       } else {
@@ -138,22 +183,11 @@ class LocationService {
     } on DioException catch (e) {
       print('❌ [LOCATION] Create error: ${e.message}');
       print('❌ [LOCATION] Status: ${e.response?.statusCode}');
-      print('❌ [LOCATION] Response: ${e.response?.data}');
-      
-      // Handle 500 error
-      if (e.response?.statusCode == 500) {
-        final data = e.response?.data;
-        if (data != null && data is Map) {
-          return LocationResponse(
-            success: false,
-            message: data['Message'] ?? 'Gagal menambah lokasi',
-          );
-        }
-      }
-      
+
       return LocationResponse(
         success: false,
-        message: e.response?.data['Message'] ?? 'Failed to create location: ${e.message}',
+        message: e.response?.data['Message'] ??
+            'Failed to create location: ${e.message}',
       );
     } catch (e) {
       print('❌ [LOCATION] Unexpected error: $e');
@@ -164,90 +198,72 @@ class LocationService {
     }
   }
 
-// ✅ UPDATE - Edit existing location
-Future<LocationResponse> updateLocation({
-  required String id,
-  required String kode,
-  required String nama,
-  required String catatan,
-}) async {
-  try {
-    print('📍 [LOCATION] Updating location: $id');
-    print('📍 [LOCATION] URL: ${ApiConfig.baseUrl}${ApiConfig.locationUpdate}');
-    print('📍 [LOCATION] Data: id=$id, kode=$kode, nama=$nama');
+  // ✅ UPDATE - Edit existing location
+  Future<LocationResponse> updateLocation({
+    required String id,
+    required String kode,
+    required String nama,
+    String? catatan,
+  }) async {
+    try {
+      print('🔍 [LOCATION] Updating location: $id');
+      print(
+          '🔍 [LOCATION] URL: ${ApiConfig.baseUrl}${ApiConfig.locationUpdate}');
 
-    // ✅ Sesuai Swagger: PUT /location (id dikirim di body)
-    final response = await _api.put(
-      ApiConfig.locationUpdate, // <── tanpa /$id
-      data: {
-        'id': id, // <── wajib disertakan di body
-        'kode': kode,
-        'nama': nama,
-        'catatan': catatan,
-      },
-    );
+      final response = await _api.put(
+        ApiConfig.locationUpdate,
+        data: {
+          'id': id,
+          'kode': kode,
+          'nama': nama,
+          'catatan': catatan?.isNotEmpty == true ? catatan : '-',
+        },
+      );
 
-    print('📍 [LOCATION] Update response: ${response.data}');
+      print('🔍 [LOCATION] Update response: ${response.data}');
 
-    final locationResponse = LocationResponse.fromJsonSingle(response.data);
+      final locationResponse = LocationResponse.fromJsonSingle(response.data);
 
-    if (locationResponse.success) {
-      print('✅ [LOCATION] Updated successfully');
-    } else {
-      print('⚠️ [LOCATION] Update warning: ${locationResponse.message}');
-    }
-
-    return locationResponse;
-  } on DioException catch (e) {
-    print('❌ [LOCATION] Update error: ${e.message}');
-    print('❌ [LOCATION] Status: ${e.response?.statusCode}');
-    print('❌ [LOCATION] Response: ${e.response?.data}');
-
-    if (e.response?.statusCode == 500) {
-      final data = e.response?.data;
-      if (data != null && data is Map) {
-        final message = data['Message'] ?? 'Gagal update lokasi';
-        if (message.contains('no rows')) {
-          return LocationResponse(
-            success: false,
-            message: 'Lokasi tidak ditemukan atau sudah dihapus',
-          );
-        }
-        return LocationResponse(
-          success: false,
-          message: message,
-        );
+      if (locationResponse.success) {
+        print('✅ [LOCATION] Updated successfully');
+      } else {
+        print('⚠️ [LOCATION] Update warning: ${locationResponse.message}');
       }
-    }
 
-    return LocationResponse(
-      success: false,
-      message:
-          e.response?.data['Message'] ?? 'Failed to update location: ${e.message}',
-    );
-  } catch (e) {
-    print('❌ [LOCATION] Unexpected error: $e');
-    return LocationResponse(
-      success: false,
-      message: 'Unexpected error: $e',
-    );
+      return locationResponse;
+    } on DioException catch (e) {
+      print('❌ [LOCATION] Update error: ${e.message}');
+      print('❌ [LOCATION] Status: ${e.response?.statusCode}');
+
+      return LocationResponse(
+        success: false,
+        message: e.response?.data['Message'] ??
+            'Failed to update location: ${e.message}',
+      );
+    } catch (e) {
+      print('❌ [LOCATION] Unexpected error: $e');
+      return LocationResponse(
+        success: false,
+        message: 'Unexpected error: $e',
+      );
+    }
   }
-}
 
   // ✅ DELETE - Remove location
   Future<LocationResponse> deleteLocation(String locationId) async {
     try {
-      print('📍 [LOCATION] Deleting location: $locationId');
-      print('📍 [LOCATION] URL: ${ApiConfig.baseUrl}${ApiConfig.locationUpdate}/$locationId');
-      
+      print('🔍 [LOCATION] Deleting location: $locationId');
+      print(
+          '🔍 [LOCATION] URL: ${ApiConfig.baseUrl}${ApiConfig.locationFetch}/$locationId');
+
       final response = await _api.delete(
-        '${ApiConfig.locationUpdate}/$locationId',
+        '${ApiConfig.locationFetch}/$locationId',
       );
 
-      print('📍 [LOCATION] Delete response: ${response.data}');
+      print('🔍 [LOCATION] Delete response: ${response.data}');
 
       final locationResponse = LocationResponse.fromJsonNoData(response.data);
-      
+
       if (locationResponse.success) {
         print('✅ [LOCATION] Deleted successfully');
       } else {
@@ -258,31 +274,11 @@ Future<LocationResponse> updateLocation({
     } on DioException catch (e) {
       print('❌ [LOCATION] Delete error: ${e.message}');
       print('❌ [LOCATION] Status: ${e.response?.statusCode}');
-      print('❌ [LOCATION] Response: ${e.response?.data}');
-      
-      // Handle 500 error
-      if (e.response?.statusCode == 500) {
-        final data = e.response?.data;
-        if (data != null && data is Map) {
-          final message = data['Message'] ?? 'Gagal hapus lokasi';
-          
-          if (message.contains('no rows')) {
-            return LocationResponse(
-              success: false,
-              message: 'Lokasi tidak ditemukan atau sudah dihapus',
-            );
-          }
-          
-          return LocationResponse(
-            success: false,
-            message: message,
-          );
-        }
-      }
-      
+
       return LocationResponse(
         success: false,
-        message: e.response?.data['Message'] ?? 'Failed to delete location: ${e.message}',
+        message: e.response?.data['Message'] ??
+            'Failed to delete location: ${e.message}',
       );
     } catch (e) {
       print('❌ [LOCATION] Unexpected error: $e');

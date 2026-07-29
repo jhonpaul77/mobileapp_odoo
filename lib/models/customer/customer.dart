@@ -26,44 +26,69 @@ class Customer {
   });
 
   factory Customer.fromJson(Map<String, dynamic> json) {
+    // Parse nama to extract phone if it's in format "Name (Phone)"
+    final rawNama = json['nama'] ?? '';
+    String parsedNama = rawNama;
+    String parsedNoTelp = json['no_telp'] ?? '';
+
+    // Check if nama contains phone in parentheses
+    final phoneInNameRegex = RegExp(r'^(.+?)\s*\(([^)]+)\)\s*$');
+    final match = phoneInNameRegex.firstMatch(rawNama);
+
+    if (match != null) {
+      // Extract name and phone from the match
+      parsedNama = match.group(1)?.trim() ?? rawNama;
+      final phoneFromName = match.group(2)?.trim();
+
+      // Use phone from name if no phone field exists or is empty
+      if (phoneFromName != null && phoneFromName.isNotEmpty) {
+        if (parsedNoTelp.isEmpty) {
+          parsedNoTelp = phoneFromName;
+        }
+      }
+
+      print(
+          '📞 [CUSTOMER PARSING OLD] Raw: "$rawNama" → Nama: "$parsedNama", NoTelp: "$parsedNoTelp"');
+    }
+
     return Customer(
       id: json['id'] ?? '',
-      nama: json['nama'] ?? '',
+      nama: parsedNama,
       email: json['email'] ?? '',
-      noTelp: json['no_telp'] ?? '',
+      noTelp: parsedNoTelp,
       isActive: json['is_active'] ?? true,
       catatan: json['catatan'] ?? '',
       createdBy: json['created_by'] ?? '',
       updatedBy: json['updated_by'] ?? '',
       createdAt: DateTime.parse(json['created_at']),
-      updatedAt: json['updated_at'] != null 
-          ? DateTime.parse(json['updated_at']) 
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
           : null,
-      deletedAt: json['deleted_at'] != null 
-          ? DateTime.parse(json['deleted_at']) 
+      deletedAt: json['deleted_at'] != null
+          ? DateTime.parse(json['deleted_at'])
           : null,
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'nama': nama,
-    'email': email,
-    'no_telp': noTelp,
-    'is_active': isActive,
-    'catatan': catatan,
-    'created_by': createdBy,
-    'updated_by': updatedBy,
-    'created_at': createdAt.toIso8601String(),
-    'updated_at': updatedAt?.toIso8601String(),
-    'deleted_at': deletedAt?.toIso8601String(),
-  };
+        'id': id,
+        'nama': nama,
+        'email': email,
+        'no_telp': noTelp,
+        'is_active': isActive,
+        'catatan': catatan,
+        'created_by': createdBy,
+        'updated_by': updatedBy,
+        'created_at': createdAt.toIso8601String(),
+        'updated_at': updatedAt?.toIso8601String(),
+        'deleted_at': deletedAt?.toIso8601String(),
+      };
 
   Map<String, dynamic> toFormData() => {
-    'nama': nama,
-    'email': email,
-    'no_telp': noTelp,
-    'is_active': isActive,
-    'catatan': catatan,
-  };
+        'nama': nama,
+        'email': email,
+        'no_telp': noTelp,
+        'is_active': isActive,
+        'catatan': catatan,
+      };
 }

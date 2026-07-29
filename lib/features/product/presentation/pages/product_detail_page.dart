@@ -621,7 +621,6 @@ class ProductDetailPage extends StatelessWidget {
               title: const Text('Bagikan Produk'),
               onTap: () {
                 Navigator.pop(context);
-                _shareProduct(context);
               },
             ),
             ListTile(
@@ -654,7 +653,6 @@ class ProductDetailPage extends StatelessWidget {
               title: const Text('Hapus Produk'),
               onTap: () {
                 Navigator.pop(context);
-                _confirmDelete(context);
               },
             ),
           ],
@@ -666,39 +664,5 @@ class ProductDetailPage extends StatelessWidget {
   /// Copy to clipboard
   void _copyToClipboard(String text) async {
     await Clipboard.setData(ClipboardData(text: text));
-  }
-
-  /// Share product
-  void _shareProduct(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Fitur share akan segera hadir')),
-    );
-    // TODO: Implement share using share_plus package
-  }
-
-  /// Confirm delete
-  void _confirmDelete(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hapus Produk'),
-        content: Text('Yakin ingin menghapus ${product.name}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-              // TODO: Implement delete product API
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
-    );
   }
 }

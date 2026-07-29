@@ -33,11 +33,34 @@ class Customer {
 
   /// Factory constructor from JSON (Odoo API response)
   factory Customer.fromJson(Map<String, dynamic> json) {
+    // Parse name to extract phone if it's in format "Name (Phone)"
+    final rawName = json['name'] as String;
+    String parsedName = rawName;
+    String? parsedPhone = _parseStringOrFalse(json['phone']);
+
+    // Check if name contains phone in parentheses
+    final phoneInNameRegex = RegExp(r'^(.+?)\s*\(([^)]+)\)\s*$');
+    final match = phoneInNameRegex.firstMatch(rawName);
+
+    if (match != null) {
+      // Extract name and phone from the match
+      parsedName = match.group(1)?.trim() ?? rawName;
+      final phoneFromName = match.group(2)?.trim();
+
+      // Use phone from name if no phone field exists
+      if (phoneFromName != null && phoneFromName.isNotEmpty) {
+        parsedPhone = phoneFromName;
+      }
+
+      print(
+          '📞 [CUSTOMER PARSING] Raw: "$rawName" → Name: "$parsedName", Phone: "$parsedPhone"');
+    }
+
     return Customer(
       id: _parseInt(json['id']),
-      name: json['name'] as String,
+      name: parsedName,
       email: _parseStringOrFalse(json['email']),
-      phone: _parseStringOrFalse(json['phone']),
+      phone: parsedPhone,
       userId: _parseIntOrNull(json['user_id']),
       street: _parseStringOrFalse(json['street']),
       street2: _parseStringOrFalse(json['street2']),

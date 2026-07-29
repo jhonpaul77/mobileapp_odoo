@@ -324,9 +324,10 @@ Terima kasih atas pesanan Anda! 🙏
     final paymentTerms = transaction['paymentTerms'] as String? ?? '-';
     final awbRaw = (transaction['awb'] as String?)?.trim() ?? '';
     final kurirRaw = (transaction['salesRep'] as String?)?.trim() ?? '';
-    
+
     final isEditable = status.toLowerCase() == 'open';
     final isCancel = status.toLowerCase() == 'cancel';
+    final isConfirm = status.toLowerCase() == 'confirm';
 
     return PopScope(
       canPop: false,
