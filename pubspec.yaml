@@ -42,6 +42,7 @@ dependencies:
   
   # ✅ BARU: untuk error logging
   path_provider: ^2.1.5
+  font_awesome_flutter: ^11.0.0
   
 
 flutter:

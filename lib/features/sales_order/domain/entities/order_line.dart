@@ -25,11 +25,17 @@ class OrderLine {
   });
 
   factory OrderLine.fromJson(Map<String, dynamic> json) {
+    // Parse analytic_distribution - can be false or Map
+    Map<String, dynamic>? analyticDist;
+    final analyticRaw = json['analytic_distribution'];
+    if (analyticRaw is Map<String, dynamic>) {
+      analyticDist = analyticRaw;
+    }
+
     return OrderLine(
       productId: json['product_id'],
       productUomQty: (json['product_uom_qty'] as num?)?.toDouble() ?? 0.0,
-      analyticDistribution:
-          json['analytic_distribution'] as Map<String, dynamic>?,
+      analyticDistribution: analyticDist,
       priceUnit: (json['price_unit'] as num?)?.toDouble() ?? 0.0,
       priceSubtotal: (json['price_subtotal'] as num?)?.toDouble(),
     );

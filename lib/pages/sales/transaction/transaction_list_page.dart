@@ -6,124 +6,6 @@ import 'package:pintarx/config/theme.dart';
 class TransactionListPage extends StatefulWidget {
   const TransactionListPage({super.key});
 
-  static final List<Map<String, dynamic>> _demoTransactions = [
-    {
-      'soNumber': 'SO-20260701-001',
-      'tanggal': DateTime(2026, 7, 1, 14, 32),
-      'customer': 'PT Maju Jaya',
-      'phone': '+62 812-3456-7890',
-      'nominal': 1525000.0,
-      'orderedCount': 4,
-      'canceledCount': 0,
-      'status': 'Confirm',
-      'salesRep': 'Alex Wijaya',
-      'paymentTerms': 'TOP 14',
-      'deliveryAddress': 'Jl. Merdeka No. 45, Jakarta',
-      'items': [
-        {'product': 'Paket A', 'analyticAccount': 'Riztastore', 'qty': 2, 'price': 325000.0},
-        {'product': 'Paket B', 'analyticAccount': 'Facebook', 'qty': 1, 'price': 875000.0},
-      ],
-    },
-    {
-      'soNumber': 'SO-20260701-002',
-      'tanggal': DateTime(2026, 7, 1, 12, 10),
-      'customer': 'CV Sumber Makmur',
-      'phone': '+62 813-9876-5432',
-      'nominal': 860000.0,
-      'orderedCount': 2,
-      'canceledCount': 1,
-      'status': 'Open',
-      'salesRep': 'Nina Sari',
-      'paymentTerms': 'Cash',
-      'deliveryAddress': 'Jl. Sudirman No. 78, Bandung',
-      'items': [
-        {'product': 'Produk C', 'analyticAccount': 'Instagram', 'qty': 3, 'price': 180000.0},
-        {'product': 'Produk D', 'analyticAccount': 'Tokopedia', 'qty': 1, 'price': 320000.0},
-      ],
-    },
-    {
-      'soNumber': 'SO-20260630-011',
-      'tanggal': DateTime(2026, 6, 30, 16, 5),
-      'customer': 'UD Berkah Jaya',
-      'phone': '+62 811-2233-4455',
-      'nominal': 345000.0,
-      'orderedCount': 1,
-      'canceledCount': 0,
-      'status': 'Confirm',
-      'salesRep': 'Budi Santoso',
-      'paymentTerms': 'TOP 7',
-      'deliveryAddress': 'Jl. Veteran No. 12, Bekasi',
-      'items': [
-        {'product': 'Produk E', 'analyticAccount': 'Shopee', 'qty': 1, 'price': 345000.0},
-      ],
-    },
-    {
-      'soNumber': 'SO-20260630-010',
-      'tanggal': DateTime(2026, 6, 30, 10, 20),
-      'customer': 'PT Agro Mandiri',
-      'phone': '+62 816-7788-9900',
-      'nominal': 1237500.0,
-      'orderedCount': 3,
-      'canceledCount': 0,
-      'status': 'Confirm',
-      'salesRep': 'Rina Putri',
-      'paymentTerms': 'Cash',
-      'deliveryAddress': 'Jl. Delima No. 22, Surabaya',
-      'items': [
-        {'product': 'Produk F', 'analyticAccount': 'Lazada', 'qty': 2, 'price': 412500.0},
-        {'product': 'Produk G', 'analyticAccount': 'Bukalapak', 'qty': 1, 'price': 412500.0},
-      ],
-    },
-    {
-      'soNumber': 'SO-20260629-009',
-      'tanggal': DateTime(2026, 6, 29, 9, 15),
-      'customer': 'Toko Jaya Sentosa',
-      'phone': '+62 817-1122-3344',
-      'nominal': 550000.0,
-      'orderedCount': 2,
-      'canceledCount': 2,
-      'status': 'Cancel',
-      'salesRep': 'Dini Hartono',
-      'paymentTerms': 'TOP 3',
-      'deliveryAddress': 'Jl. Ahmad Yani No. 15, Medan',
-      'items': [
-        {'product': 'Produk B', 'analyticAccount': 'Riztastore', 'qty': 2, 'price': 275000.0},
-      ],
-    },
-    {
-      'soNumber': 'SO-20260628-008',
-      'tanggal': DateTime(2026, 6, 28, 15, 45),
-      'customer': 'PT Dinamis Sejahtera',
-      'phone': '+62 818-5566-7788',
-      'nominal': 987500.0,
-      'orderedCount': 3,
-      'canceledCount': 3,
-      'status': 'Cancel',
-      'salesRep': 'Eka Pratama',
-      'paymentTerms': 'Cash',
-      'deliveryAddress': 'Jl. Gatot Subroto No. 88, Semarang',
-      'items': [
-        {'product': 'Paket C', 'analyticAccount': 'Instagram', 'qty': 1, 'price': 450000.0},
-        {'product': 'Produk A', 'analyticAccount': 'Facebook', 'qty': 2, 'price': 268750.0},
-      ],
-    },
-    {
-      'soNumber': 'SO-20260627-007',
-      'tanggal': DateTime(2026, 6, 27, 11, 20),
-      'customer': 'CV Sumber Makmur',
-      'phone': '+62 813-9876-5432',
-      'nominal': 720000.0,
-      'orderedCount': 2,
-      'canceledCount': 2,
-      'status': 'Cancel',
-      'salesRep': 'Nina Sari',
-      'paymentTerms': 'TOP 14',
-      'deliveryAddress': 'Jl. Sudirman No. 78, Bandung',
-      'items': [
-        {'product': 'Produk D', 'analyticAccount': 'Shopee', 'qty': 2, 'price': 360000.0},
-      ],
-    },
-  ];
   @override
   State<TransactionListPage> createState() => _TransactionListPageState();
 }
@@ -134,25 +16,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
   String? _statusFilter;
 
   List<Map<String, dynamic>> get _filteredTransactions {
-    final query = _searchQuery.trim().toLowerCase();
-    final sorted = List<Map<String, dynamic>>.from(TransactionListPage._demoTransactions)
-      ..sort((a, b) => (b['tanggal'] as DateTime).compareTo(a['tanggal'] as DateTime));
-
-    return sorted.where((transaction) {
-      final soNumber = (transaction['soNumber'] as String?)?.toLowerCase() ?? '';
-      final customer = (transaction['customer'] as String?)?.toLowerCase() ?? '';
-      final phone = (transaction['phone'] as String?)?.toLowerCase() ?? '';
-      final status = (transaction['status'] as String?)?.toLowerCase() ?? '';
-
-      final matchesStatus = _statusFilter == null ||
-          _statusFilter == 'All' ||
-          status == _statusFilter?.toLowerCase();
-
-      return matchesStatus && (soNumber.contains(query) ||
-          customer.contains(query) ||
-          phone.contains(query) ||
-          status.contains(query));
-    }).toList();
+    return [];
   }
 
   Widget _buildStatusChip(String label) {
@@ -264,12 +128,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
 
                     if (updated != null) {
                       setState(() {
-                        final index = TransactionListPage._demoTransactions.indexWhere(
-                          (element) => element['soNumber'] == updated['soNumber'],
-                        );
-                        if (index != -1) {
-                          TransactionListPage._demoTransactions[index] = Map<String, dynamic>.from(updated);
-                        }
+                        // Data akan diupdate dari API, tidak perlu update manual
                       });
                     }
                   },

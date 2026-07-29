@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pintarx/config/theme.dart';
 import 'package:pintarx/pages/sales/transaction/transaction_edit_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TransactionDetailPage extends StatefulWidget {
   final Map<String, dynamic> transaction;
@@ -103,6 +104,107 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
         );
       },
     );
+  }
+
+  /// Send WhatsApp shipment notification
+  Future<void> _sendWhatsAppShipment() async {
+    final awb = (transaction['awb'] as String?)?.trim() ?? '';
+    final kurir = (transaction['salesRep'] as String?)?.trim() ?? '';
+    final phone = transaction['phone'] as String? ?? '';
+    final customer = transaction['customer'] as String? ?? '';
+
+    // Validate required fields
+    if (awb.isEmpty || kurir.isEmpty || phone.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('AWB, Kurir, atau No. HP tidak lengkap'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Format message
+    final message = '''
+📦 *Pengiriman Pesanan Anda*
+
+Halo *$customer*,
+
+Pesanan Anda telah dikirim! Berikut adalah detail pengiriman:
+
+🚚 *Detail Pengiriman:*
+• Kurir: *$kurir*
+• No. Resi/AWB: *$awb*
+• Status: Dalam Perjalanan
+
+📍 Anda dapat melacak pesanan Anda menggunakan nomor resi di atas pada website kurir.
+
+Terima kasih atas pesanan Anda! 🙏
+''';
+
+    try {
+      // Format phone number
+      String formattedPhone = phone.trim();
+      if (formattedPhone.startsWith('0')) {
+        formattedPhone = formattedPhone.substring(1);
+      }
+      if (!formattedPhone.startsWith('62')) {
+        formattedPhone = '62$formattedPhone';
+      }
+
+      // Encode message
+      final encodedMessage = Uri.encodeComponent(message);
+
+      // WhatsApp URL
+      final whatsappUrl = 'https://wa.me/$formattedPhone?text=$encodedMessage';
+
+      // Launch WhatsApp
+      if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
+        await launchUrl(Uri.parse(whatsappUrl),
+            mode: LaunchMode.externalApplication);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 12),
+                  Text('Membuka WhatsApp...'),
+                ],
+              ),
+              backgroundColor: Color(0xFF25D366),
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tidak dapat membuka WhatsApp'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   void _printTransaction() {
@@ -219,9 +321,11 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     final city = transaction['deliveryCity'] as String? ?? '-';
     final district = transaction['deliveryDistrict'] as String? ?? '-';
     final paymentTerms = transaction['paymentTerms'] as String? ?? '-';
+    final awbRaw = (transaction['awb'] as String?)?.trim() ?? '';
+    final kurirRaw = (transaction['salesRep'] as String?)?.trim() ?? '';
+    
     final isEditable = status.toLowerCase() == 'open';
     final isCancel = status.toLowerCase() == 'cancel';
-    final isConfirm = status.toLowerCase() == 'confirm';
 
     return PopScope(
       canPop: false,
@@ -259,6 +363,14 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                   ),
                 ),
               ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: IconButton(
+                icon: const Icon(Icons.mail_outline, color: Colors.white),
+                onPressed: _sendWhatsAppShipment,
+                tooltip: 'WhatsApp',
+              ),
+            ),
             if (isConfirm)
               Padding(
                 padding: const EdgeInsets.only(right: 8),
@@ -461,6 +573,29 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Shipment Info
+                    Text(
+                      'Shipment Information',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoGrid([
+                      {
+                        'label': 'Kurir',
+                        'value': kurirRaw.isEmpty ? '-' : kurirRaw,
+                      },
+                      {
+                        'label': 'AWB Number',
+                        'value': awbRaw.isEmpty ? '-' : awbRaw,
+                      },
+                    ]),
+                    const SizedBox(height: 16),
+                    Divider(color: Colors.grey[200], height: 1),
+                    const SizedBox(height: 16),
                     Text(
                       'Delivery Address',
                       style: TextStyle(

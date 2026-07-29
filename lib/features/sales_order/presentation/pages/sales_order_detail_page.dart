@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../config/theme.dart';
 import '../../domain/entities/sales_order.dart';
+import 'sales_order_edit_page.dart';
 
 /// SalesOrderDetailPage - Detail Transaksi Penjualan
 ///
@@ -239,6 +240,27 @@ Terima kasih atas kepercayaan Anda! 🙏
     );
   }
 
+  Future<void> _openEditPage() async {
+    final updatedLines = await Navigator.of(context).push<List>(
+      MaterialPageRoute(
+        builder: (_) => SalesOrderEditPage(order: widget.order),
+      ),
+    );
+
+    if (updatedLines != null) {
+      // Update is successful, you can show a message or refresh the page
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Changes saved successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final order = widget.order;
@@ -311,14 +333,7 @@ Terima kasih atas kepercayaan Anda! 🙏
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: TextButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Fitur edit transaksi akan segera hadir'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
+                onPressed: _openEditPage,
                 child: const Text(
                   'Edit',
                   style: TextStyle(
