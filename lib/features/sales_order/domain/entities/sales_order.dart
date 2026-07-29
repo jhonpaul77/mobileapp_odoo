@@ -73,22 +73,54 @@ class SalesOrder {
     // Parse partner_name - can be string or false
     String? partnerNameParsed;
     final partnerNameRaw = json['partner_name'];
-    if (partnerNameRaw is String) {
+    if (partnerNameRaw is String && partnerNameRaw.isNotEmpty) {
       partnerNameParsed = partnerNameRaw;
     }
 
     // Parse warehouse_name - can be string or false
     String? warehouseNameParsed;
     final warehouseNameRaw = json['warehouse_name'];
-    if (warehouseNameRaw is String) {
+    if (warehouseNameRaw is String && warehouseNameRaw.isNotEmpty) {
       warehouseNameParsed = warehouseNameRaw;
     }
 
     // Parse kurir_name - can be string or false
     String? kurirNameParsed;
     final kurirNameRaw = json['kurir_name'];
-    if (kurirNameRaw is String) {
+    if (kurirNameRaw is String && kurirNameRaw.isNotEmpty) {
       kurirNameParsed = kurirNameRaw;
+    }
+
+    // Safely parse AWB - can be string or false
+    dynamic awbParsed;
+    final awbRaw = json['awb'];
+    if (awbRaw is String && awbRaw.isNotEmpty) {
+      awbParsed = awbRaw;
+    } else if (awbRaw is bool || awbRaw == null) {
+      awbParsed = null;
+    } else {
+      awbParsed = awbRaw;
+    }
+
+    // Safely parse address - ensure it's string
+    String? addressParsed;
+    final addressRaw = json['address'];
+    if (addressRaw is String && addressRaw.isNotEmpty) {
+      addressParsed = addressRaw;
+    }
+
+    // Safely parse district - ensure it's string
+    String? districtParsed;
+    final districtRaw = json['district'];
+    if (districtRaw is String && districtRaw.isNotEmpty) {
+      districtParsed = districtRaw;
+    }
+
+    // Safely parse city - ensure it's string
+    String? cityParsed;
+    final cityRaw = json['city'];
+    if (cityRaw is String && cityRaw.isNotEmpty) {
+      cityParsed = cityRaw;
     }
 
     return SalesOrder(
@@ -102,13 +134,13 @@ class SalesOrder {
       warehouseName: warehouseNameParsed,
       kurirId: json['kurir_id'],
       kurirName: kurirNameParsed,
-      awb: json['awb'],
+      awb: awbParsed,
       state: json['state'] as String? ?? 'draft',
       orderCount: json['order_count'] as int?,
       orderLines: orderLines,
-      address: json['address'] as String?,
-      district: json['district'] as String?,
-      city: json['city'] as String?,
+      address: addressParsed,
+      district: districtParsed,
+      city: cityParsed,
     );
   }
 

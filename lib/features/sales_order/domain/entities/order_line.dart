@@ -31,18 +31,19 @@ class OrderLine {
     // Parse analytic_distribution - can be String, Map, or false
     dynamic analyticDist;
     final analyticRaw = json['analytic_distribution'];
-    if (analyticRaw is String) {
+    if (analyticRaw is String && analyticRaw.isNotEmpty) {
       analyticDist = analyticRaw;
     } else if (analyticRaw is Map<String, dynamic>) {
       analyticDist = analyticRaw;
-    } else if (analyticRaw == false || analyticRaw == null) {
+    } else {
+      // If false, null, or any other type, treat as null
       analyticDist = null;
     }
 
     // Parse product_name - can be string or false
     String? productNameParsed;
     final productNameRaw = json['product_name'];
-    if (productNameRaw is String) {
+    if (productNameRaw is String && productNameRaw.isNotEmpty) {
       productNameParsed = productNameRaw;
     }
 
