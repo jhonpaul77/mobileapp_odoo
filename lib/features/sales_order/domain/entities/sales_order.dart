@@ -31,6 +31,7 @@ class SalesOrder {
   final List<OrderLine> orderLines;
   final String? address;
   final String? district;
+  final String? city;
 
   SalesOrder({
     required this.id,
@@ -45,6 +46,7 @@ class SalesOrder {
     required this.orderLines,
     this.address,
     this.district,
+    this.city,
   });
 
   factory SalesOrder.fromJson(Map<String, dynamic> json) {
@@ -69,6 +71,7 @@ class SalesOrder {
       orderLines: orderLines,
       address: json['address'] as String?,
       district: json['district'] as String?,
+      city: json['city'] as String?,
     );
   }
 
@@ -195,6 +198,7 @@ class SalesOrder {
       'order_lines': orderLines.map((line) => line.toJson()).toList(),
       'address': address,
       'district': district,
+      'city': city,
     };
   }
 }

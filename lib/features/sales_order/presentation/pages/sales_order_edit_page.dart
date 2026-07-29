@@ -7,9 +7,12 @@ import '../../domain/entities/sales_order.dart';
 import '../../domain/entities/order_line.dart';
 import '../../../product/data/datasources/product_remote_datasource.dart';
 import '../../../product/data/models/product_model.dart';
+import '../../../location/data/datasources/location_remote_datasource.dart';
+import '../../../location/domain/entities/district.dart';
 import '../../../../services/config_service.dart';
 import '../../../../services/secure_storage_service.dart';
 import 'product_search_modal.dart';
+import 'district_search_modal.dart';
 
 /// Input formatter untuk menambahkan separator pada angka
 class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
@@ -70,9 +73,13 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   late final TextEditingController _awbController;
   late final TextEditingController _addressController;
   late final TextEditingController _districtController;
+  late final TextEditingController _cityController;
   late final List<OrderLine> _orderLines;
   late final List<Map<String, TextEditingController>> _lineControllers;
   late List<ProductModel> _allProducts = [];
+  late List<District> _allDistricts = [];
+  late Map<int, String> _cityMap = {}; // cityId -> cityName
+  bool _loadingData = false;
   final _currencyFormat =
       NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
@@ -87,6 +94,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         TextEditingController(text: order.address?.toString() ?? '');
     _districtController =
         TextEditingController(text: order.district?.toString() ?? '');
+    _cityController =
+        TextEditingController(text: order.city?.toString() ?? '');
     _warehouseIdController = TextEditingController(
         text: order.warehouseId?.toString() ?? '');
     _kurirIdController =
@@ -121,11 +130,13 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       };
     }).toList();
 
-    _loadProducts();
+    _loadData();
   }
 
-  Future<void> _loadProducts() async {
+  Future<void> _loadData() async {
     try {
+      setState(() => _loadingData = true);
+
       final configService = ConfigService();
       final storage = SecureStorageService();
 
@@ -133,18 +144,71 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       final db = config['database'] as String?;
       final apiKey = await storage.getAccessToken();
 
-      if (db == null || apiKey == null) return;
+      print('🔵 Loading edit page data: db=$db, apiKey=${apiKey != null}');
 
-      final datasource = ProductRemoteDataSource();
-      final products = await datasource.getProducts(db: db, apiKey: apiKey);
+      if (db == null || apiKey == null) {
+        print('❌ Missing config: db=$db, apiKey=$apiKey');
+        return;
+      }
 
-      if (mounted) {
-        setState(() {
-          _allProducts = products;
-        });
+      // Load products
+      try {
+        final productDatasource = ProductRemoteDataSource();
+        final products = await productDatasource.getProducts(db: db, apiKey: apiKey);
+        print('✅ Loaded ${products.length} products');
+        if (mounted) {
+          setState(() {
+            _allProducts = products;
+          });
+        }
+      } catch (e) {
+        print('❌ Error loading products: $e');
+      }
+
+      // Load cities
+      try {
+        final locationDatasource = LocationRemoteDataSource();
+        final cities = await locationDatasource.getCities(
+          db: db,
+          apiKey: apiKey,
+        );
+        print('✅ Loaded ${cities.length} cities');
+        
+        // Build city map
+        final cityMap = <int, String>{};
+        for (final city in cities) {
+          cityMap[city.id] = city.name;
+        }
+        
+        if (mounted) {
+          setState(() {
+            _cityMap = cityMap;
+          });
+        }
+      } catch (e) {
+        print('❌ Error loading cities: $e');
+      }
+
+      // Load districts
+      try {
+        final locationDatasource = LocationRemoteDataSource();
+        final districts = await locationDatasource.getAllDistricts(
+          db: db,
+          apiKey: apiKey,
+        );
+        print('✅ Loaded ${districts.length} districts');
+        if (mounted) {
+          setState(() {
+            _allDistricts = districts;
+          });
+        }
+      } catch (e) {
+        print('❌ Error loading districts: $e');
       }
     } catch (e) {
-      print('❌ Error loading products: $e');
+      print('❌ Error in _loadData: $e');
+    } finally {
+      if (mounted) setState(() => _loadingData = false);
     }
   }
 
@@ -162,11 +226,32 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     }
   }
 
+  Future<void> _selectDistrict() async {
+    final selected = await showDialog<District>(
+      context: context,
+      builder: (_) => DistrictSearchModal(
+        allDistricts: _allDistricts,
+        cityNames: _cityMap,
+      ),
+    );
+
+    if (selected != null) {
+      // Get city name from map or by looking it up
+      String cityName = _cityMap[selected.cityId] ?? '';
+      
+      setState(() {
+        _districtController.text = selected.name;
+        _cityController.text = cityName;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _customerNameController.dispose();
     _addressController.dispose();
     _districtController.dispose();
+    _cityController.dispose();
     _warehouseIdController.dispose();
     _kurirIdController.dispose();
     _awbController.dispose();
@@ -569,7 +654,92 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                   _buildEditField('Customer', _customerNameController,
                       readOnly: true),
                   _buildEditField('Address', _addressController, maxLines: 2),
-                  _buildEditField('District', _districtController),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'District',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _districtController,
+                                readOnly: true,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.black87,
+                                ),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[300]!,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[300]!,
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              height: 42,
+                              child: ElevatedButton.icon(
+                                onPressed: _allDistricts.isEmpty
+                                    ? null
+                                    : _selectDistrict,
+                                icon: _allDistricts.isEmpty
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                                        ),
+                                      )
+                                    : const Icon(Icons.search, size: 16),
+                                label: Text(_allDistricts.isEmpty
+                                    ? 'Loading...'
+                                    : 'Search'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                  disabledBackgroundColor: Colors.grey[400],
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  _buildEditField('City', _cityController, readOnly: true),
                   _buildEditField('Warehouse ID', _warehouseIdController),
                   _buildEditField('Kurir ID', _kurirIdController),
                   _buildEditField('AWB', _awbController),
