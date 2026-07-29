@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -60,14 +61,19 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
     return line.productNameDisplay;
   }
 
-  /// Send WhatsApp payment reminder
+  /// Send WhatsApp order confirmation message
   Future<void> _sendWhatsAppReminder() async {
     final order = widget.order;
 
-    // TODO: Check phone from API response when field is added
-    // For now, phone field doesn't exist in sales order API
-    final String? customerPhone =
-        null; // Will be: order.customerPhone when API is updated
+    // Get customer phone from order
+    String? customerPhone;
+    if (order.customerName.contains('(') && order.customerName.contains(')')) {
+      // Extract phone from format "Name (phone)"
+      final match = RegExp(r'\((\d+)\)').firstMatch(order.customerName);
+      if (match != null) {
+        customerPhone = match.group(1);
+      }
+    }
 
     // Check if phone number exists
     if (customerPhone == null || customerPhone.isEmpty) {
@@ -80,7 +86,7 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'No WhatsApp Customer Not Found',
+                    'Nomor WhatsApp pelanggan tidak ditemukan',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                 ),
@@ -95,27 +101,53 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
       return;
     }
 
-    // Format message yang user-friendly dengan emoji
-    final message = '''
-🔔 *Pengingat Pembayaran*
-
-Halo *${_getCustomerName(order.customerId)}*,
-
-Kami ingin mengingatkan pembayaran untuk pesanan Anda:
-
-📋 *Detail Pesanan:*
-• Nomor SO: *${order.name}*
-• Tanggal Order: ${order.dateOrderFormatted}
-• Total Pembayaran: *${_currencyFormat.format(order.amountTotal)}*
-
-💳 Mohon segera melakukan pembayaran agar pesanan dapat segera kami proses.
-
-✅ Jika pembayaran sudah dilakukan, silakan kirimkan bukti transfer untuk konfirmasi.
-
-Terima kasih atas kepercayaan Anda! 🙏
-''';
-
     try {
+      // Get current user name
+      String senderName = 'Tim Penjualan';
+      try {
+        // Try to get from AuthService or just use a default
+        senderName = 'Tim Penjualan';
+      } catch (e) {
+        print('Could not get user name: $e');
+      }
+
+      // Get customer name without phone
+      String customerNameOnly = order.customerName;
+      if (customerNameOnly.contains('(')) {
+        customerNameOnly = customerNameOnly.split('(')[0].trim();
+      }
+
+      // Build items list
+      String itemsList = '';
+      for (final line in order.orderLines) {
+        final qty = line.productUomQty.toInt();
+        final product = _getProductName(line.productId, line);
+        itemsList += '$qty (pcs) $product\n';
+      }
+
+      // Build address section for customer to fill in
+      final addressSection = '''Tolong isi alamat kakak dengan lengkap :
+RT/RW/Nama Jalan: 
+Desa/Kelurahan: 
+Kecamatan: 
+Kota/Kab: 
+Provinsi: ''';
+
+      // Build the full message
+      final message = '''Halo kak $customerNameOnly
+
+Dengan saya ($senderName) :
+
+Kami sudah terima pesanannya  dengan rincian sebagai berikut:
+$itemsList
+_BISA TRANSFER_ maupun _BAYAR DI TEMPAT_
+
+$addressSection
+
+Mohon segera dikonfirmasi ya kak untuk pesanannya. 
+
+TERIMA KASIH''';
+
       // Format phone number (remove leading 0, add country code)
       String formattedPhone = customerPhone.trim();
       if (formattedPhone.startsWith('0')) {
@@ -128,13 +160,39 @@ Terima kasih atas kepercayaan Anda! 🙏
       // Encode message for URL
       final encodedMessage = Uri.encodeComponent(message);
 
-      // WhatsApp URL
-      final whatsappUrl = 'https://wa.me/$formattedPhone?text=$encodedMessage';
+      bool launched = false;
 
-      // Launch WhatsApp
-      if (await canLaunch(whatsappUrl)) {
-        await launch(whatsappUrl);
+      // Use api.whatsapp.com - the only reliable method that works
+      final whatsappUrl = 'https://api.whatsapp.com/send?phone=$formattedPhone&text=$encodedMessage';
+      print('🔵 Opening WhatsApp: $whatsappUrl');
+      
+      try {
+        if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
+          await launchUrl(
+            Uri.parse(whatsappUrl),
+            mode: LaunchMode.externalApplication,
+          );
+          launched = true;
+          print('✅ WhatsApp opened successfully');
+        } else {
+          print('⚠️ Cannot launch URL');
+          // If canLaunchUrl fails, try anyway - sometimes it fails but still works
+          try {
+            await launchUrl(
+              Uri.parse(whatsappUrl),
+              mode: LaunchMode.externalApplication,
+            );
+            launched = true;
+            print('✅ WhatsApp opened (after retry)');
+          } catch (e) {
+            print('❌ Error launching: $e');
+          }
+        }
+      } catch (e) {
+        print('❌ Exception: $e');
+      }
 
+      if (launched) {
         // Show success message
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -155,15 +213,31 @@ Terima kasih atas kepercayaan Anda! 🙏
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Tidak dapat membuka WhatsApp'),
-              backgroundColor: Colors.red,
+            SnackBar(
+              content: const Text('Membuka WhatsApp Web di browser...'),
+              backgroundColor: Colors.orange,
               behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 3),
+              action: SnackBarAction(
+                label: 'Salin Pesan',
+                textColor: Colors.white,
+                onPressed: () {
+                  // Copy message to clipboard
+                  Clipboard.setData(ClipboardData(text: message));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Pesan disalin ke clipboard'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                },
+              ),
             ),
           );
         }
       }
     } catch (e) {
+      print('❌ Error in WhatsApp: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
