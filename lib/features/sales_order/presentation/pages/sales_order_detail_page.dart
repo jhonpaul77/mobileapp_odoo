@@ -250,6 +250,203 @@ TERIMA KASIH''';
     }
   }
 
+  /// Send WhatsApp shipment tracking message (for Sale/Confirm status)
+  Future<void> _sendWhatsAppShipment() async {
+    final order = widget.order;
+
+    // Get customer phone from order
+    String? customerPhone;
+    if (order.customerName.contains('(') && order.customerName.contains(')')) {
+      // Extract phone from format "Name (phone)"
+      final match = RegExp(r'\((\d+)\)').firstMatch(order.customerName);
+      if (match != null) {
+        customerPhone = match.group(1);
+      }
+    }
+
+    // Check if phone number exists
+    if (customerPhone == null || customerPhone.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Nomor WhatsApp pelanggan tidak ditemukan',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Check if kurir and awb exist
+    if ((order.kurirName == null || order.kurirName!.isEmpty) &&
+        (order.awb == null || order.awb!.isEmpty)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.warning_outlined, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Data kurir dan nomor resi belum tersedia',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      // Get customer name without phone
+      String customerNameOnly = order.customerName;
+      if (customerNameOnly.contains('(')) {
+        customerNameOnly = customerNameOnly.split('(')[0].trim();
+      }
+
+      // Get kurir name and AWB
+      final kurirName = order.kurirName ?? '-';
+      final awbNumber = order.awb?.toString() ?? '-';
+
+      // Build the shipment tracking message
+      final message = '''Halo kak $customerNameOnly
+
+Dengan saya CS Armand dari UNIK TRENDI
+
+Memberitahukan bahwa pesanannya sudah terkirim melalui kurir $kurirName, dengan nomor resi: $awbNumber
+
+Mohon ditunggu. Jika kedapatan kurir yang tidak mau antar paket ke lokasi, jangan lupa langsung hubungi kami ya kak.
+
+Mohon sertakan bukti chat nya akan kami ganti rugi 100%
+
+Paket yang terkirim tidak dapat dicancel. Jika menolak paket, maka harus mengganti biaya kirim ya kak *(penggantian ongkir jangan diberikan ke kurir)*.
+
+Dimohon untuk membayar paket sesuai kesepakatan di awal . :-)
+
+TERIMA KASIH''';
+
+      // Format phone number (remove leading 0, add country code)
+      String formattedPhone = customerPhone.trim();
+      if (formattedPhone.startsWith('0')) {
+        formattedPhone = formattedPhone.substring(1);
+      }
+      if (!formattedPhone.startsWith('62')) {
+        formattedPhone = '62$formattedPhone';
+      }
+
+      // Encode message for URL
+      final encodedMessage = Uri.encodeComponent(message);
+
+      bool launched = false;
+
+      // Use api.whatsapp.com - the only reliable method that works
+      final whatsappUrl = 'https://api.whatsapp.com/send?phone=$formattedPhone&text=$encodedMessage';
+      print('🔵 Opening WhatsApp: $whatsappUrl');
+
+      try {
+        if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
+          await launchUrl(
+            Uri.parse(whatsappUrl),
+            mode: LaunchMode.externalApplication,
+          );
+          launched = true;
+          print('✅ WhatsApp opened successfully');
+        } else {
+          print('⚠️ Cannot launch URL');
+          // If canLaunchUrl fails, try anyway - sometimes it fails but still works
+          try {
+            await launchUrl(
+              Uri.parse(whatsappUrl),
+              mode: LaunchMode.externalApplication,
+            );
+            launched = true;
+            print('✅ WhatsApp opened (after retry)');
+          } catch (e) {
+            print('❌ Error launching: $e');
+          }
+        }
+      } catch (e) {
+        print('❌ Exception: $e');
+      }
+
+      if (launched) {
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 12),
+                  Text('Membuka WhatsApp...'),
+                ],
+              ),
+              backgroundColor: Color(0xFF25D366),
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Membuka WhatsApp Web di browser...'),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 3),
+              action: SnackBarAction(
+                label: 'Salin Pesan',
+                textColor: Colors.white,
+                onPressed: () {
+                  // Copy message to clipboard
+                  Clipboard.setData(ClipboardData(text: message));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Pesan disalin ke clipboard'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('❌ Error in WhatsApp: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   void _printTransaction() {
     showDialog(
       context: context,
@@ -487,6 +684,38 @@ TERIMA KASIH''';
                   if (isEditable) ...[
                     GestureDetector(
                       onTap: _sendWhatsAppReminder,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(
+                              0xFF25D366), // WhatsApp green original
+                          borderRadius: BorderRadius.circular(6),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF25D366)
+                                  .withValues(alpha: 0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const FaIcon(
+                          FontAwesomeIcons.whatsapp,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  // WhatsApp Button (for Sale/Confirm status - shipment tracking)
+                  if (order.state.toLowerCase() == 'sale' ||
+                      order.state.toLowerCase() == 'confirm') ...[
+                    GestureDetector(
+                      onTap: _sendWhatsAppShipment,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
