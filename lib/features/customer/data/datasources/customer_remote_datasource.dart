@@ -98,7 +98,7 @@ class CustomerRemoteDataSource {
   /// Creates a new customer in Odoo API
   ///
   /// Returns CustomerModel of the created customer.
-  /// API Response format: {"Success": true, "Data": {...}, "Message": "..."}
+  /// API Response format: {"id": 123} OR {"Success": true, "Data": {...}, "Message": "..."}
   Future<CustomerModel> createCustomer({
     required String db,
     required String apiKey,
@@ -121,6 +121,7 @@ class CustomerRemoteDataSource {
 
       print('✅ [CUSTOMER_DS] Customer created');
       print('📦 [CUSTOMER_DS] Response type: ${response.data.runtimeType}');
+      print('📦 [CUSTOMER_DS] Response data: ${response.data}');
 
       // Handle different response formats
       dynamic responseData = response.data;
@@ -129,20 +130,53 @@ class CustomerRemoteDataSource {
       if (responseData is String) {
         print('🔄 [CUSTOMER_DS] Parsing JSON string...');
         responseData = jsonDecode(responseData);
+        print('📦 [CUSTOMER_DS] Parsed response: $responseData');
       }
 
-      // Response wrapped in Success/Message/Data
+      // Response as simple Map with id (new format)
       if (responseData is Map<String, dynamic>) {
-        if (responseData['Success'] == true) {
+        print('📦 [CUSTOMER_DS] Response keys: ${responseData.keys}');
+        
+        // If response contains only 'id' (simple response), merge with request data
+        if (responseData.containsKey('id') && responseData.keys.length == 1) {
+          print('✅ [CUSTOMER_DS] Simple response format - ID: ${responseData['id']}');
+          // Merge the ID with the original request data to create full CustomerModel
+          final fullData = {
+            ...data,
+            'id': responseData['id'],
+          };
+          print('📦 [CUSTOMER_DS] Creating CustomerModel from merged data: $fullData');
+          return CustomerModel.fromJson(fullData);
+        }
+        
+        // If response has more fields, use it directly
+        if (responseData.containsKey('id') && responseData.containsKey('name')) {
+          print('✅ [CUSTOMER_DS] Full response format');
+          return CustomerModel.fromJson(responseData);
+        }
+        
+        // Handle wrapped response format with Success/Message/Data
+        print('📦 [CUSTOMER_DS] Success value: ${responseData['Success']}');
+        
+        // Handle Success as boolean or string
+        bool isSuccess = false;
+        if (responseData['Success'] is bool) {
+          isSuccess = responseData['Success'] as bool;
+        } else if (responseData['Success'] is String) {
+          isSuccess = (responseData['Success'] as String).toLowerCase() == 'true';
+        }
+        
+        if (isSuccess) {
           final customerData = responseData['Data'] as Map<String, dynamic>;
           return CustomerModel.fromJson(customerData);
         } else {
-          throw Exception(
-              responseData['Message'] ?? 'Failed to create customer');
+          final errorMsg = responseData['Message'] ?? 'Failed to create customer';
+          print('❌ [CUSTOMER_DS] API error: $errorMsg');
+          throw Exception(errorMsg);
         }
       } else {
         throw Exception(
-            'Unexpected response format: ${responseData.runtimeType}');
+            'Unexpected response format: ${responseData.runtimeType}. Response: $responseData');
       }
     } on DioException catch (e) {
       print('❌ [CUSTOMER_DS] Dio error: ${e.message}');

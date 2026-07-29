@@ -79,6 +79,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   late List<ProductModel> _allProducts = [];
   late List<District> _allDistricts = [];
   late Map<int, String> _cityMap = {}; // cityId -> cityName
+  late Map<int, String> _stateMap = {}; // stateId -> stateName
+  late Map<int, int> _cityToStateMap = {}; // cityId -> stateId
   bool _loadingData = false;
   final _currencyFormat =
       NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
@@ -174,19 +176,46 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         );
         print('✅ Loaded ${cities.length} cities');
         
-        // Build city map
+        // Build city map and city-to-state map
         final cityMap = <int, String>{};
+        final cityToStateMap = <int, int>{};
         for (final city in cities) {
           cityMap[city.id] = city.name;
+          cityToStateMap[city.id] = city.stateId;
         }
         
         if (mounted) {
           setState(() {
             _cityMap = cityMap;
+            _cityToStateMap = cityToStateMap;
           });
         }
       } catch (e) {
         print('❌ Error loading cities: $e');
+      }
+
+      // Load states
+      try {
+        final locationDatasource = LocationRemoteDataSource();
+        final states = await locationDatasource.getStates(
+          db: db,
+          apiKey: apiKey,
+        );
+        print('✅ Loaded ${states.length} states');
+        
+        // Build state map
+        final stateMap = <int, String>{};
+        for (final state in states) {
+          stateMap[state.id] = state.name;
+        }
+        
+        if (mounted) {
+          setState(() {
+            _stateMap = stateMap;
+          });
+        }
+      } catch (e) {
+        print('❌ Error loading states: $e');
       }
 
       // Load districts
@@ -232,6 +261,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       builder: (_) => DistrictSearchModal(
         allDistricts: _allDistricts,
         cityNames: _cityMap,
+        stateNames: _stateMap,
+        cityToStateMap: _cityToStateMap,
       ),
     );
 

@@ -9,12 +9,14 @@ class DistrictSearchModal extends StatefulWidget {
   final List<District> allDistricts;
   final Map<int, String>? cityNames; // Map of cityId -> cityName
   final Map<int, String>? stateNames; // Map of stateId -> stateName
+  final Map<int, int>? cityToStateMap; // Map of cityId -> stateId
 
   const DistrictSearchModal({
     super.key,
     required this.allDistricts,
     this.cityNames,
     this.stateNames,
+    this.cityToStateMap,
   });
 
   @override
@@ -58,6 +60,12 @@ class _DistrictSearchModalState extends State<DistrictSearchModal> {
 
   String _getCityName(int cityId) {
     return widget.cityNames?[cityId] ?? '';
+  }
+
+  String _getStateName(int cityId) {
+    final stateId = widget.cityToStateMap?[cityId];
+    if (stateId == null) return '';
+    return widget.stateNames?[stateId] ?? '';
   }
 
   @override
@@ -140,6 +148,13 @@ class _DistrictSearchModalState extends State<DistrictSearchModal> {
                     itemBuilder: (context, index) {
                       final district = _filteredDistricts[index];
                       final cityName = _getCityName(district.cityId);
+                      final stateName = _getStateName(district.cityId);
+                      
+                      // Build display text: District, City, State
+                      final displayParts = [district.name];
+                      if (cityName.isNotEmpty) displayParts.add(cityName);
+                      if (stateName.isNotEmpty) displayParts.add(stateName);
+                      final displayText = displayParts.join(', ');
                       
                       return InkWell(
                         onTap: () => Navigator.pop(context, district),
@@ -152,29 +167,15 @@ class _DistrictSearchModalState extends State<DistrictSearchModal> {
                               ),
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                district.name,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              if (cityName.isNotEmpty)
-                                Text(
-                                  cityName,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                            ],
+                          child: Text(
+                            displayText,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       );

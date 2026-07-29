@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../config/theme.dart';
+import '../../../../services/config_service.dart';
+import '../../../../services/secure_storage_service.dart';
+import '../../../location/data/datasources/location_remote_datasource.dart';
+import '../../../location/domain/entities/district.dart';
+import '../../../sales_order/presentation/pages/district_search_modal.dart';
 import '../providers/customer_provider.dart';
 
 /// Customer Create Page
@@ -18,22 +23,129 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _emailController = TextEditingController();
   final _streetController = TextEditingController();
-  final _cityController = TextEditingController();
+  final _districtController = TextEditingController();
+  final _cityIdController = TextEditingController();
   final _zipController = TextEditingController();
 
   bool _isSubmitting = false;
+  List<District> _allDistricts = [];
+  bool _districtLoading = false;
+  int? _selectedDistrictId;
+  int? _selectedCityId;
+  Map<int, String> _cityMap = {}; // cityId -> cityName
+  Map<int, String> _stateMap = {}; // stateId -> stateName
+  Map<int, int> _cityToStateMap = {}; // cityId -> stateId
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDistricts();
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
-    _emailController.dispose();
     _streetController.dispose();
-    _cityController.dispose();
+    _districtController.dispose();
+    _cityIdController.dispose();
     _zipController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadDistricts() async {
+    try {
+      setState(() => _districtLoading = true);
+
+      final configService = ConfigService();
+      final storage = SecureStorageService();
+
+      final config = await configService.load();
+      final db = config['database'] as String?;
+      final apiKey = await storage.getAccessToken();
+
+      if (db == null || apiKey == null) return;
+
+      final locationDatasource = LocationRemoteDataSource();
+
+      // Load all districts
+      final districts = await locationDatasource.getAllDistricts(
+        db: db,
+        apiKey: apiKey,
+      );
+
+      // Load all cities
+      final cities = await locationDatasource.getCities(
+        db: db,
+        apiKey: apiKey,
+      );
+
+      // Build city name map
+      final cityMap = <int, String>{};
+      final cityToStateMap = <int, int>{};
+      for (final city in cities) {
+        cityMap[city.id] = city.name;
+        cityToStateMap[city.id] = city.stateId;
+      }
+
+      // Load all states
+      final states = await locationDatasource.getStates(
+        db: db,
+        apiKey: apiKey,
+      );
+
+      // Build state name map
+      final stateMap = <int, String>{};
+      for (final state in states) {
+        stateMap[state.id] = state.name;
+      }
+
+      if (mounted) {
+        setState(() {
+          _allDistricts = districts;
+          _cityMap = cityMap;
+          _stateMap = stateMap;
+          _cityToStateMap = cityToStateMap;
+        });
+      }
+    } catch (e) {
+      print('❌ Error loading districts: $e');
+    } finally {
+      if (mounted) setState(() => _districtLoading = false);
+    }
+  }
+
+  Future<void> _selectDistrict() async {
+    final selected = await showDialog<District>(
+      context: context,
+      builder: (_) => DistrictSearchModal(
+        allDistricts: _allDistricts,
+        cityNames: _cityMap,
+        stateNames: _stateMap,
+        cityToStateMap: _cityToStateMap,
+      ),
+    );
+
+    if (selected != null) {
+      // Get city and state names
+      final cityName = _cityMap[selected.cityId] ?? '';
+      final stateId = _cityToStateMap[selected.cityId];
+      final stateName = stateId != null ? _stateMap[stateId] ?? '' : '';
+      
+      // Build display text: District, City, State
+      final displayParts = [selected.name];
+      if (cityName.isNotEmpty) displayParts.add(cityName);
+      if (stateName.isNotEmpty) displayParts.add(stateName);
+      final displayText = displayParts.join(', ');
+      
+      setState(() {
+        _selectedDistrictId = selected.id;
+        _selectedCityId = selected.cityId;
+        _districtController.text = selected.name;
+        _cityIdController.text = displayText;
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -42,16 +154,19 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
     setState(() => _isSubmitting = true);
 
     try {
+      final phoneNumber = _phoneController.text.trim();
+      final formattedPhone = phoneNumber.isNotEmpty ? '+62${phoneNumber}' : '';
+      
       final data = {
         'name': _nameController.text.trim(),
-        if (_phoneController.text.trim().isNotEmpty)
-          'phone': _phoneController.text.trim(),
-        if (_emailController.text.trim().isNotEmpty)
-          'email': _emailController.text.trim(),
+        if (formattedPhone.isNotEmpty)
+          'phone': formattedPhone,
         if (_streetController.text.trim().isNotEmpty)
           'street': _streetController.text.trim(),
-        if (_cityController.text.trim().isNotEmpty)
-          'city': _cityController.text.trim(),
+        if (_selectedDistrictId != null)
+          'district_id': _selectedDistrictId,
+        if (_selectedCityId != null)
+          'city_id': _selectedCityId,
         if (_zipController.text.trim().isNotEmpty)
           'zip': _zipController.text.trim(),
       };
@@ -207,7 +322,8 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
               controller: _phoneController,
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
-                hintText: 'Contoh: 08123456789',
+                hintText: 'Contoh: 8123456789',
+                prefixText: '+62 ',
                 prefixIcon:
                     Icon(Icons.phone_outlined, color: Colors.green, size: 20),
                 filled: true,
@@ -234,56 +350,12 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
 
             const SizedBox(height: 20),
 
-            // Email Field
-            _buildSectionLabel('Email'),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                hintText: 'Contoh: customer@example.com',
-                prefixIcon:
-                    Icon(Icons.email_outlined, color: Colors.blue, size: 20),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppTheme.brandBlue),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
-              validator: (value) {
-                if (value != null && value.trim().isNotEmpty) {
-                  final emailRegex =
-                      RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                  if (!emailRegex.hasMatch(value.trim())) {
-                    return 'Format email tidak valid';
-                  }
-                }
-                return null;
-              },
-              textInputAction: TextInputAction.next,
-            ),
-
-            const SizedBox(height: 20),
-
             // Street Field
             _buildSectionLabel('Alamat'),
             const SizedBox(height: 8),
             TextFormField(
               controller: _streetController,
-              maxLines: 3,
+              maxLines: 2,
               decoration: InputDecoration(
                 hintText: 'Contoh: Jl. Merdeka No. 123',
                 prefixIcon:
@@ -312,17 +384,85 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
 
             const SizedBox(height: 20),
 
-            // City Field
-            _buildSectionLabel('Kota'),
+            // District Field with Search Button
+            _buildSectionLabel('District'),
             const SizedBox(height: 8),
-            TextFormField(
-              controller: _cityController,
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _districtController,
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      hintText: 'Pilih District',
+                      prefixIcon:
+                          Icon(Icons.location_on_outlined, color: Colors.red, size: 20),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppTheme.brandBlue),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: _districtLoading || _allDistricts.isEmpty
+                        ? null
+                        : _selectDistrict,
+                    icon: _districtLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Icon(Icons.search, size: 16),
+                    label: Text(_districtLoading ? 'Loading...' : 'Search'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      disabledBackgroundColor: Colors.grey[400],
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // City ID Field (auto-filled from district)
+            _buildSectionLabel('Lokasi (Auto-filled)'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _cityIdController,
+              readOnly: true,
               decoration: InputDecoration(
-                hintText: 'Contoh: Jakarta',
-                prefixIcon: Icon(Icons.location_city_outlined,
-                    color: Colors.purple, size: 20),
+                hintText: 'Distrik, Kota, Provinsi akan muncul otomatis',
+                prefixIcon:
+                    Icon(Icons.location_city_outlined, color: Colors.purple, size: 20),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.grey.shade300),
@@ -331,16 +471,11 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.grey.shade300),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppTheme.brandBlue),
-                ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 14,
                 ),
               ),
-              textInputAction: TextInputAction.next,
             ),
 
             const SizedBox(height: 20),
@@ -352,7 +487,7 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
               controller: _zipController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                hintText: 'Contoh: 12345',
+                hintText: 'Contoh: 60233',
                 prefixIcon: Icon(Icons.markunread_mailbox_outlined,
                     color: Colors.teal, size: 20),
                 filled: true,
