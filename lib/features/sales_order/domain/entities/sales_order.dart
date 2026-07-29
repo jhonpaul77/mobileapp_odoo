@@ -19,6 +19,7 @@ import 'order_line.dart';
 ///   "kurir_name": "IDX",
 ///   "awb": "JD009833",
 ///   "state": "draft",
+///   "order_count": 1,
 ///   "order_lines": [...]
 /// }
 class SalesOrder {
@@ -34,6 +35,7 @@ class SalesOrder {
   final String? kurirName; // From API
   final dynamic awb; // Can be false or string
   final String state;
+  final int? orderCount; // From API - number of orders for this customer
   final List<OrderLine> orderLines;
   final String? address;
   final String? district;
@@ -52,6 +54,7 @@ class SalesOrder {
     this.kurirName,
     this.awb,
     required this.state,
+    this.orderCount,
     required this.orderLines,
     this.address,
     this.district,
@@ -101,6 +104,7 @@ class SalesOrder {
       kurirName: kurirNameParsed,
       awb: json['awb'],
       state: json['state'] as String? ?? 'draft',
+      orderCount: json['order_count'] as int?,
       orderLines: orderLines,
       address: json['address'] as String?,
       district: json['district'] as String?,
@@ -240,6 +244,7 @@ class SalesOrder {
       'kurir_name': kurirName,
       'awb': awb,
       'state': state,
+      'order_count': orderCount,
       'order_lines': orderLines.map((line) => line.toJson()).toList(),
       'address': address,
       'district': district,

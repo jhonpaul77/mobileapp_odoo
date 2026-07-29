@@ -444,6 +444,23 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
+                                  if (order.orderCount != null) ...[
+                                    const SizedBox(width: 12),
+                                    Icon(Icons.receipt_long_outlined,
+                                        size: 14,
+                                        color:
+                                            itemTheme.textTheme.bodySmall?.color),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Order #${order.orderCount}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color:
+                                            itemTheme.textTheme.bodyMedium?.color,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
