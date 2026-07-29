@@ -70,6 +70,7 @@ class _AppHeaderState extends State<AppHeader> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final now = DateTime.now();
     final dateString = _formatDate(now);
 
@@ -89,19 +90,19 @@ class _AppHeaderState extends State<AppHeader> {
                 children: [
                   Text(
                     widget.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
-                      color: AppTheme.textPrimary,
+                      color: theme.textTheme.bodyLarge?.color,
                     ),
                   ),
                   if (widget.subtitle != null) ...[
                     const SizedBox(height: 4),
                     Text(
                       widget.subtitle!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: AppTheme.textSecondary,
+                        color: theme.textTheme.bodyMedium?.color,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -116,10 +117,10 @@ class _AppHeaderState extends State<AppHeader> {
                 children: [
                   IconButton(
                     onPressed: widget.onNotificationTap,
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.notifications_rounded,
                       size: 28,
-                      color: AppTheme.textPrimary,
+                      color: theme.textTheme.bodyLarge?.color,
                     ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -167,14 +168,14 @@ class _AppHeaderState extends State<AppHeader> {
             children: [
               Icon(
                 Icons.calendar_today_rounded,
-                color: AppTheme.textSecondary,
+                color: theme.textTheme.bodySmall?.color,
                 size: 14,
               ),
               const SizedBox(width: 6),
               Text(
                 dateString,
-                style: const TextStyle(
-                  color: AppTheme.textSecondary,
+                style: TextStyle(
+                  color: theme.textTheme.bodySmall?.color,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),

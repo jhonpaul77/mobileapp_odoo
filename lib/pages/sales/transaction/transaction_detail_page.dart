@@ -207,6 +207,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final date = transaction['tanggal'] as DateTime;
     final status = (transaction['status'] as String?) ??
         (transaction['salesStatus'] as String?) ??
@@ -231,7 +232,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text('Transaction Detail',
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
@@ -295,9 +296,12 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.green[50],
+                  color: AppTheme.successColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.green[300]!, width: 1),
+                  border: Border.all(
+                    color: AppTheme.successColor.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -305,7 +309,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: Colors.green,
+                        color: AppTheme.successColor,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Icon(Icons.check,
@@ -321,7 +325,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[700],
+                              color: theme.textTheme.bodyMedium?.color,
                             ),
                           ),
                         ],
@@ -353,11 +357,19 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.cardTheme.color,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey[200]!,
+                    width: 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: Colors.black.withValues(
+                          alpha:
+                              theme.brightness == Brightness.dark ? 0.3 : 0.04),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -378,16 +390,16 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.grey[600],
+                                color: theme.textTheme.bodySmall?.color,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               transaction['noTransaksi'] as String? ?? '-',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.black87,
+                                color: theme.textTheme.bodyLarge?.color,
                               ),
                             ),
                           ],
@@ -400,16 +412,16 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.grey[600],
+                                color: theme.textTheme.bodySmall?.color,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               _formatDate(date),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                                color: theme.textTheme.bodyLarge?.color,
                               ),
                             ),
                           ],
@@ -417,7 +429,12 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Divider(color: Colors.grey[200], height: 1),
+                    Divider(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]
+                          : Colors.grey[200],
+                      height: 1,
+                    ),
                     const SizedBox(height: 16),
 
                     // Grid Info
@@ -448,11 +465,19 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.cardTheme.color,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey[200]!,
+                    width: 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: Colors.black.withValues(
+                          alpha:
+                              theme.brightness == Brightness.dark ? 0.3 : 0.04),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -466,7 +491,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: Colors.grey[700],
+                        color: theme.textTheme.bodyMedium?.color,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -482,10 +507,10 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                             children: [
                               Text(
                                 district.isEmpty ? '-' : district,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
+                                  color: theme.textTheme.bodyLarge?.color,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -493,7 +518,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                                 '$city, $province',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey[600],
+                                  color: theme.textTheme.bodySmall?.color,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -502,7 +527,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                                 address,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey[700],
+                                  color: theme.textTheme.bodyMedium?.color,
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -523,11 +548,20 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardTheme.color,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey[200]!,
+                      width: 1,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
+                        color: Colors.black.withValues(
+                            alpha: theme.brightness == Brightness.dark
+                                ? 0.3
+                                : 0.04),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -541,7 +575,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: Colors.grey[700],
+                          color: theme.textTheme.bodyMedium?.color,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -564,10 +598,11 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                                     children: [
                                       Text(
                                         item['product'] as String? ?? '-',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
+                                          color:
+                                              theme.textTheme.bodyLarge?.color,
                                         ),
                                       ),
                                       if (analyticAccount.isNotEmpty) ...[
@@ -576,7 +611,8 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                                           analyticAccount,
                                           style: TextStyle(
                                             fontSize: 11,
-                                            color: Colors.grey[600],
+                                            color: theme
+                                                .textTheme.bodySmall?.color,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -586,7 +622,8 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                                         'Qty: ${item['qty']} | Price: ${_formatCurrency((item['price'] as double?) ?? 0.0)}',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[600],
+                                          color:
+                                              theme.textTheme.bodySmall?.color,
                                         ),
                                       ),
                                     ],
@@ -597,10 +634,10 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                                   _formatCurrency(((item['qty'] as int?) ?? 0) *
                                       ((item['price'] as double?) ?? 0.0)
                                           .toDouble()),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 13,
-                                    color: Colors.black87,
+                                    color: theme.textTheme.bodyLarge?.color,
                                   ),
                                 ),
                               ],
@@ -609,8 +646,12 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                               Padding(
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 12),
-                                child:
-                                    Divider(color: Colors.grey[200], height: 1),
+                                child: Divider(
+                                  color: theme.brightness == Brightness.dark
+                                      ? Colors.grey[700]
+                                      : Colors.grey[200],
+                                  height: 1,
+                                ),
                               ),
                           ],
                         );
@@ -625,11 +666,19 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.cardTheme.color,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey[200]!,
+                    width: 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: Colors.black.withValues(
+                          alpha:
+                              theme.brightness == Brightness.dark ? 0.3 : 0.04),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -638,12 +687,12 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Total',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: Colors.black87,
+                        color: theme.textTheme.bodyLarge?.color,
                       ),
                     ),
                     Text(
@@ -666,6 +715,8 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
   }
 
   Widget _buildInfoGrid(List<Map<String, String>> items) {
+    final theme = Theme.of(context);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: items.map((item) {
@@ -678,16 +729,16 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[600],
+                  color: theme.textTheme.bodySmall?.color,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 item['value'] ?? '-',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: theme.textTheme.bodyLarge?.color,
                 ),
               ),
             ],

@@ -25,12 +25,15 @@ class AppBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.3 : 0.08),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -73,6 +76,8 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -96,7 +101,7 @@ class _NavItem extends StatelessWidget {
               icon,
               color: isSelected
                   ? AppTheme.primaryColor
-                  : AppTheme.textSecondary,
+                  : theme.textTheme.bodyMedium?.color,
               size: 24,
             ),
             if (isSelected) ...[

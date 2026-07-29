@@ -63,6 +63,12 @@ class ApiConfig {
   static const String customerUpdate =
       '$apiVersion/contact/customer'; // PUT - Update
 
+  // ✅ CUSTOMER ENDPOINTS - ODOO
+  static const String getCustomer = '/get_customer'; // GET - Get all customers
+  static const String createCustomer =
+      '/create_customer'; // POST - Create customer
+  static const String editCustomer = '/edit_customer'; // POST - Edit customer
+
   // ✅ PRODUCT ENDPOINTS - ODOO
   static const String getProductSale =
       '/get_product_sale'; // GET - Get all products for sale

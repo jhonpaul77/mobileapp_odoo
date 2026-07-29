@@ -78,9 +78,12 @@ class _SettingProfileState extends State<SettingProfile> {
   }
 
   void _showInfoDataModal() {
+    final theme = Theme.of(context);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: theme.cardTheme.color,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -103,11 +106,12 @@ class _SettingProfileState extends State<SettingProfile> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text(
+            Text(
               'Info Data',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
+                color: theme.textTheme.bodyLarge?.color,
               ),
             ),
           ],
@@ -123,7 +127,12 @@ class _SettingProfileState extends State<SettingProfile> {
               value: _database,
             ),
             const SizedBox(height: 16),
-            const Divider(height: 1),
+            Divider(
+              height: 1,
+              color: theme.brightness == Brightness.dark
+                  ? Colors.grey[700]
+                  : Colors.grey[300],
+            ),
             const SizedBox(height: 16),
             // Server URL
             _buildModalInfoRow(
@@ -148,6 +157,8 @@ class _SettingProfileState extends State<SettingProfile> {
     required String label,
     required String value,
   }) {
+    final theme = Theme.of(context);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -165,16 +176,16 @@ class _SettingProfileState extends State<SettingProfile> {
                 label,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: theme.textTheme.bodySmall?.color,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: AppTheme.textPrimary,
+                  color: theme.textTheme.bodyLarge?.color,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -187,6 +198,8 @@ class _SettingProfileState extends State<SettingProfile> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profil'),
@@ -205,15 +218,14 @@ class _SettingProfileState extends State<SettingProfile> {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               "Kelola preferensi aplikasi Anda",
               style: TextStyle(
                 fontSize: 14,
-                color: AppTheme.textSecondary,
+                color: theme.textTheme.bodySmall?.color,
               ),
             ),
             const SizedBox(height: 24),
@@ -343,7 +355,6 @@ class _SettingProfileState extends State<SettingProfile> {
         style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
-          color: AppTheme.textPrimary,
         ),
       ),
     );
@@ -356,6 +367,9 @@ class _SettingProfileState extends State<SettingProfile> {
     VoidCallback? onTap,
     Widget? trailing,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -363,12 +377,15 @@ class _SettingProfileState extends State<SettingProfile> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardTheme.color,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!, width: 1),
+          border: Border.all(
+            color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             )
@@ -405,10 +422,10 @@ class _SettingProfileState extends State<SettingProfile> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
-                      color: Colors.black87,
+                      color: theme.textTheme.bodyLarge?.color,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -417,7 +434,7 @@ class _SettingProfileState extends State<SettingProfile> {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: theme.textTheme.bodySmall?.color,
                       fontSize: 12,
                       fontStyle: FontStyle.italic,
                     ),
@@ -435,7 +452,7 @@ class _SettingProfileState extends State<SettingProfile> {
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 16,
-                color: Colors.grey[400],
+                color: theme.textTheme.bodySmall?.color,
               ),
           ],
         ),
@@ -444,13 +461,17 @@ class _SettingProfileState extends State<SettingProfile> {
   }
 
   Widget _buildLogoutButton() {
+    final theme = Theme.of(context);
+
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: _handleLogout,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.grey[200],
-          foregroundColor: Colors.black87,
+          backgroundColor: theme.brightness == Brightness.dark
+              ? Colors.grey[800]
+              : Colors.grey[200],
+          foregroundColor: theme.textTheme.bodyLarge?.color,
           padding: const EdgeInsets.symmetric(vertical: 16),
           elevation: 0,
           shape: RoundedRectangleBorder(

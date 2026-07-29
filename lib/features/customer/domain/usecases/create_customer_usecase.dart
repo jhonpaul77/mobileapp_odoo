@@ -1,14 +1,14 @@
-import '../../data/repositories/customer_repository.dart';
+import '../../data/repositories/customer_repository_impl.dart';
 import '../entities/customer.dart';
 
 /// CreateCustomerUseCase - Domain Layer
 ///
 /// Business logic for creating a new customer
 class CreateCustomerUseCase {
-  final CustomerRepository _repository;
+  final CustomerRepositoryImpl _repository;
 
-  CreateCustomerUseCase({CustomerRepository? repository})
-      : _repository = repository ?? CustomerRepository();
+  CreateCustomerUseCase({CustomerRepositoryImpl? repository})
+      : _repository = repository ?? CustomerRepositoryImpl();
 
   /// Execute create customer
   ///
