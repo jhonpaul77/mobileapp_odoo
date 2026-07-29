@@ -27,6 +27,7 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
     // Fetch sales orders on page load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SalesOrderProvider>().fetchSalesOrders();
+      // No need to load customer names separately - API provides them directly
     });
   }
 

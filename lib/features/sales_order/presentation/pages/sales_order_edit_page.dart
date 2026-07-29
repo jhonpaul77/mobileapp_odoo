@@ -9,6 +9,9 @@ import '../../../product/data/datasources/product_remote_datasource.dart';
 import '../../../product/data/models/product_model.dart';
 import '../../../location/data/datasources/location_remote_datasource.dart';
 import '../../../location/domain/entities/district.dart';
+import '../../../customer/data/datasources/customer_remote_datasource.dart';
+import '../../../customer/domain/entities/customer.dart';
+import '../../../customer/presentation/pages/customer_search_modal.dart';
 import '../../../../services/config_service.dart';
 import '../../../../services/secure_storage_service.dart';
 import 'product_search_modal.dart';
@@ -68,8 +71,8 @@ class SalesOrderEditPage extends StatefulWidget {
 
 class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   late final TextEditingController _customerNameController;
-  late final TextEditingController _warehouseIdController;
-  late final TextEditingController _kurirIdController;
+  late final TextEditingController _warehouseNameController;
+  late final TextEditingController _kurirNameController;
   late final TextEditingController _awbController;
   late final TextEditingController _addressController;
   late final TextEditingController _districtController;
@@ -78,10 +81,12 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   late final List<Map<String, TextEditingController>> _lineControllers;
   late List<ProductModel> _allProducts = [];
   late List<District> _allDistricts = [];
+  late List<Customer> _allCustomers = [];
   late Map<int, String> _cityMap = {}; // cityId -> cityName
   late Map<int, String> _stateMap = {}; // stateId -> stateName
   late Map<int, int> _cityToStateMap = {}; // cityId -> stateId
   bool _loadingData = false;
+  int? _selectedCustomerId;
   final _currencyFormat =
       NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
@@ -98,15 +103,16 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         TextEditingController(text: order.district?.toString() ?? '');
     _cityController =
         TextEditingController(text: order.city?.toString() ?? '');
-    _warehouseIdController = TextEditingController(
-        text: order.warehouseId?.toString() ?? '');
-    _kurirIdController =
-        TextEditingController(text: order.kurirId?.toString() ?? '');
+    _warehouseNameController = TextEditingController(
+        text: order.warehouseNameDisplay ?? '');
+    _kurirNameController =
+        TextEditingController(text: order.kurirNameDisplay ?? '');
     _awbController = TextEditingController(text: order.awb?.toString() ?? '');
 
     _orderLines = order.orderLines
         .map((line) => OrderLine(
               productId: line.productId,
+              productName: line.productName, // Keep the product name from API
               productUomQty: line.productUomQty,
               analyticDistribution: line.analyticDistribution,
               priceUnit: line.priceUnit,
@@ -117,14 +123,12 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     _lineControllers = _orderLines.map((line) {
       // Parse analytic account from distribution
       String analyticAccount = '';
-      if (line.analyticDistribution != null &&
-          line.analyticDistribution!.isNotEmpty) {
-        final entries = line.analyticDistribution!.entries.toList();
-        analyticAccount = entries.map((e) => '${e.key}: ${e.value}%').join(', ');
+      if (line.analyticDistributionName.isNotEmpty && line.analyticDistributionName != '-') {
+        analyticAccount = line.analyticDistributionName;
       }
 
       return {
-        'product': TextEditingController(text: line.productName),
+        'product': TextEditingController(text: line.productNameDisplay),
         'analyticAccount': TextEditingController(text: analyticAccount),
         'qty': TextEditingController(text: line.productUomQty.toString()),
         'price': TextEditingController(
@@ -165,6 +169,20 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         }
       } catch (e) {
         print('❌ Error loading products: $e');
+      }
+
+      // Load customers
+      try {
+        final customerDatasource = CustomerRemoteDataSource();
+        final customers = await customerDatasource.getCustomers(db: db, apiKey: apiKey);
+        print('✅ Loaded ${customers.length} customers');
+        if (mounted) {
+          setState(() {
+            _allCustomers = customers.map((model) => model.toEntity()).toList();
+          });
+        }
+      } catch (e) {
+        print('❌ Error loading customers: $e');
       }
 
       // Load cities
@@ -248,9 +266,20 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     );
 
     if (selected != null) {
+      final line = _orderLines[lineIndex];
       setState(() {
         _lineControllers[lineIndex]['product']!.text = selected.name;
         _lineControllers[lineIndex]['price']!.text = _formatPrice(selected.listPrice);
+        
+        // Update the order line with new product info
+        _orderLines[lineIndex] = OrderLine(
+          productId: selected.id,
+          productName: selected.name,
+          productUomQty: line.productUomQty,
+          analyticDistribution: line.analyticDistribution,
+          priceUnit: selected.listPrice,
+          priceSubtotal: line.productUomQty * selected.listPrice,
+        );
       });
     }
   }
@@ -277,14 +306,28 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     }
   }
 
+  Future<void> _selectCustomer() async {
+    final selected = await showDialog<Customer>(
+      context: context,
+      builder: (_) => CustomerSearchModal(allCustomers: _allCustomers),
+    );
+
+    if (selected != null) {
+      setState(() {
+        _selectedCustomerId = selected.id;
+        _customerNameController.text = selected.name;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _customerNameController.dispose();
     _addressController.dispose();
     _districtController.dispose();
     _cityController.dispose();
-    _warehouseIdController.dispose();
-    _kurirIdController.dispose();
+    _warehouseNameController.dispose();
+    _kurirNameController.dispose();
     _awbController.dispose();
     for (final controllers in _lineControllers) {
       for (final controller in controllers.values) {
@@ -308,6 +351,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
 
     _orderLines[index] = OrderLine(
       productId: line.productId,
+      productName: line.productName, // Preserve product name
       productUomQty: newQty,
       analyticDistribution: line.analyticDistribution,
       priceUnit: newPrice,
@@ -682,8 +726,61 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildEditField('Customer', _customerNameController,
-                      readOnly: true),
+                  // Customer Field with Search Button
+                  Text(
+                    'Customer',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _customerNameController,
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            hintText: 'Pilih Customer',
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 42,
+                        child: ElevatedButton.icon(
+                          onPressed: _allCustomers.isEmpty ? null : _selectCustomer,
+                          icon: const Icon(Icons.search, size: 16),
+                          label: const Text('Search'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            disabledBackgroundColor: Colors.grey[400],
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   _buildEditField('Address', _addressController, maxLines: 2),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
@@ -771,8 +868,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                     ),
                   ),
                   _buildEditField('City', _cityController, readOnly: true),
-                  _buildEditField('Warehouse ID', _warehouseIdController),
-                  _buildEditField('Kurir ID', _kurirIdController),
+                  _buildEditField('Warehouse', _warehouseNameController, readOnly: true),
+                  _buildEditField('Kurir', _kurirNameController, readOnly: true),
                   _buildEditField('AWB', _awbController),
                 ],
               ),

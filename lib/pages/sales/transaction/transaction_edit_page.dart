@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:pintarx/config/theme.dart';
 import 'package:pintarx/models/location_picker.dart';
+import 'package:pintarx/features/customer/data/datasources/customer_remote_datasource.dart';
+import 'package:pintarx/features/customer/domain/entities/customer.dart';
+import 'package:pintarx/features/customer/presentation/pages/customer_search_modal.dart';
+import 'package:pintarx/features/product/data/datasources/product_remote_datasource.dart';
+import 'package:pintarx/features/product/data/models/product_model.dart';
+import 'package:pintarx/services/config_service.dart';
+import 'package:pintarx/services/secure_storage_service.dart';
 
 import 'location_picker_page.dart';
 
@@ -23,6 +30,11 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
   late final TextEditingController _fullAddressController;
   late final List<Map<String, dynamic>> _items;
   late final List<Map<String, TextEditingController>> _itemControllers;
+  
+  late List<Customer> _allCustomers = [];
+  late List<ProductModel> _allProducts = [];
+  int? _selectedCustomerId;
+  bool _loadingData = false;
 
   @override
   void initState() {
@@ -60,6 +72,56 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
             text: (item['price'] as double?)?.toStringAsFixed(0) ?? ''),
       };
     }).toList();
+    
+    // Load customers and products from API
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      setState(() => _loadingData = true);
+
+      final configService = ConfigService();
+      final storage = SecureStorageService();
+
+      final config = await configService.load();
+      final db = config['database'] as String?;
+      final apiKey = await storage.getAccessToken();
+
+      if (db == null || apiKey == null) return;
+
+      // Load customers
+      try {
+        final customerDatasource = CustomerRemoteDataSource();
+        final customers = await customerDatasource.getCustomers(db: db, apiKey: apiKey);
+        print('✅ Loaded ${customers.length} customers');
+        if (mounted) {
+          setState(() {
+            _allCustomers = customers.map((model) => model.toEntity()).toList();
+          });
+        }
+      } catch (e) {
+        print('❌ Error loading customers: $e');
+      }
+
+      // Load products
+      try {
+        final productDatasource = ProductRemoteDataSource();
+        final products = await productDatasource.getProducts(db: db, apiKey: apiKey);
+        print('✅ Loaded ${products.length} products');
+        if (mounted) {
+          setState(() {
+            _allProducts = products;
+          });
+        }
+      } catch (e) {
+        print('❌ Error loading products: $e');
+      }
+    } catch (e) {
+      print('❌ Error in _loadData: $e');
+    } finally {
+      if (mounted) setState(() => _loadingData = false);
+    }
   }
 
   @override
@@ -178,6 +240,123 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
         _districtController.text = result.district;
       });
     }
+  }
+
+  Future<void> _selectCustomer() async {
+    final selected = await showDialog<Customer>(
+      context: context,
+      builder: (_) => CustomerSearchModal(allCustomers: _allCustomers),
+    );
+
+    if (selected != null) {
+      setState(() {
+        _selectedCustomerId = selected.id;
+        _customerController.text = selected.name;
+        _phoneController.text = selected.phone ?? '';
+      });
+    }
+  }
+
+  Future<void> _selectProductForItem(int index) async {
+    final selected = await showDialog<ProductModel>(
+      context: context,
+      builder: (_) => _buildProductSearchDialog(),
+    );
+
+    if (selected != null) {
+      setState(() {
+        _itemControllers[index]['product']!.text = selected.name;
+        _itemControllers[index]['price']!.text = selected.listPrice.toStringAsFixed(0);
+      });
+    }
+  }
+
+  Widget _buildProductSearchDialog() {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Pilih Produk',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                  constraints: const BoxConstraints(),
+                  padding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _allProducts.isEmpty
+                ? const Center(
+                    child: Text('Tidak ada produk tersedia'),
+                  )
+                : ListView.builder(
+                    itemCount: _allProducts.length,
+                    itemBuilder: (context, index) {
+                      final product = _allProducts[index];
+                      return InkWell(
+                        onTap: () => Navigator.pop(context, product),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Colors.grey[200]!,
+                              ),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                product.name,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Harga: Rp ${product.listPrice.toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSectionTitle(String title) {
@@ -324,10 +503,62 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
             ],
           ),
           const SizedBox(height: 8),
-          _buildEditField(
-            'Produk',
-            controllers['product']!,
-            onChanged: (_) => _syncItem(index),
+          // Product Field with Search Button
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Produk',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: controllers['product']!,
+                        readOnly: true,
+                        style: const TextStyle(fontSize: 12, color: Colors.black87),
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          contentPadding:
+                              const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 36,
+                      child: ElevatedButton.icon(
+                        onPressed: _allProducts.isEmpty ? null : () => _selectProductForItem(index),
+                        icon: const Icon(Icons.search, size: 16),
+                        label: const Text('Cari'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          disabledBackgroundColor: Colors.grey[400],
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
           _buildEditField(
             'Analytic Account',
@@ -406,7 +637,63 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
                   children: [
                     _buildSectionTitle('Informasi Pelanggan'),
                     const SizedBox(height: 12),
-                    _buildEditField('Nama Pelanggan', _customerController),
+                    // Customer Field with Search Button
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Nama Pelanggan',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _customerController,
+                                  readOnly: true,
+                                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.grey[50],
+                                    contentPadding:
+                                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                      borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                      borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                height: 36,
+                                child: ElevatedButton.icon(
+                                  onPressed: _allCustomers.isEmpty ? null : _selectCustomer,
+                                  icon: const Icon(Icons.search, size: 16),
+                                  label: const Text('Cari'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.primaryColor,
+                                    disabledBackgroundColor: Colors.grey[400],
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                     Row(
                       children: [
                         Expanded(

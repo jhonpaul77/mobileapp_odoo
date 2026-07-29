@@ -10,11 +10,14 @@ import 'order_line.dart';
 ///   "id": 4223,
 ///   "name": "S00031",
 ///   "partner_id": 32763,
+///   "partner_name": "0piandi (6283833303500)",
 ///   "date_order": "2026-07-22",
 ///   "amount_total": 85000.0,
 ///   "warehouse_id": 1,
-///   "kurir_id": false,
-///   "awb": false,
+///   "warehouse_name": "SURABAYA",
+///   "kurir_id": 24,
+///   "kurir_name": "IDX",
+///   "awb": "JD009833",
 ///   "state": "draft",
 ///   "order_lines": [...]
 /// }
@@ -22,10 +25,13 @@ class SalesOrder {
   final int id;
   final String name;
   final dynamic partnerId; // Can be int or [id, name]
+  final String? partnerName; // From API - customer name with phone
   final String dateOrder;
   final double amountTotal;
   final dynamic warehouseId; // Can be int or [id, name]
+  final String? warehouseName; // From API
   final dynamic kurirId; // Can be false or int/array
+  final String? kurirName; // From API
   final dynamic awb; // Can be false or string
   final String state;
   final List<OrderLine> orderLines;
@@ -37,10 +43,13 @@ class SalesOrder {
     required this.id,
     required this.name,
     this.partnerId,
+    this.partnerName,
     required this.dateOrder,
     required this.amountTotal,
     this.warehouseId,
+    this.warehouseName,
     this.kurirId,
+    this.kurirName,
     this.awb,
     required this.state,
     required this.orderLines,
@@ -58,14 +67,38 @@ class SalesOrder {
         .map((line) => OrderLine.fromJson(line as Map<String, dynamic>))
         .toList();
 
+    // Parse partner_name - can be string or false
+    String? partnerNameParsed;
+    final partnerNameRaw = json['partner_name'];
+    if (partnerNameRaw is String) {
+      partnerNameParsed = partnerNameRaw;
+    }
+
+    // Parse warehouse_name - can be string or false
+    String? warehouseNameParsed;
+    final warehouseNameRaw = json['warehouse_name'];
+    if (warehouseNameRaw is String) {
+      warehouseNameParsed = warehouseNameRaw;
+    }
+
+    // Parse kurir_name - can be string or false
+    String? kurirNameParsed;
+    final kurirNameRaw = json['kurir_name'];
+    if (kurirNameRaw is String) {
+      kurirNameParsed = kurirNameRaw;
+    }
+
     return SalesOrder(
       id: _parseInt(json['id']),
       name: json['name'] as String,
       partnerId: json['partner_id'], // Can be int or array
+      partnerName: partnerNameParsed,
       dateOrder: json['date_order'] as String,
       amountTotal: (json['amount_total'] as num?)?.toDouble() ?? 0.0,
       warehouseId: json['warehouse_id'],
+      warehouseName: warehouseNameParsed,
       kurirId: json['kurir_id'],
+      kurirName: kurirNameParsed,
       awb: json['awb'],
       state: json['state'] as String? ?? 'draft',
       orderLines: orderLines,
@@ -82,8 +115,11 @@ class SalesOrder {
     throw Exception('Cannot parse id: $value');
   }
 
-  /// Get customer name from partnerId
+  /// Get customer name - use API value if available, otherwise fallback
   String get customerName {
+    if (partnerName != null && partnerName!.isNotEmpty) {
+      return partnerName!;
+    }
     if (partnerId == null || partnerId == false) return 'Unknown Customer';
     if (partnerId is List && partnerId.length > 1) {
       return partnerId[1] as String;
@@ -101,8 +137,11 @@ class SalesOrder {
     return null;
   }
 
-  /// Get warehouse name
-  String? get warehouseName {
+  /// Get warehouse name - use API value if available
+  String? get warehouseNameDisplay {
+    if (warehouseName != null && warehouseName!.isNotEmpty) {
+      return warehouseName;
+    }
     if (warehouseId == null || warehouseId == false) return null;
     if (warehouseId is List && warehouseId.length > 1) {
       return warehouseId[1] as String;
@@ -110,8 +149,11 @@ class SalesOrder {
     return null;
   }
 
-  /// Get kurir name
-  String? get kurirName {
+  /// Get kurir name - use API value if available
+  String? get kurirNameDisplay {
+    if (kurirName != null && kurirName != false) {
+      return kurirName;
+    }
     if (kurirId == null || kurirId == false) return null;
     if (kurirId is List && kurirId.length > 1) {
       return kurirId[1] as String;
@@ -189,10 +231,13 @@ class SalesOrder {
       'id': id,
       'name': name,
       'partner_id': partnerId,
+      'partner_name': partnerName,
       'date_order': dateOrder,
       'amount_total': amountTotal,
       'warehouse_id': warehouseId,
+      'warehouse_name': warehouseName,
       'kurir_id': kurirId,
+      'kurir_name': kurirName,
       'awb': awb,
       'state': state,
       'order_lines': orderLines.map((line) => line.toJson()).toList(),

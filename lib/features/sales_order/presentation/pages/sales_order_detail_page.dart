@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../config/theme.dart';
+import '../../domain/entities/order_line.dart';
 import '../../domain/entities/sales_order.dart';
 import 'sales_order_edit_page.dart';
 
@@ -35,12 +36,28 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
     }
   }
 
+  @override
+  void initState() {
+    super.initState();
+    // No need to load names anymore - API provides them directly
+  }
+
   /// Format field value - convert false/null to "-"
   String _formatFieldValue(dynamic value) {
     if (value == null || value == false) {
       return '-';
     }
     return value.toString();
+  }
+
+  /// Get customer name - use API value from order
+  String _getCustomerName(int? customerId) {
+    return widget.order.customerName;
+  }
+
+  /// Get product name - use API value from order line
+  String _getProductName(dynamic productId, OrderLine line) {
+    return line.productNameDisplay;
   }
 
   /// Send WhatsApp payment reminder
@@ -82,7 +99,7 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
     final message = '''
 🔔 *Pengingat Pembayaran*
 
-Halo *${order.customerName}*,
+Halo *${_getCustomerName(order.customerId)}*,
 
 Kami ingin mengingatkan pembayaran untuk pesanan Anda:
 
@@ -181,7 +198,7 @@ Terima kasih atas kepercayaan Anda! 🙏
                 Text('Tanggal: ${_formatDate(widget.order.dateOrder)}',
                     style: const TextStyle(fontSize: 12)),
                 const SizedBox(height: 8),
-                Text('Customer: ${widget.order.customerName}',
+                Text('Customer: ${_getCustomerName(widget.order.customerId)}',
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 12)),
                 const SizedBox(height: 8),
@@ -194,12 +211,16 @@ Terima kasih atas kepercayaan Anda! 🙏
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(line.productName,
+                      Text(_getProductName(line.productId, line),
                           style: const TextStyle(fontSize: 11)),
                       Text(
                           'Qty: ${line.productUomQty} | Harga: ${_currencyFormat.format(line.priceUnit)}',
                           style:
                               TextStyle(fontSize: 10, color: Colors.grey[600])),
+                      if (line.analyticDistributionName.isNotEmpty && line.analyticDistributionName != '-')
+                        Text('Analytic: ${line.analyticDistributionName}',
+                            style:
+                                TextStyle(fontSize: 10, color: Colors.grey[600])),
                       Text('Subtotal: ${_currencyFormat.format(subtotal)}',
                           style: const TextStyle(
                               fontSize: 11, fontWeight: FontWeight.w600)),
@@ -529,7 +550,7 @@ Terima kasih atas kepercayaan Anda! 🙏
                   _buildInfoGrid([
                     {
                       'label': 'Customer',
-                      'value': order.customerName,
+                      'value': _getCustomerName(order.customerId),
                     },
                     {
                       'label': 'Customer ID',
@@ -539,12 +560,12 @@ Terima kasih atas kepercayaan Anda! 🙏
                   const SizedBox(height: 12),
                   _buildInfoGrid([
                     {
-                      'label': 'Warehouse ID',
-                      'value': _formatFieldValue(order.warehouseId),
+                      'label': 'Warehouse',
+                      'value': order.warehouseNameDisplay ?? 'N/A',
                     },
                     {
-                      'label': 'Kurir ID',
-                      'value': _formatFieldValue(order.kurirId),
+                      'label': 'Kurir',
+                      'value': order.kurirNameDisplay ?? 'N/A',
                     },
                   ]),
                   const SizedBox(height: 12),
@@ -622,17 +643,6 @@ Terima kasih atas kepercayaan Anda! 🙏
                       final isLast = index == order.orderLines.length - 1;
                       final subtotal = line.productUomQty * line.priceUnit;
 
-                      // Parse analytic distribution
-                      String analyticInfo = '';
-                      if (line.analyticDistribution != null &&
-                          line.analyticDistribution!.isNotEmpty) {
-                        final entries =
-                            line.analyticDistribution!.entries.toList();
-                        analyticInfo = entries
-                            .map((e) => '${e.key}: ${e.value}%')
-                            .join(', ');
-                      }
-
                       return Column(
                         children: [
                           Row(
@@ -657,17 +667,17 @@ Terima kasih atas kepercayaan Anda! 🙏
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      line.productName,
+                                      _getProductName(line.productId, line),
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
                                         color: theme.textTheme.bodyLarge?.color,
                                       ),
                                     ),
-                                    if (analyticInfo.isNotEmpty) ...[
+                                    if (line.analyticDistributionName.isNotEmpty && line.analyticDistributionName != '-') ...[
                                       const SizedBox(height: 2),
                                       Text(
-                                        'Analytic: $analyticInfo',
+                                        'Analytic: ${line.analyticDistributionName}',
                                         style: TextStyle(
                                           fontSize: 11,
                                           color:

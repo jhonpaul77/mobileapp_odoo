@@ -33,6 +33,7 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
   bool _districtLoading = false;
   int? _selectedDistrictId;
   int? _selectedCityId;
+  int? _selectedStateId;
   Map<int, String> _cityMap = {}; // cityId -> cityName
   Map<int, String> _stateMap = {}; // stateId -> stateName
   Map<int, int> _cityToStateMap = {}; // cityId -> stateId
@@ -142,6 +143,7 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
       setState(() {
         _selectedDistrictId = selected.id;
         _selectedCityId = selected.cityId;
+        _selectedStateId = stateId;
         _districtController.text = selected.name;
         _cityIdController.text = displayText;
       });
@@ -167,6 +169,8 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
           'district_id': _selectedDistrictId,
         if (_selectedCityId != null)
           'city_id': _selectedCityId,
+        if (_selectedStateId != null)
+          'state_id': _selectedStateId,
         if (_zipController.text.trim().isNotEmpty)
           'zip': _zipController.text.trim(),
       };
