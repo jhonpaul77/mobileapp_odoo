@@ -2,25 +2,24 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-
   // ═══════════════════════════════════════════════════════════════
   // 🎨 LOGO COLORS (4 warna dari logo)
   // ═══════════════════════════════════════════════════════════════
 
   // ✅ Brand Colors - Pintar X
   static const Color brandOrange = Color(0xFFF07313); // #f07313
-  static const Color brandRed = Color(0xFFDB0A1F);    // #db0a1f
-  static const Color brandGreen = Color(0xFF256D2F);  // #256d2f
-  static const Color brandBlue = Color(0xFF0A64AF);   // #0a64af
-   // ✅ kotak box - Pintar X
-  static const Color kotakblue = Color(0xFF89f7fe);  // #256d2f
-  static const Color kotakblue2 = Color(0xFF66a6ff);   // #0a64af
-  
+  static const Color brandRed = Color(0xFFDB0A1F); // #db0a1f
+  static const Color brandGreen = Color(0xFF256D2F); // #256d2f
+  static const Color brandBlue = Color(0xFF0A64AF); // #0a64af
+  // ✅ kotak box - Pintar X
+  static const Color kotakblue = Color(0xFF89f7fe); // #256d2f
+  static const Color kotakblue2 = Color(0xFF66a6ff); // #0a64af
+
   // Primary Colors (Gunakan brand blue sebagai primary)
   static const Color primaryColor = brandBlue;
   static const Color primaryDark = Color(0xFF084A8C);
   static const Color primaryLight = Color(0xFF0D7CDB);
-  
+
   // Secondary Colors (Gunakan brand orange sebagai secondary)
   static const Color secondaryColor = brandOrange;
   static const Color secondaryDark = Color(0xFFD86310);
@@ -29,55 +28,55 @@ class AppTheme {
   // ═══════════════════════════════════════════════════════════════
   // 🎨 COLOR PALETTE
   // ═══════════════════════════════════════════════════════════════
-  
+
   // Neutral Colors
   static const Color backgroundColor = Color(0xFFF5F5F5);
   static const Color surfaceColor = Colors.white;
   static const Color cardColor = Colors.white;
-  
+
   // Text Colors
   static const Color textPrimary = Color(0xFF212121);
   static const Color textSecondary = Color(0xFF757575);
   static const Color textHint = Color(0xFFBDBDBD);
-  
+
   // Status Colors
   static const Color successColor = Color(0xFF4CAF50); // Green
   static const Color errorColor = Color(0xFFF44336); // Red
   static const Color warningColor = Color(0xFFFF9800); // Orange
   static const Color infoColor = Color(0xFF2196F3); // Blue
-  
+
   // ✅ ALIAS untuk kemudahan (agar tidak bingung)
   static const Color dangerColor = errorColor; // Alias untuk errorColor
-  
+
   // Divider & Border
   static const Color dividerColor = Color(0xFFE0E0E0);
   static const Color borderColor = Color(0xFFE0E0E0);
-  
+
   // ═══════════════════════════════════════════════════════════════
   // 📏 SPACING & SIZING
   // ═══════════════════════════════════════════════════════════════
-  
+
   static const double paddingSmall = 8.0;
   static const double paddingMedium = 16.0;
   static const double paddingLarge = 24.0;
   static const double paddingXLarge = 32.0;
-  
+
   static const double borderRadiusSmall = 8.0;
   static const double borderRadiusMedium = 12.0;
   static const double borderRadiusLarge = 16.0;
-  
+
   static const double iconSizeSmall = 20.0;
   static const double iconSizeMedium = 24.0;
   static const double iconSizeLarge = 32.0;
-  
+
   // ═══════════════════════════════════════════════════════════════
   // 🎭 LIGHT THEME
   // ═══════════════════════════════════════════════════════════════
-  
+
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
-    
+
     // Color Scheme
     colorScheme: const ColorScheme.light(
       primary: primaryColor,
@@ -89,10 +88,10 @@ class AppTheme {
       onSurface: textPrimary,
       onError: Colors.white,
     ),
-    
+
     // Scaffold
     scaffoldBackgroundColor: backgroundColor,
-    
+
     // AppBar Theme
     appBarTheme: const AppBarTheme(
       backgroundColor: primaryColor,
@@ -106,7 +105,7 @@ class AppTheme {
         fontWeight: FontWeight.w600,
       ),
     ),
-    
+
     // Card Theme
     cardTheme: CardThemeData(
       color: cardColor,
@@ -120,7 +119,7 @@ class AppTheme {
         vertical: paddingSmall,
       ),
     ),
-    
+
     // Elevated Button Theme
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -140,7 +139,7 @@ class AppTheme {
         ),
       ),
     ),
-    
+
     // Text Button Theme
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
@@ -155,7 +154,7 @@ class AppTheme {
         ),
       ),
     ),
-    
+
     // Outlined Button Theme
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
@@ -174,7 +173,7 @@ class AppTheme {
         ),
       ),
     ),
-    
+
     // Input Decoration Theme
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
@@ -207,20 +206,20 @@ class AppTheme {
       hintStyle: const TextStyle(color: textHint),
       errorStyle: const TextStyle(color: errorColor),
     ),
-    
+
     // Icon Theme
     iconTheme: const IconThemeData(
       color: textPrimary,
       size: iconSizeMedium,
     ),
-    
+
     // Divider Theme
     dividerTheme: const DividerThemeData(
       color: dividerColor,
       thickness: 1,
       space: 1,
     ),
-    
+
     // Bottom Navigation Bar Theme
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: surfaceColor,
@@ -230,14 +229,14 @@ class AppTheme {
       elevation: 8,
       selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600),
     ),
-    
+
     // Floating Action Button Theme
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: primaryColor,
       foregroundColor: Colors.white,
       elevation: 4,
     ),
-    
+
     // Chip Theme
     chipTheme: ChipThemeData(
       backgroundColor: primaryLight.withValues(alpha: 0.2),
@@ -250,7 +249,7 @@ class AppTheme {
         borderRadius: BorderRadius.circular(borderRadiusSmall),
       ),
     ),
-    
+
     // Dialog Theme
     dialogTheme: DialogThemeData(
       backgroundColor: surfaceColor,
@@ -264,7 +263,7 @@ class AppTheme {
         fontWeight: FontWeight.w600,
       ),
     ),
-    
+
     // SnackBar Theme
     snackBarTheme: SnackBarThemeData(
       backgroundColor: textPrimary,
@@ -274,7 +273,7 @@ class AppTheme {
       ),
       behavior: SnackBarBehavior.floating,
     ),
-    
+
     // Text Theme
     textTheme: const TextTheme(
       displayLarge: TextStyle(
@@ -354,27 +353,304 @@ class AppTheme {
       ),
     ),
   );
-  
+
   // ═══════════════════════════════════════════════════════════════
-  // 🌙 DARK THEME (Optional - untuk future)
+  // 🌙 DARK THEME
   // ═══════════════════════════════════════════════════════════════
-  
+
+  // Dark Theme Colors
+  static const Color darkBackground = Color(0xFF121212);
+  static const Color darkSurface = Color(0xFF1E1E1E);
+  static const Color darkCard = Color(0xFF2C2C2C);
+  static const Color darkTextPrimary = Color(0xFFE0E0E0);
+  static const Color darkTextSecondary = Color(0xFFB0B0B0);
+  static const Color darkDivider = Color(0xFF3A3A3A);
+
   static ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
+
+    // Color Scheme
     colorScheme: const ColorScheme.dark(
       primary: primaryLight,
       secondary: secondaryLight,
-      surface: Color(0xFF212121),
+      surface: darkSurface,
       error: errorColor,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onSurface: darkTextPrimary,
+      onError: Colors.white,
     ),
-    scaffoldBackgroundColor: const Color(0xFF121212),
+
+    // Scaffold
+    scaffoldBackgroundColor: darkBackground,
+
+    // AppBar Theme
+    appBarTheme: const AppBarTheme(
+      backgroundColor: darkSurface,
+      foregroundColor: darkTextPrimary,
+      elevation: 0,
+      centerTitle: true,
+      iconTheme: IconThemeData(color: darkTextPrimary),
+      titleTextStyle: TextStyle(
+        color: darkTextPrimary,
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+
+    // Card Theme
+    cardTheme: CardThemeData(
+      color: darkCard,
+      elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.3),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(borderRadiusMedium),
+      ),
+      margin: const EdgeInsets.symmetric(
+        horizontal: paddingMedium,
+        vertical: paddingSmall,
+      ),
+    ),
+
+    // Elevated Button Theme
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: primaryLight,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        padding: const EdgeInsets.symmetric(
+          horizontal: paddingLarge,
+          vertical: paddingMedium,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadiusMedium),
+        ),
+        textStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+
+    // Text Button Theme
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: primaryLight,
+        padding: const EdgeInsets.symmetric(
+          horizontal: paddingMedium,
+          vertical: paddingSmall,
+        ),
+        textStyle: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+
+    // Outlined Button Theme
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: primaryLight,
+        side: const BorderSide(color: primaryLight, width: 1.5),
+        padding: const EdgeInsets.symmetric(
+          horizontal: paddingLarge,
+          vertical: paddingMedium,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadiusMedium),
+        ),
+        textStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+
+    // Input Decoration Theme
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: darkCard,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: paddingMedium,
+        vertical: paddingMedium,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(borderRadiusMedium),
+        borderSide: const BorderSide(color: darkDivider),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(borderRadiusMedium),
+        borderSide: const BorderSide(color: darkDivider),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(borderRadiusMedium),
+        borderSide: const BorderSide(color: primaryLight, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(borderRadiusMedium),
+        borderSide: const BorderSide(color: errorColor),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(borderRadiusMedium),
+        borderSide: const BorderSide(color: errorColor, width: 2),
+      ),
+      labelStyle: const TextStyle(color: darkTextSecondary),
+      hintStyle: TextStyle(color: darkTextSecondary.withValues(alpha: 0.6)),
+      errorStyle: const TextStyle(color: errorColor),
+    ),
+
+    // Icon Theme
+    iconTheme: const IconThemeData(
+      color: darkTextPrimary,
+      size: iconSizeMedium,
+    ),
+
+    // Divider Theme
+    dividerTheme: const DividerThemeData(
+      color: darkDivider,
+      thickness: 1,
+      space: 1,
+    ),
+
+    // Bottom Navigation Bar Theme
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      backgroundColor: darkSurface,
+      selectedItemColor: primaryLight,
+      unselectedItemColor: darkTextSecondary,
+      type: BottomNavigationBarType.fixed,
+      elevation: 8,
+      selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600),
+    ),
+
+    // Floating Action Button Theme
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: primaryLight,
+      foregroundColor: Colors.white,
+      elevation: 4,
+    ),
+
+    // Chip Theme
+    chipTheme: ChipThemeData(
+      backgroundColor: primaryLight.withValues(alpha: 0.2),
+      labelStyle: const TextStyle(color: darkTextPrimary),
+      padding: const EdgeInsets.symmetric(
+        horizontal: paddingSmall,
+        vertical: 4,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(borderRadiusSmall),
+      ),
+    ),
+
+    // Dialog Theme
+    dialogTheme: DialogThemeData(
+      backgroundColor: darkCard,
+      elevation: 8,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(borderRadiusLarge),
+      ),
+      titleTextStyle: const TextStyle(
+        color: darkTextPrimary,
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+
+    // SnackBar Theme
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: darkCard,
+      contentTextStyle: const TextStyle(color: darkTextPrimary),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(borderRadiusSmall),
+      ),
+      behavior: SnackBarBehavior.floating,
+    ),
+
+    // Text Theme
+    textTheme: const TextTheme(
+      displayLarge: TextStyle(
+        fontSize: 32,
+        fontWeight: FontWeight.bold,
+        color: darkTextPrimary,
+      ),
+      displayMedium: TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.bold,
+        color: darkTextPrimary,
+      ),
+      displaySmall: TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        color: darkTextPrimary,
+      ),
+      headlineLarge: TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
+        color: darkTextPrimary,
+      ),
+      headlineMedium: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: darkTextPrimary,
+      ),
+      headlineSmall: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: darkTextPrimary,
+      ),
+      titleLarge: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: darkTextPrimary,
+      ),
+      titleMedium: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: darkTextPrimary,
+      ),
+      titleSmall: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: darkTextPrimary,
+      ),
+      bodyLarge: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.normal,
+        color: darkTextPrimary,
+      ),
+      bodyMedium: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.normal,
+        color: darkTextPrimary,
+      ),
+      bodySmall: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.normal,
+        color: darkTextSecondary,
+      ),
+      labelLarge: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: darkTextPrimary,
+      ),
+      labelMedium: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: darkTextSecondary,
+      ),
+      labelSmall: TextStyle(
+        fontSize: 10,
+        fontWeight: FontWeight.w500,
+        color: darkTextSecondary,
+      ),
+    ),
   );
-  
+
   // ═══════════════════════════════════════════════════════════════
   // 🎨 CUSTOM DECORATIONS (Helper Methods)
   // ═══════════════════════════════════════════════════════════════
-  
+
   // Box Shadow untuk Card/Container
   static List<BoxShadow> cardShadow = [
     BoxShadow(
@@ -383,7 +659,7 @@ class AppTheme {
       offset: const Offset(0, 2),
     ),
   ];
-  
+
   // Card shadow soft (untuk form, features card)
   static List<BoxShadow> softCardShadow = [
     BoxShadow(
@@ -392,7 +668,7 @@ class AppTheme {
       offset: const Offset(0, 4),
     ),
   ];
-  
+
   // Button shadow
   static List<BoxShadow> buttonShadow = [
     BoxShadow(
@@ -401,30 +677,30 @@ class AppTheme {
       offset: const Offset(0, 8),
     ),
   ];
-  
+
   // Border Radius presets
   static BorderRadius smallRadius = BorderRadius.circular(borderRadiusSmall);
   static BorderRadius mediumRadius = BorderRadius.circular(borderRadiusMedium);
   static BorderRadius largeRadius = BorderRadius.circular(borderRadiusLarge);
-  
+
   // Gradient untuk background
   static LinearGradient primaryGradient = const LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [primaryColor, primaryDark],
   );
-  
+
   static LinearGradient secondaryGradient = const LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [secondaryColor, secondaryDark],
   );
-  
+
   // Gradient untuk button
   static LinearGradient primaryButtonGradient = const LinearGradient(
     colors: [primaryDark, primaryColor],
   );
-  
+
   // Background gradient halaman (soft)
   static LinearGradient pageBackgroundGradient = LinearGradient(
     begin: Alignment.topCenter,
@@ -434,7 +710,7 @@ class AppTheme {
       primaryColor.withValues(alpha: 0.03),
     ],
   );
-  
+
   // Card decoration (reusable)
   static BoxDecoration cardDecoration = BoxDecoration(
     color: surfaceColor,
@@ -445,7 +721,7 @@ class AppTheme {
     ),
     boxShadow: softCardShadow,
   );
-  
+
   // Info box decoration
   static BoxDecoration infoBoxDecoration = BoxDecoration(
     color: infoColor.withValues(alpha: 0.08),

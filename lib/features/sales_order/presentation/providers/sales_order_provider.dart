@@ -25,7 +25,7 @@ class SalesOrderProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   String _searchQuery = '';
-  String? _statusFilter; // null, 'Open', 'Confirm', 'Cancel'
+  String? _statusFilter; // null, 'Open', 'Confirm', 'Sale', 'Cancel'
 
   List<SalesOrder> get orders =>
       _searchQuery.isEmpty && _statusFilter == null ? _orders : _filteredOrders;
@@ -112,14 +112,14 @@ class SalesOrderProvider extends ChangeNotifier {
 
   String _getDisplayLabel(String apiState) {
     // Map API states to display labels
-    // API states: draft, sent, sale, done, cancel
-    // Display labels: Open, Confirm, Cancel
+    // API states: draft, sale, confirm, cancel
+    // Display labels: Open, Sale, Confirm, Cancel
     switch (apiState.toLowerCase()) {
       case 'draft':
-      case 'sent':
         return 'Open';
       case 'sale':
-      case 'done':
+        return 'Sale';
+      case 'confirm':
         return 'Confirm';
       case 'cancel':
         return 'Cancel';

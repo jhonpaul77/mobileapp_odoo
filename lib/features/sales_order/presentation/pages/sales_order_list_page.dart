@@ -69,11 +69,13 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
                   child: Row(
                     children: [
                       _buildStatusChip(provider, 'All'),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 7),
                       _buildStatusChip(provider, 'Open'),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 7),
                       _buildStatusChip(provider, 'Confirm'),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 7),
+                      _buildStatusChip(provider, 'Sale'),
+                      const SizedBox(width: 7),
                       _buildStatusChip(provider, 'Cancel'),
                     ],
                   ),
@@ -435,7 +437,7 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
         provider.setStatusFilter(isAll ? null : label);
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
           color: selected
               ? AppTheme.primaryColor.withValues(alpha: 0.15)
@@ -447,7 +449,7 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
           style: TextStyle(
             color: selected ? AppTheme.primaryColor : AppTheme.textSecondary,
             fontWeight: FontWeight.w600,
-            fontSize: 13,
+            fontSize: 11,
           ),
         ),
       ),
@@ -481,7 +483,7 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
               color: iconColor,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 11),
 
           // Label & Value
           Expanded(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../config/theme.dart';
 import '../../domain/entities/sales_order.dart';
@@ -38,6 +40,122 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
       return '-';
     }
     return value.toString();
+  }
+
+  /// Send WhatsApp payment reminder
+  Future<void> _sendWhatsAppReminder() async {
+    final order = widget.order;
+
+    // TODO: Check phone from API response when field is added
+    // For now, phone field doesn't exist in sales order API
+    final String? customerPhone =
+        null; // Will be: order.customerPhone when API is updated
+
+    // Check if phone number exists
+    if (customerPhone == null || customerPhone.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'No WhatsApp Customer Not Found',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Format message yang user-friendly dengan emoji
+    final message = '''
+🔔 *Pengingat Pembayaran*
+
+Halo *${order.customerName}*,
+
+Kami ingin mengingatkan pembayaran untuk pesanan Anda:
+
+📋 *Detail Pesanan:*
+• Nomor SO: *${order.name}*
+• Tanggal Order: ${order.dateOrderFormatted}
+• Total Pembayaran: *${_currencyFormat.format(order.amountTotal)}*
+
+💳 Mohon segera melakukan pembayaran agar pesanan dapat segera kami proses.
+
+✅ Jika pembayaran sudah dilakukan, silakan kirimkan bukti transfer untuk konfirmasi.
+
+Terima kasih atas kepercayaan Anda! 🙏
+''';
+
+    try {
+      // Format phone number (remove leading 0, add country code)
+      String formattedPhone = customerPhone.trim();
+      if (formattedPhone.startsWith('0')) {
+        formattedPhone = formattedPhone.substring(1);
+      }
+      if (!formattedPhone.startsWith('62')) {
+        formattedPhone = '62$formattedPhone';
+      }
+
+      // Encode message for URL
+      final encodedMessage = Uri.encodeComponent(message);
+
+      // WhatsApp URL
+      final whatsappUrl = 'https://wa.me/$formattedPhone?text=$encodedMessage';
+
+      // Launch WhatsApp
+      if (await canLaunch(whatsappUrl)) {
+        await launch(whatsappUrl);
+
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 12),
+                  Text('Membuka WhatsApp...'),
+                ],
+              ),
+              backgroundColor: Color(0xFF25D366),
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tidak dapat membuka WhatsApp'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   void _printTransaction() {
@@ -254,6 +372,37 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
                       ],
                     ),
                   ),
+                  // WhatsApp Button (only for Open status)
+                  if (isEditable) ...[
+                    GestureDetector(
+                      onTap: _sendWhatsAppReminder,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(
+                              0xFF25D366), // WhatsApp green original
+                          borderRadius: BorderRadius.circular(6),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF25D366)
+                                  .withValues(alpha: 0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const FaIcon(
+                          FontAwesomeIcons.whatsapp,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

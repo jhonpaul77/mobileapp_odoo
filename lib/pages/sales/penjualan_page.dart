@@ -97,7 +97,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
         // SCROLLABLE CONTENT
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 28, 16, 100),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

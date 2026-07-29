@@ -120,15 +120,13 @@ class SalesOrder {
   String get stateLabel {
     switch (state.toLowerCase()) {
       case 'draft':
-        return 'Draft';
-      case 'sent':
-        return 'Terkirim';
+        return 'Open';
       case 'sale':
-        return 'Sales Order';
-      case 'done':
-        return 'Selesai';
+        return 'Sale';
+      case 'confirm':
+        return 'Confirm';
       case 'cancel':
-        return 'Dibatalkan';
+        return 'Cancel';
       default:
         return state;
     }
@@ -139,12 +137,10 @@ class SalesOrder {
     switch (state.toLowerCase()) {
       case 'draft':
         return 0xFFFFA726; // Orange
-      case 'sent':
-        return 0xFF42A5F5; // Blue
       case 'sale':
+        return 0xFF42A5F5; // Blue
+      case 'confirm':
         return 0xFF66BB6A; // Green
-      case 'done':
-        return 0xFF9E9E9E; // Grey
       case 'cancel':
         return 0xFFEF5350; // Red
       default:

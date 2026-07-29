@@ -44,6 +44,21 @@ class SalesOrderRepository {
       print(
           '   [SALES_ORDER_REPO] Response type: ${response.data.runtimeType}');
 
+      // ✅ VALIDASI: Cek database dari response header
+      final responseDb = response.headers.value('db') ??
+          response.headers.value('DB') ??
+          response.headers.value('Database');
+
+      if (responseDb != null && responseDb != db) {
+        print('⚠️ [SALES_ORDER_REPO] Database mismatch!');
+        print('   Expected (config): $db');
+        print('   Received (API): $responseDb');
+        throw Exception('Database tidak sesuai!\n'
+            'Config: $db\n'
+            'API Response: $responseDb\n\n'
+            'Silakan logout dan login ulang untuk sinkronisasi database.');
+      }
+
       // Preview response (first 300 chars)
       final responseStr = response.data.toString();
       final preview = responseStr.length > 300

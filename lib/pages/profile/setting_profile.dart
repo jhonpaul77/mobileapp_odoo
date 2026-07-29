@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:pintarx/config/theme.dart';
 import 'package:pintarx/pages/auth/login_page.dart';
 import 'package:pintarx/pages/profile/profile_page.dart';
+import 'package:pintarx/providers/theme_provider.dart';
 import 'package:pintarx/services/auth_service.dart';
+import 'package:pintarx/services/config_service.dart';
+import 'package:provider/provider.dart';
 
 class SettingProfile extends StatefulWidget {
   const SettingProfile({super.key});
@@ -13,6 +16,23 @@ class SettingProfile extends StatefulWidget {
 
 class _SettingProfileState extends State<SettingProfile> {
   final _authService = AuthService();
+  final _configService = ConfigService();
+  String _database = '';
+  String _url = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConfig();
+  }
+
+  Future<void> _loadConfig() async {
+    final config = await _configService.load();
+    setState(() {
+      _database = config['database'] ?? '-';
+      _url = config['url'] ?? '-';
+    });
+  }
 
   Future<void> _handleLogout() async {
     final confirm = await showDialog<bool>(
@@ -55,6 +75,114 @@ class _SettingProfileState extends State<SettingProfile> {
         (route) => false,
       );
     }
+  }
+
+  void _showInfoDataModal() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppTheme.kotakblue, AppTheme.kotakblue2],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.storage_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Info Data',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Database
+            _buildModalInfoRow(
+              icon: Icons.dns_rounded,
+              label: 'Database',
+              value: _database,
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 16),
+            // Server URL
+            _buildModalInfoRow(
+              icon: Icons.link_rounded,
+              label: 'Server URL',
+              value: _url,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModalInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: AppTheme.primaryColor,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -124,15 +252,23 @@ class _SettingProfileState extends State<SettingProfile> {
                 activeThumbColor: AppTheme.primaryColor,
               ),
             ),
-            _buildSettingItem(
-              icon: Icons.dark_mode_rounded,
-              title: "Mode Gelap",
-              subtitle: "Aktifkan tema gelap",
-              trailing: Switch(
-                value: false,
-                onChanged: (value) {},
-                activeThumbColor: AppTheme.primaryColor,
-              ),
+            Consumer<ThemeProvider>(
+              builder: (context, themeProvider, child) {
+                return _buildSettingItem(
+                  icon: Icons.dark_mode_rounded,
+                  title: "Mode Gelap",
+                  subtitle: themeProvider.isDarkMode
+                      ? "Mode gelap aktif"
+                      : "Mode terang aktif",
+                  trailing: Switch(
+                    value: themeProvider.isDarkMode,
+                    onChanged: (value) async {
+                      await themeProvider.toggleTheme();
+                    },
+                    activeThumbColor: AppTheme.primaryColor,
+                  ),
+                );
+              },
             ),
             _buildSettingItem(
               icon: Icons.language_rounded,
@@ -150,6 +286,12 @@ class _SettingProfileState extends State<SettingProfile> {
               title: "Backup Data",
               subtitle: "Cadangkan data aplikasi",
               onTap: () {},
+            ),
+            _buildSettingItem(
+              icon: Icons.storage_rounded,
+              title: "Info Data",
+              subtitle: "Data Aplikasi",
+              onTap: _showInfoDataModal,
             ),
             _buildSettingItem(
               icon: Icons.sync_rounded,

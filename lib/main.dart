@@ -4,6 +4,7 @@ import 'package:pintarx/features/customer/presentation/providers/customer_provid
 import 'package:pintarx/features/product/presentation/providers/product_provider.dart';
 import 'package:pintarx/features/sales_order/presentation/providers/sales_order_provider.dart';
 import 'package:pintarx/pages/auth/intro_page.dart';
+import 'package:pintarx/providers/theme_provider.dart';
 import 'package:pintarx/services/api_service.dart';
 import 'package:pintarx/services/auth_service.dart';
 import 'package:provider/provider.dart';
@@ -56,17 +57,22 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => CustomerProvider()),
         ChangeNotifierProvider(create: (_) => SalesOrderProvider()),
       ],
-      child: MaterialApp(
-        title: 'Pintar - X',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.light,
-        home: const IntroPage(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'Pintar - X',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
+            home: const IntroPage(),
+          );
+        },
       ),
     );
   }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/services/auth_service.dart';
 import 'package:pintarx/models/auth/user.dart';
 import 'package:pintarx/pages/auth/login_page.dart';
+import 'package:pintarx/services/auth_service.dart';
+import 'package:pintarx/services/config_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -13,8 +14,11 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final _authService = AuthService();
+  final _configService = ConfigService();
   User? _currentUser;
   bool _isLoading = true;
+  String _database = '';
+  String _url = '';
 
   @override
   void initState() {
@@ -25,9 +29,16 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadUser() async {
     setState(() => _isLoading = true);
     final user = await _authService.getCurrentUser();
+    final config = await _configService.load();
+
+    print('📊 [PROFILE] Database: ${config['database']}');
+    print('📊 [PROFILE] URL: ${config['url']}');
+
     if (mounted) {
       setState(() {
         _currentUser = user;
+        _database = config['database'] ?? '-';
+        _url = config['url'] ?? '-';
         _isLoading = false;
       });
     }
@@ -106,7 +117,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [AppTheme.primaryColor, AppTheme.primaryLight],
+                          colors: [
+                            AppTheme.primaryColor,
+                            AppTheme.primaryLight
+                          ],
                         ),
                       ),
                       child: Column(
@@ -118,9 +132,13 @@ class _ProfilePageState extends State<ProfilePage> {
                             backgroundColor: Colors.white,
                             child: CircleAvatar(
                               radius: 56,
-                              backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.3),
+                              backgroundColor:
+                                  AppTheme.primaryLight.withValues(alpha: 0.3),
                               child: Text(
-                                _currentUser?.username.substring(0, 1).toUpperCase() ?? 'U',
+                                _currentUser?.username
+                                        .substring(0, 1)
+                                        .toUpperCase() ??
+                                    'U',
                                 style: const TextStyle(
                                   fontSize: 48,
                                   fontWeight: FontWeight.bold,
@@ -182,6 +200,24 @@ class _ProfilePageState extends State<ProfilePage> {
                         children: [
                           // Info Cards dalam Grid
                           _buildInfoGrid(),
+
+                          const SizedBox(height: 24),
+
+                          // DEBUG: Test visibility
+                          Container(
+                            color: Colors.red,
+                            padding: EdgeInsets.all(16),
+                            child: Text(
+                              'TEST: Info Data Section di bawah ini',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16),
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Info Data Section
+                          _buildInfoDataSection(),
 
                           const SizedBox(height: 24),
 
@@ -338,6 +374,132 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoDataSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.primaryColor.withValues(alpha: 0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.storage_rounded,
+                  color: AppTheme.primaryColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Info Data',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Database Info
+          _buildDataInfoRow(
+            icon: Icons.dns_rounded,
+            label: 'Database',
+            value: _database,
+            color: AppTheme.brandBlue,
+          ),
+
+          const SizedBox(height: 16),
+
+          // URL Info
+          _buildDataInfoRow(
+            icon: Icons.link_rounded,
+            label: 'Server URL',
+            value: _url,
+            color: AppTheme.brandOrange,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDataInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Icon
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            color: color,
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Label & Value
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
