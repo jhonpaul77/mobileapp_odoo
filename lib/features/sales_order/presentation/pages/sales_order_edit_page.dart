@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../config/theme.dart';
 import '../../domain/entities/sales_order.dart';
 import '../../domain/entities/order_line.dart';
+import '../../data/repositories/sales_order_repository.dart';
 import '../../../product/data/datasources/product_remote_datasource.dart';
 import '../../../product/data/models/product_model.dart';
 import '../../../location/data/datasources/location_remote_datasource.dart';
@@ -12,6 +13,9 @@ import '../../../location/domain/entities/district.dart';
 import '../../../customer/data/datasources/customer_remote_datasource.dart';
 import '../../../customer/domain/entities/customer.dart';
 import '../../../customer/presentation/pages/customer_search_modal.dart';
+import '../../../analytic/domain/entities/analytic.dart';
+import '../../../analytic/data/datasources/analytic_remote_datasource.dart';
+import '../../../analytic/presentation/pages/analytic_search_modal.dart';
 import '../../../../services/config_service.dart';
 import '../../../../services/secure_storage_service.dart';
 import 'product_search_modal.dart';
@@ -82,6 +86,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   late List<ProductModel> _allProducts = [];
   late List<District> _allDistricts = [];
   late List<Customer> _allCustomers = [];
+  late List<Analytic> _allAnalytics = [];
   late Map<int, String> _cityMap = {}; // cityId -> cityName
   late Map<int, String> _stateMap = {}; // stateId -> stateName
   late Map<int, int> _cityToStateMap = {}; // cityId -> stateId
@@ -115,6 +120,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
               productName: line.productName, // Keep the product name from API
               productUomQty: line.productUomQty,
               analyticDistribution: line.analyticDistribution,
+              analyticId: line.analyticId,
               priceUnit: line.priceUnit,
               priceSubtotal: line.priceSubtotal,
             ))
@@ -252,6 +258,23 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       } catch (e) {
         print('❌ Error loading districts: $e');
       }
+
+      // Load analytics
+      try {
+        final analyticDatasource = AnalyticRemoteDataSource();
+        final analytics = await analyticDatasource.getAnalytics(
+          db: db,
+          apiKey: apiKey,
+        );
+        print('✅ Loaded ${analytics.length} analytics');
+        if (mounted) {
+          setState(() {
+            _allAnalytics = analytics;
+          });
+        }
+      } catch (e) {
+        print('❌ Error loading analytics: $e');
+      }
     } catch (e) {
       print('❌ Error in _loadData: $e');
     } finally {
@@ -277,6 +300,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           productName: selected.name,
           productUomQty: line.productUomQty,
           analyticDistribution: line.analyticDistribution,
+          analyticId: line.analyticId,
           priceUnit: selected.listPrice,
           priceSubtotal: line.productUomQty * selected.listPrice,
         );
@@ -302,6 +326,68 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       setState(() {
         _districtController.text = selected.name;
         _cityController.text = cityName;
+      });
+    }
+  }
+
+  Future<void> _selectAnalytic(int lineIndex) async {
+    // If analytics not loaded yet, try to load them
+    if (_allAnalytics.isEmpty) {
+      print('⚠️ Analytics not loaded yet, loading on-demand...');
+      try {
+        final configService = ConfigService();
+        final storage = SecureStorageService();
+        final config = await configService.load();
+        final db = config['database'] as String?;
+        final apiKey = await storage.getAccessToken();
+
+        if (db != null && apiKey != null) {
+          final analyticDatasource = AnalyticRemoteDataSource();
+          _allAnalytics = await analyticDatasource.getAnalytics(
+            db: db,
+            apiKey: apiKey,
+          );
+          print('✅ Analytics loaded on-demand: ${_allAnalytics.length} items');
+        }
+      } catch (e) {
+        print('❌ Error loading analytics on-demand: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error loading analytics: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    final selected = await AnalyticSearchModal.show(
+      context,
+      selectedAnalytic: _orderLines[lineIndex].analyticId != null
+          ? _allAnalytics.firstWhere(
+              (a) => a.id == _orderLines[lineIndex].analyticId,
+              orElse: () => Analytic(id: 0, name: 'Unknown'),
+            )
+          : null,
+    );
+
+    if (selected != null) {
+      setState(() {
+        _lineControllers[lineIndex]['analyticAccount']!.text = selected.name;
+        
+        // Update the order line with analytic info
+        final line = _orderLines[lineIndex];
+        _orderLines[lineIndex] = OrderLine(
+          productId: line.productId,
+          productName: line.productName,
+          productUomQty: line.productUomQty,
+          analyticDistribution: selected.name,
+          analyticId: selected.id,
+          priceUnit: line.priceUnit,
+          priceSubtotal: line.priceSubtotal,
+        );
       });
     }
   }
@@ -354,6 +440,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       productName: line.productName, // Preserve product name
       productUomQty: newQty,
       analyticDistribution: line.analyticDistribution,
+      analyticId: line.analyticId, // Preserve analytic ID
       priceUnit: newPrice,
       priceSubtotal: newQty * newPrice,
     );
@@ -367,14 +454,114 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     return formatted;
   }
 
-  void _saveChanges() {
+  void _saveChanges() async {
     // Sync all line items before saving
     for (int i = 0; i < _orderLines.length; i++) {
       _syncLineItem(i);
     }
 
-    // Return updated order
-    Navigator.of(context).pop(_orderLines);
+    // Show loading dialog
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              const Text('Saving order...'),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final configService = ConfigService();
+      final storage = SecureStorageService();
+
+      final config = await configService.load();
+      final db = config['database'] as String?;
+      final apiKey = await storage.getAccessToken();
+
+      if (db == null || apiKey == null) {
+        throw Exception('Missing database or API key');
+      }
+
+      // Build updated order with edited data
+      final updatedOrder = SalesOrder(
+        id: widget.order.id,
+        name: widget.order.name,
+        partnerId: widget.order.partnerId,
+        partnerName: _customerNameController.text,
+        dateOrder: widget.order.dateOrder,
+        amountTotal: _orderLines.fold(
+          0.0,
+          (sum, line) => sum + (line.productUomQty * line.priceUnit),
+        ),
+        warehouseId: widget.order.warehouseId,
+        warehouseName: _warehouseNameController.text,
+        kurirId: widget.order.kurirId,
+        kurirName: _kurirNameController.text,
+        awb: _awbController.text.isEmpty ? false : _awbController.text,
+        state: widget.order.state,
+        orderCount: widget.order.orderCount,
+        orderLines: _orderLines,
+        address: _addressController.text,
+        district: _districtController.text,
+        city: _cityController.text,
+      );
+
+      // Call repository to save
+      final repository = SalesOrderRepository();
+      final success = await repository.editSalesOrder(
+        db: db,
+        apiKey: apiKey,
+        order: updatedOrder,
+      );
+
+      if (!mounted) return;
+      
+      // Close loading dialog
+      Navigator.pop(context);
+
+      if (success) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order saved successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Return to previous page
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        });
+      }
+    } catch (e) {
+      print('❌ Error saving order: $e');
+
+      if (!mounted) return;
+      
+      // Close loading dialog
+      Navigator.pop(context);
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error saving order: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _addLineItem() {
@@ -383,6 +570,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         productId: 0,
         productUomQty: 1.0,
         analyticDistribution: null,
+        analyticId: null,
         priceUnit: 0.0,
       ));
       _lineControllers.add({
@@ -579,9 +767,78 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                 ],
               ),
             ),
-            _buildEditField(
-              'Analytic Account',
-              controllers['analyticAccount']!,
+            // Analytic Distribution field dengan search button
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Analytic Distribution',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: controllers['analyticAccount']!,
+                          readOnly: true,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.black87,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Select store...',
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                color: Colors.grey[300]!,
+                                width: 1,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                color: Colors.grey[300]!,
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 42,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _selectAnalytic(index),
+                          icon: const Icon(Icons.store, size: 16),
+                          label: const Text('Select'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             Row(
               children: [

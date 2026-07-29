@@ -2,13 +2,11 @@ import 'dart:convert' as json_convert;
 
 import 'package:dio/dio.dart';
 
+import '../../../../config/api_config.dart';
 import '../../../../services/api_service.dart';
 import '../../domain/entities/sales_order.dart';
 
 /// SalesOrderRepository - Data Layer
-///
-/// Handles data fetching from Odoo API
-/// Endpoint: GET /get_sale_order
 class SalesOrderRepository {
   final ApiService _apiService;
 
@@ -16,19 +14,12 @@ class SalesOrderRepository {
       : _apiService = apiService ?? ApiService();
 
   /// Fetch sales orders from Odoo API
-  ///
-  /// API Spec:
-  /// - Endpoint: GET /get_sale_order
-  /// - Headers: db, api-key
-  /// - Response: Direct array (NOT wrapped)
   Future<List<SalesOrder>> getSalesOrders({
     required String db,
     required String apiKey,
   }) async {
     try {
       print('🔄 [SALES_ORDER_REPO] Fetching sales orders...');
-      print('   [SALES_ORDER_REPO] Database: $db');
-      print('   [SALES_ORDER_REPO] API Key: ${apiKey.substring(0, 8)}...');
 
       final response = await _apiService.dio.get(
         '/get_sale_order',
@@ -40,46 +31,13 @@ class SalesOrderRepository {
         ),
       );
 
-      print('   [SALES_ORDER_REPO] Response received');
-      print(
-          '   [SALES_ORDER_REPO] Response type: ${response.data.runtimeType}');
+      print('   [SALES_ORDER_REPO] Response type: ${response.data.runtimeType}');
 
-      // ✅ VALIDASI: Cek database dari response header
-      final responseDb = response.headers.value('db') ??
-          response.headers.value('DB') ??
-          response.headers.value('Database');
-
-      if (responseDb != null && responseDb != db) {
-        print('⚠️ [SALES_ORDER_REPO] Database mismatch!');
-        print('   Expected (config): $db');
-        print('   Received (API): $responseDb');
-        throw Exception('Database tidak sesuai!\n'
-            'Config: $db\n'
-            'API Response: $responseDb\n\n'
-            'Silakan logout dan login ulang untuk sinkronisasi database.');
-      }
-
-      // Preview response (first 300 chars)
-      final responseStr = response.data.toString();
-      final preview = responseStr.length > 300
-          ? '${responseStr.substring(0, 300)}...'
-          : responseStr;
-      print('   [SALES_ORDER_REPO] Response preview: $preview');
-
-      // Handle different response formats
       dynamic data = response.data;
 
       // If response is String, parse as JSON
       if (data is String) {
-        print('   [SALES_ORDER_REPO] Response is String, parsing JSON...');
-        try {
-          data = json_convert.jsonDecode(data);
-          print('   [SALES_ORDER_REPO] JSON parsed. Type: ${data.runtimeType}');
-        } catch (e) {
-          print('   [SALES_ORDER_REPO] JSON parse failed: $e');
-          throw Exception(
-              'API mengembalikan format tidak valid. Response: $preview');
-        }
+        data = json_convert.jsonDecode(data);
       }
 
       // Response should be direct array
@@ -91,36 +49,93 @@ class SalesOrderRepository {
         print('✅ [SALES_ORDER_REPO] Parsed ${orders.length} sales orders');
         return orders;
       }
-      // Handle wrapped response format (Success/Message/Data)
+      // Handle wrapped response
       else if (data is Map<String, dynamic>) {
-        print('   [SALES_ORDER_REPO] Response is Map, checking format...');
-
-        if (data.containsKey('Success') && data['Success'] == true) {
-          if (data['Data'] is List) {
-            final orders = (data['Data'] as List)
-                .map(
-                    (json) => SalesOrder.fromJson(json as Map<String, dynamic>))
-                .toList();
-            print(
-                '✅ [SALES_ORDER_REPO] Parsed ${orders.length} sales orders from wrapped response');
-            return orders;
-          } else {
-            throw Exception(
-                'Data field is not a List: ${data['Data'].runtimeType}');
-          }
-        } else if (data.containsKey('Success') && data['Success'] == false) {
-          throw Exception(data['Message'] ?? 'API returned error');
-        } else {
-          throw Exception('Unexpected Map format. Keys: ${data.keys}');
+        if (data.containsKey('Success') && data['Success'] == true && data['Data'] is List) {
+          final orders = (data['Data'] as List)
+              .map((json) => SalesOrder.fromJson(json as Map<String, dynamic>))
+              .toList();
+          print('✅ [SALES_ORDER_REPO] Parsed ${orders.length} sales orders');
+          return orders;
         }
-      } else {
-        throw Exception(
-            'Unexpected response format: ${data.runtimeType}. Response: $preview');
       }
-    } catch (e, stackTrace) {
+
+      throw Exception('Unexpected response format: ${data.runtimeType}');
+    } catch (e) {
       print('❌ [SALES_ORDER_REPO] Error: $e');
-      print('   Stack trace: $stackTrace');
       rethrow;
     }
+  }
+
+  /// Edit (save) a sales order
+  Future<bool> editSalesOrder({
+    required String db,
+    required String apiKey,
+    required SalesOrder order,
+  }) async {
+    try {
+      print('🔄 [SALES_ORDER_REPO] Editing sales order ID: ${order.id}');
+
+      // Build request body
+      final body = _buildEditOrderBody(order);
+      print('   [SALES_ORDER_REPO] Sending body');
+
+      final response = await _apiService.dio.post(
+        ApiConfig.editSalesOrder,
+        data: body,
+        options: Options(
+          headers: {
+            'db': db,
+            'api-key': apiKey,
+          },
+        ),
+      );
+
+      print('   [SALES_ORDER_REPO] Response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        print('✅ [SALES_ORDER_REPO] Sales order saved successfully');
+        return true;
+      } else {
+        throw Exception('API returned status ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ [SALES_ORDER_REPO] Error saving sales order: $e');
+      rethrow;
+    }
+  }
+
+  /// Build request body for edit sales order
+  Map<String, dynamic> _buildEditOrderBody(SalesOrder order) {
+    return {
+      'id': order.id,
+      'partner_id': order.customerId,
+      'partner_phone': _extractPhone(order.partnerName),
+      'partner_district': order.district ?? '',
+      'partner_city': order.city ?? '',
+      'partner_state': '',
+      'date_order': order.dateOrder,
+      'warehouse_id': order.warehouseId,
+      'kurir_id': order.kurirId,
+      'awb': order.awbNumber ?? '',
+      'state': order.state,
+      'order_lines': order.orderLines
+          .map((line) => {
+                'product_id': line.productIdValue,
+                'product_uom_qty': line.productUomQty,
+                'analytic_distribution': line.analyticDistribution ?? false,
+                'price_unit': line.priceUnit,
+              })
+          .toList(),
+    };
+  }
+
+  /// Extract phone from partner name format "Name (phone)"
+  String _extractPhone(String? partnerName) {
+    if (partnerName == null || partnerName.isEmpty) return '';
+    
+    final regex = RegExp(r'\(([^)]+)\)');
+    final match = regex.firstMatch(partnerName);
+    return match?.group(1) ?? '';
   }
 }
