@@ -29,6 +29,8 @@ class SalesOrder {
   final dynamic awb; // Can be false or string
   final String state;
   final List<OrderLine> orderLines;
+  final String? address;
+  final String? district;
 
   SalesOrder({
     required this.id,
@@ -41,6 +43,8 @@ class SalesOrder {
     this.awb,
     required this.state,
     required this.orderLines,
+    this.address,
+    this.district,
   });
 
   factory SalesOrder.fromJson(Map<String, dynamic> json) {
@@ -63,6 +67,8 @@ class SalesOrder {
       awb: json['awb'],
       state: json['state'] as String? ?? 'draft',
       orderLines: orderLines,
+      address: json['address'] as String?,
+      district: json['district'] as String?,
     );
   }
 
@@ -187,6 +193,8 @@ class SalesOrder {
       'awb': awb,
       'state': state,
       'order_lines': orderLines.map((line) => line.toJson()).toList(),
+      'address': address,
+      'district': district,
     };
   }
 }

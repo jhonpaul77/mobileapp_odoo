@@ -68,10 +68,11 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   late final TextEditingController _warehouseIdController;
   late final TextEditingController _kurirIdController;
   late final TextEditingController _awbController;
+  late final TextEditingController _addressController;
+  late final TextEditingController _districtController;
   late final List<OrderLine> _orderLines;
   late final List<Map<String, TextEditingController>> _lineControllers;
   late List<ProductModel> _allProducts = [];
-  bool _productsLoading = false;
   final _currencyFormat =
       NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
@@ -82,6 +83,10 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
 
     _customerNameController =
         TextEditingController(text: order.customerName);
+    _addressController =
+        TextEditingController(text: order.address?.toString() ?? '');
+    _districtController =
+        TextEditingController(text: order.district?.toString() ?? '');
     _warehouseIdController = TextEditingController(
         text: order.warehouseId?.toString() ?? '');
     _kurirIdController =
@@ -121,8 +126,6 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
 
   Future<void> _loadProducts() async {
     try {
-      setState(() => _productsLoading = true);
-
       final configService = ConfigService();
       final storage = SecureStorageService();
 
@@ -142,8 +145,6 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       }
     } catch (e) {
       print('❌ Error loading products: $e');
-    } finally {
-      if (mounted) setState(() => _productsLoading = false);
     }
   }
 
@@ -164,6 +165,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   @override
   void dispose() {
     _customerNameController.dispose();
+    _addressController.dispose();
+    _districtController.dispose();
     _warehouseIdController.dispose();
     _kurirIdController.dispose();
     _awbController.dispose();
@@ -565,6 +568,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                   const SizedBox(height: 12),
                   _buildEditField('Customer', _customerNameController,
                       readOnly: true),
+                  _buildEditField('Address', _addressController, maxLines: 2),
+                  _buildEditField('District', _districtController),
                   _buildEditField('Warehouse ID', _warehouseIdController),
                   _buildEditField('Kurir ID', _kurirIdController),
                   _buildEditField('AWB', _awbController),
