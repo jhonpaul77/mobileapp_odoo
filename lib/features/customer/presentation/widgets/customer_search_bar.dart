@@ -3,19 +3,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/product_provider.dart';
+import '../providers/customer_provider.dart';
 
-/// Product Search Bar Widget
+/// Customer Search Bar Widget
 ///
-/// Search input with debounce for filtering products.
-class ProductSearchBar extends StatefulWidget {
-  const ProductSearchBar({super.key});
+/// Search input with debounce for filtering customers.
+class CustomerSearchBar extends StatefulWidget {
+  const CustomerSearchBar({super.key});
 
   @override
-  State<ProductSearchBar> createState() => _ProductSearchBarState();
+  State<CustomerSearchBar> createState() => _CustomerSearchBarState();
 }
 
-class _ProductSearchBarState extends State<ProductSearchBar> {
+class _CustomerSearchBarState extends State<CustomerSearchBar> {
   final _searchController = TextEditingController();
   Timer? _debounce;
 
@@ -30,7 +30,7 @@ class _ProductSearchBarState extends State<ProductSearchBar> {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
 
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      context.read<ProductProvider>().searchProducts(query);
+      context.read<CustomerProvider>().searchCustomers(query);
     });
   }
 
@@ -42,14 +42,14 @@ class _ProductSearchBarState extends State<ProductSearchBar> {
       controller: _searchController,
       onChanged: _onSearchChanged,
       decoration: InputDecoration(
-        hintText: 'Cari produk atau SKU...',
+        hintText: 'Cari customer, phone, atau kota...',
         prefixIcon: const Icon(Icons.search),
         suffixIcon: _searchController.text.isNotEmpty
             ? IconButton(
                 icon: const Icon(Icons.clear),
                 onPressed: () {
                   _searchController.clear();
-                  context.read<ProductProvider>().clearSearch();
+                  context.read<CustomerProvider>().clearSearch();
                 },
               )
             : null,

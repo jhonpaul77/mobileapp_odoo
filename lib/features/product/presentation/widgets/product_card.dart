@@ -18,6 +18,7 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final currencyFormatter = NumberFormat.currency(
       locale: 'id_ID',
       symbol: 'Rp ',
@@ -60,10 +61,10 @@ class ProductCard extends StatelessWidget {
                   children: [
                     Text(
                       product.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: theme.textTheme.bodyLarge?.color,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -76,14 +77,16 @@ class ProductCard extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
+                          color: theme.brightness == Brightness.dark
+                              ? Colors.grey.shade700
+                              : Colors.grey.shade200,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           product.defaultCode!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
-                            color: Colors.black87,
+                            color: theme.textTheme.bodyMedium?.color,
                             fontWeight: FontWeight.w500,
                           ),
                         ),

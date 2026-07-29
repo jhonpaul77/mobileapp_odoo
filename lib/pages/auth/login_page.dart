@@ -516,6 +516,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
   Widget _buildAnimatedBackground() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Stack(
       children: [
         // Background color
@@ -524,10 +527,15 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                AppTheme.surfaceColor,
-                AppTheme.primaryColor.withValues(alpha: 0.02),
-              ],
+              colors: isDark
+                  ? [
+                      AppTheme.darkBackground,
+                      AppTheme.darkSurface,
+                    ]
+                  : [
+                      AppTheme.surfaceColor,
+                      AppTheme.primaryColor.withValues(alpha: 0.02),
+                    ],
             ),
           ),
         ),
@@ -613,6 +621,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
   Widget _buildTopBar() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -621,15 +632,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           // ✅ BACK BUTTON (Kiri)
           IconButton(
             onPressed: _handleBack,
-            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            icon: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: isDark ? AppTheme.darkTextPrimary : Colors.black,
+            ),
             style: IconButton.styleFrom(
-              backgroundColor: Colors.white,
+              backgroundColor: isDark ? AppTheme.darkCard : Colors.white,
               padding: const EdgeInsets.all(12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
               elevation: 2,
-              shadowColor: Colors.black.withValues(alpha: 0.1),
+              shadowColor: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
             ),
           ),
 
@@ -678,14 +692,15 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 onPressed: _handleSettings,
                 icon: const Icon(Icons.settings_rounded),
                 style: IconButton.styleFrom(
-                  backgroundColor: Colors.white,
+                  backgroundColor: isDark ? AppTheme.darkCard : Colors.white,
                   foregroundColor: AppTheme.brandBlue,
                   padding: const EdgeInsets.all(12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 2,
-                  shadowColor: Colors.black.withValues(alpha: 0.1),
+                  shadowColor:
+                      Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
                 ),
               ),
             ],
@@ -696,6 +711,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
   Widget _buildWelcomeText() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -724,7 +742,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           style: TextStyle(
             fontSize: 36,
             fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+            color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
             height: 1.2,
           ),
         ),
@@ -768,11 +786,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         const SizedBox(height: 1),
 
         // ✅ Description
-        const Text(
+        Text(
           'Anyone can be productive. Work better\nwith your team and friends.\nNow, Tomorrow, Together.',
           style: TextStyle(
             fontSize: 14,
-            color: AppTheme.textSecondary,
+            color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
             height: 1.5,
           ),
         ),
@@ -781,14 +799,17 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
   Widget _buildFormFields() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppTheme.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -800,14 +821,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           TextFormField(
             controller: _usernameController,
             enabled: !_isLoading,
+            style: TextStyle(
+              color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+            ),
             decoration: InputDecoration(
               hintText: 'Username',
-              prefixIcon: const Icon(
+              prefixIcon: Icon(
                 Icons.person_outline_rounded,
-                color: AppTheme.textHint,
+                color: isDark ? AppTheme.darkTextSecondary : AppTheme.textHint,
               ),
               filled: true,
-              fillColor: AppTheme.backgroundColor,
+              fillColor:
+                  isDark ? AppTheme.darkBackground : AppTheme.backgroundColor,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
@@ -833,25 +858,30 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             controller: _passwordController,
             enabled: !_isLoading,
             obscureText: _obscurePassword,
+            style: TextStyle(
+              color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+            ),
             decoration: InputDecoration(
               hintText: 'Password',
-              prefixIcon: const Icon(
+              prefixIcon: Icon(
                 Icons.lock_outline_rounded,
-                color: AppTheme.textHint,
+                color: isDark ? AppTheme.darkTextSecondary : AppTheme.textHint,
               ),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscurePassword
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
-                  color: AppTheme.textHint,
+                  color:
+                      isDark ? AppTheme.darkTextSecondary : AppTheme.textHint,
                 ),
                 onPressed: () {
                   setState(() => _obscurePassword = !_obscurePassword);
                 },
               ),
               filled: true,
-              fillColor: AppTheme.backgroundColor,
+              fillColor:
+                  isDark ? AppTheme.darkBackground : AppTheme.backgroundColor,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,

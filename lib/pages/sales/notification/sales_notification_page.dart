@@ -33,18 +33,25 @@ class _SalesNotificationPageState extends State<SalesNotificationPage> {
     });
   }
 
-  /// Get orders with status Open (draft or sent)
+  /// Get orders with status Open (draft or sent), sorted by ID descending
   List<SalesOrder> _getOpenOrders(List<SalesOrder> orders) {
-    return orders.where((order) {
+    final openOrders = orders.where((order) {
       final state = order.state.toLowerCase();
       return state == 'draft' || state == 'sent';
     }).toList();
+
+    // Sort by ID descending (newest first)
+    openOrders.sort((a, b) => b.id.compareTo(a.id));
+
+    return openOrders;
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           'Notifikasi Transaksi',
@@ -95,7 +102,7 @@ class _SalesNotificationPageState extends State<SalesNotificationPage> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[600],
+                      color: theme.textTheme.bodyMedium?.color,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -128,6 +135,15 @@ class _SalesNotificationPageState extends State<SalesNotificationPage> {
           // Get open orders
           final openOrders = _getOpenOrders(provider.orders);
 
+          // Debug: Print info
+          print('📊 [NOTIFIKASI] Total orders: ${provider.orders.length}');
+          print('📊 [NOTIFIKASI] Open orders: ${openOrders.length}');
+          if (openOrders.isNotEmpty) {
+            print('📊 [NOTIFIKASI] First order ID: ${openOrders.first.id}');
+            print(
+                '📊 [NOTIFIKASI] First order state: ${openOrders.first.state}');
+          }
+
           // Empty state - no open orders
           if (openOrders.isEmpty) {
             return Center(
@@ -153,20 +169,30 @@ class _SalesNotificationPageState extends State<SalesNotificationPage> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: Colors.grey[800],
+                      color: theme.textTheme.bodyLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 48),
                     child: Text(
-                      'Semua transaksi sudah di-proses.\nTidak ada transaksi Open yang perlu di-follow up.',
+                      'Semua transaksi Open sudah di-proses.\nTidak ada transaksi (Draft/Sent) yang perlu di-follow up.',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: theme.textTheme.bodySmall?.color,
                         height: 1.5,
                       ),
                       textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Total transaksi: ${provider.orders.length}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.textTheme.bodySmall?.color
+                          ?.withValues(alpha: 0.7),
+                      fontStyle: FontStyle.italic,
                     ),
                   ),
                 ],
@@ -221,7 +247,7 @@ class _SalesNotificationPageState extends State<SalesNotificationPage> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '${openOrders.length} transaksi dengan status Open perlu ditindaklanjuti',
+                              '${openOrders.length} transaksi Open perlu ditindaklanjuti',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.orange[800],
@@ -255,6 +281,8 @@ class _SalesNotificationPageState extends State<SalesNotificationPage> {
   }
 
   Widget _buildNotificationCard(SalesOrder order) {
+    final theme = Theme.of(context);
+
     return GestureDetector(
       onTap: () {
         // Navigate to detail page
@@ -267,7 +295,7 @@ class _SalesNotificationPageState extends State<SalesNotificationPage> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardTheme.color,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: Colors.orange.shade200,
@@ -309,10 +337,10 @@ class _SalesNotificationPageState extends State<SalesNotificationPage> {
                         Expanded(
                           child: Text(
                             order.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: Colors.black87,
+                              color: theme.textTheme.bodyLarge?.color,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -439,6 +467,8 @@ class _SalesNotificationPageState extends State<SalesNotificationPage> {
     required String value,
     TextStyle? valueStyle,
   }) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -468,7 +498,7 @@ class _SalesNotificationPageState extends State<SalesNotificationPage> {
                   label,
                   style: TextStyle(
                     fontSize: 10,
-                    color: Colors.grey[600],
+                    color: theme.textTheme.bodySmall?.color,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -478,7 +508,7 @@ class _SalesNotificationPageState extends State<SalesNotificationPage> {
                   style: valueStyle ??
                       TextStyle(
                         fontSize: 13,
-                        color: Colors.grey[800],
+                        color: theme.textTheme.bodyMedium?.color,
                         fontWeight: FontWeight.w600,
                         height: 1.3,
                       ),

@@ -38,8 +38,10 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           'Daftar Transaksi Penjualan',
@@ -86,12 +88,21 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
                 TextField(
                   controller: _searchController,
                   onChanged: (value) => provider.searchOrders(value),
+                  style: TextStyle(
+                    color: theme.textTheme.bodyLarge?.color,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Cari SO atau customer...',
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: theme.textTheme.bodyMedium?.color,
+                    ),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear),
+                            icon: Icon(
+                              Icons.clear,
+                              color: theme.textTheme.bodyMedium?.color,
+                            ),
                             onPressed: () {
                               _searchController.clear();
                               provider.clearSearch();
@@ -100,18 +111,28 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
                         : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Colors.grey),
+                      borderSide: BorderSide(
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.grey[700]!
+                            : Colors.grey,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.grey[700]!
+                            : Colors.grey.shade300,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: const BorderSide(color: Colors.blue),
                     ),
                     filled: true,
-                    fillColor: Colors.grey.shade50,
+                    fillColor: theme.brightness == Brightness.dark
+                        ? AppTheme.darkCard
+                        : Colors.grey.shade50,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
@@ -273,15 +294,24 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final order = provider.orders[index];
+                final itemTheme = Theme.of(context);
 
                 return Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: itemTheme.cardTheme.color,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[200]!, width: 1),
+                    border: Border.all(
+                      color: itemTheme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey[200]!,
+                      width: 1,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
+                        color: Colors.black.withValues(
+                            alpha: itemTheme.brightness == Brightness.dark
+                                ? 0.3
+                                : 0.04),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -311,10 +341,10 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
                               Expanded(
                                 child: Text(
                                   order.name,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.black87,
+                                    color: itemTheme.textTheme.bodyLarge?.color,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -391,20 +421,25 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.grey[100],
+                                color: itemTheme.brightness == Brightness.dark
+                                    ? AppTheme.darkCard
+                                    : Colors.grey[100],
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.shopping_cart_outlined,
-                                      size: 14, color: Colors.grey[600]),
+                                      size: 14,
+                                      color:
+                                          itemTheme.textTheme.bodySmall?.color),
                                   const SizedBox(width: 6),
                                   Text(
                                     '${order.orderLines.length} item(s) • ${order.totalQty} qty',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[700],
+                                      color:
+                                          itemTheme.textTheme.bodyMedium?.color,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -427,6 +462,7 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
 
   /// Build status filter chip (same as original transaction_list_page.dart)
   Widget _buildStatusChip(SalesOrderProvider provider, String label) {
+    final theme = Theme.of(context);
     final isAll = label == 'All';
     final selected = provider.statusFilter == null
         ? isAll
@@ -441,13 +477,17 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
         decoration: BoxDecoration(
           color: selected
               ? AppTheme.primaryColor.withValues(alpha: 0.15)
-              : Colors.grey[100],
+              : theme.brightness == Brightness.dark
+                  ? AppTheme.darkCard
+                  : Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? AppTheme.primaryColor : AppTheme.textSecondary,
+            color: selected
+                ? AppTheme.primaryColor
+                : theme.textTheme.bodyMedium?.color,
             fontWeight: FontWeight.w600,
             fontSize: 11,
           ),
@@ -465,6 +505,8 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
     required String value,
     TextStyle? valueStyle,
   }) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -494,7 +536,7 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
                   label,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.grey[600],
+                    color: theme.textTheme.bodySmall?.color,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -504,7 +546,7 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
                   style: valueStyle ??
                       TextStyle(
                         fontSize: 13,
-                        color: Colors.grey[800],
+                        color: theme.textTheme.bodyMedium?.color,
                         fontWeight: FontWeight.w500,
                         height: 1.3,
                       ),

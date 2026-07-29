@@ -93,8 +93,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Profil Saya'),
         elevation: 0,
@@ -289,10 +291,12 @@ class _ProfilePageState extends State<ProfilePage> {
     IconData icon,
     Color color,
   ) {
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: color.withValues(alpha: 0.2),
@@ -326,9 +330,9 @@ class _ProfilePageState extends State<ProfilePage> {
           // Label
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: AppTheme.textSecondary,
+              color: theme.textTheme.bodySmall?.color ?? AppTheme.textSecondary,
               fontWeight: FontWeight.w500,
             ),
             maxLines: 1,
@@ -338,9 +342,9 @@ class _ProfilePageState extends State<ProfilePage> {
           // Value
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: AppTheme.textPrimary,
+              color: theme.textTheme.bodyLarge?.color ?? AppTheme.textPrimary,
               fontWeight: FontWeight.bold,
             ),
             maxLines: 2,
@@ -378,11 +382,13 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildInfoDataSection() {
+    final theme = Theme.of(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppTheme.primaryColor.withValues(alpha: 0.2),
@@ -390,7 +396,8 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -415,12 +422,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Info Data',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary,
+                  color: theme.textTheme.bodyLarge?.color,
                 ),
               ),
             ],
@@ -455,6 +462,8 @@ class _ProfilePageState extends State<ProfilePage> {
     required String value,
     required Color color,
   }) {
+    final theme = Theme.of(context);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -479,18 +488,20 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppTheme.textSecondary,
+                  color: theme.textTheme.bodySmall?.color ??
+                      AppTheme.textSecondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: AppTheme.textPrimary,
+                  color:
+                      theme.textTheme.bodyLarge?.color ?? AppTheme.textPrimary,
                   fontWeight: FontWeight.w600,
                 ),
                 maxLines: 2,

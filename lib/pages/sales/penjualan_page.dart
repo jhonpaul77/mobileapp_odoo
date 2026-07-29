@@ -37,16 +37,20 @@ class _PenjualanPageState extends State<PenjualanPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(0),
         child: AppBar(
           elevation: 0,
-          backgroundColor: AppTheme.backgroundColor,
+          backgroundColor: theme.scaffoldBackgroundColor,
           systemOverlayStyle: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.dark,
+            statusBarIconBrightness: theme.brightness == Brightness.dark
+                ? Brightness.light
+                : Brightness.dark,
           ),
         ),
       ),
@@ -55,6 +59,8 @@ class _PenjualanPageState extends State<PenjualanPage> {
   }
 
   Widget _buildPenjualanPage() {
+    final theme = Theme.of(context);
+
     return CustomScrollView(
       slivers: [
         // STICKY HEADER
@@ -63,14 +69,16 @@ class _PenjualanPageState extends State<PenjualanPage> {
           pinned: true,
           snap: false,
           elevation: 0,
-          backgroundColor: AppTheme.backgroundColor,
+          backgroundColor: theme.scaffoldBackgroundColor,
           collapsedHeight: 100,
           expandedHeight: 100,
           toolbarHeight: 100,
           automaticallyImplyLeading: false,
           systemOverlayStyle: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.light,
+            statusBarIconBrightness: theme.brightness == Brightness.dark
+                ? Brightness.light
+                : Brightness.dark,
           ),
           flexibleSpace: FlexibleSpaceBar(
             collapseMode: CollapseMode.none,
@@ -140,15 +148,23 @@ class _PenjualanPageState extends State<PenjualanPage> {
   }
 
   Widget _buildQuickActionsCard() {
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? Colors.grey[700]!
+              : Colors.grey[200]!,
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.3 : 0.04),
             blurRadius: 12,
             offset: const Offset(0, 2),
           )
@@ -161,12 +177,12 @@ class _PenjualanPageState extends State<PenjualanPage> {
             children: [
               Icon(Icons.bolt_rounded, color: AppTheme.primaryColor, size: 20),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 "Quick Actions",
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: theme.textTheme.bodyLarge?.color,
                 ),
               ),
             ],
@@ -218,6 +234,8 @@ class _PenjualanPageState extends State<PenjualanPage> {
     Color color,
     VoidCallback onTap,
   ) {
+    final theme = Theme.of(context);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -226,6 +244,14 @@ class _PenjualanPageState extends State<PenjualanPage> {
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+          // Subtle shadow for depth
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -236,8 +262,17 @@ class _PenjualanPageState extends State<PenjualanPage> {
               label,
               style: TextStyle(
                 color: color,
-                fontSize: 13,
+                fontSize: 10,
                 fontWeight: FontWeight.w700,
+                // Ensure text is always readable
+                shadows: theme.brightness == Brightness.dark
+                    ? [
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 4,
+                        ),
+                      ]
+                    : null,
               ),
             ),
           ],
@@ -375,6 +410,8 @@ class _PenjualanPageState extends State<PenjualanPage> {
   }
 
   Widget _buildRecentTransactions() {
+    final theme = Theme.of(context);
+
     return Consumer<SalesOrderProvider>(
       builder: (context, provider, child) {
         // Loading state
@@ -382,9 +419,14 @@ class _PenjualanPageState extends State<PenjualanPage> {
           return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!, width: 1),
+              border: Border.all(
+                color: theme.brightness == Brightness.dark
+                    ? Colors.grey[700]!
+                    : Colors.grey[200]!,
+                width: 1,
+              ),
             ),
             child: Center(
               child: Column(
@@ -394,7 +436,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
                   Text(
                     "Memuat transaksi...",
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: theme.textTheme.bodyMedium?.color,
                       fontSize: 14,
                     ),
                   ),
@@ -409,9 +451,14 @@ class _PenjualanPageState extends State<PenjualanPage> {
           return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!, width: 1),
+              border: Border.all(
+                color: theme.brightness == Brightness.dark
+                    ? Colors.grey[700]!
+                    : Colors.grey[200]!,
+                width: 1,
+              ),
             ),
             child: Center(
               child: Column(
@@ -425,7 +472,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
                   Text(
                     "Gagal memuat transaksi",
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: theme.textTheme.bodyMedium?.color,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -441,9 +488,14 @@ class _PenjualanPageState extends State<PenjualanPage> {
           return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!, width: 1),
+              border: Border.all(
+                color: theme.brightness == Brightness.dark
+                    ? Colors.grey[700]!
+                    : Colors.grey[200]!,
+                width: 1,
+              ),
             ),
             child: Center(
               child: Column(
@@ -451,13 +503,15 @@ class _PenjualanPageState extends State<PenjualanPage> {
                   Icon(
                     Icons.inbox_rounded,
                     size: 48,
-                    color: Colors.grey[300],
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[600]
+                        : Colors.grey[300],
                   ),
                   const SizedBox(height: 12),
                   Text(
                     "Belum ada transaksi",
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: theme.textTheme.bodyMedium?.color,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -466,7 +520,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
                   Text(
                     "Mulai dengan membuat transaksi penjualan baru",
                     style: TextStyle(
-                      color: Colors.grey[400],
+                      color: theme.textTheme.bodySmall?.color,
                       fontSize: 12,
                     ),
                   ),
@@ -494,12 +548,19 @@ class _PenjualanPageState extends State<PenjualanPage> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.cardTheme.color,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!, width: 1),
+                  border: Border.all(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey[200]!,
+                    width: 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: Colors.black.withValues(
+                          alpha:
+                              theme.brightness == Brightness.dark ? 0.3 : 0.04),
                       blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),
@@ -517,10 +578,10 @@ class _PenjualanPageState extends State<PenjualanPage> {
                           Expanded(
                             child: Text(
                               latestOrder.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.black87,
+                                color: theme.textTheme.bodyLarge?.color,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -649,6 +710,8 @@ class _PenjualanPageState extends State<PenjualanPage> {
     required String value,
     TextStyle? valueStyle,
   }) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -678,7 +741,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
                   label,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.grey[600],
+                    color: theme.textTheme.bodySmall?.color,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -688,7 +751,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
                   style: valueStyle ??
                       TextStyle(
                         fontSize: 13,
-                        color: Colors.grey[800],
+                        color: theme.textTheme.bodyMedium?.color,
                         fontWeight: FontWeight.w500,
                         height: 1.3,
                       ),

@@ -1,14 +1,14 @@
-import '../../data/repositories/customer_repository.dart';
+import '../../data/repositories/customer_repository_impl.dart';
 import '../entities/customer.dart';
 
 /// GetCustomersUseCase - Domain Layer
 ///
 /// Business logic for fetching customers from Odoo API
 class GetCustomersUseCase {
-  final CustomerRepository _repository;
+  final CustomerRepositoryImpl _repository;
 
-  GetCustomersUseCase({CustomerRepository? repository})
-      : _repository = repository ?? CustomerRepository();
+  GetCustomersUseCase({CustomerRepositoryImpl? repository})
+      : _repository = repository ?? CustomerRepositoryImpl();
 
   /// Execute usecase to get customers
   ///

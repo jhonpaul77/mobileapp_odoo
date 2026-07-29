@@ -263,6 +263,7 @@ Terima kasih atas kepercayaan Anda! 🙏
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final order = widget.order;
     final isEditable = order.state.toLowerCase() == 'draft' ||
         order.state.toLowerCase() == 'sent';
@@ -271,7 +272,7 @@ Terima kasih atas kepercayaan Anda! 🙏
         order.state.toLowerCase() == 'done';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Transaction Detail',
             style: TextStyle(
@@ -381,7 +382,7 @@ Terima kasih atas kepercayaan Anda! 🙏
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey[700],
+                            color: theme.textTheme.bodyMedium?.color,
                           ),
                         ),
                       ],
@@ -444,11 +445,19 @@ Terima kasih atas kepercayaan Anda! 🙏
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.cardTheme.color,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.brightness == Brightness.dark
+                      ? Colors.grey[700]!
+                      : Colors.grey[200]!,
+                  width: 1,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
+                    color: Colors.black.withValues(
+                        alpha:
+                            theme.brightness == Brightness.dark ? 0.3 : 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -469,16 +478,16 @@ Terima kasih atas kepercayaan Anda! 🙏
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[600],
+                              color: theme.textTheme.bodySmall?.color,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             order.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: Colors.black87,
+                              color: theme.textTheme.bodyLarge?.color,
                             ),
                           ),
                         ],
@@ -491,16 +500,16 @@ Terima kasih atas kepercayaan Anda! 🙏
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[600],
+                              color: theme.textTheme.bodySmall?.color,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             order.dateOrderFormatted,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                              color: theme.textTheme.bodyLarge?.color,
                             ),
                           ),
                         ],
@@ -508,7 +517,12 @@ Terima kasih atas kepercayaan Anda! 🙏
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Divider(color: Colors.grey[200], height: 1),
+                  Divider(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]
+                        : Colors.grey[200],
+                    height: 1,
+                  ),
                   const SizedBox(height: 16),
 
                   // Grid Info
@@ -551,11 +565,19 @@ Terima kasih atas kepercayaan Anda! 🙏
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.cardTheme.color,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey[200]!,
+                    width: 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: Colors.black.withValues(
+                          alpha:
+                              theme.brightness == Brightness.dark ? 0.3 : 0.04),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -572,7 +594,7 @@ Terima kasih atas kepercayaan Anda! 🙏
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: Colors.grey[700],
+                            color: theme.textTheme.bodyMedium?.color,
                           ),
                         ),
                         Container(
@@ -636,10 +658,10 @@ Terima kasih atas kepercayaan Anda! 🙏
                                   children: [
                                     Text(
                                       line.productName,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
+                                        color: theme.textTheme.bodyLarge?.color,
                                       ),
                                     ),
                                     if (analyticInfo.isNotEmpty) ...[
@@ -648,7 +670,8 @@ Terima kasih atas kepercayaan Anda! 🙏
                                         'Analytic: $analyticInfo',
                                         style: TextStyle(
                                           fontSize: 11,
-                                          color: Colors.grey[600],
+                                          color:
+                                              theme.textTheme.bodySmall?.color,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -658,7 +681,7 @@ Terima kasih atas kepercayaan Anda! 🙏
                                       'Qty: ${line.productUomQty} | Price: ${_currencyFormat.format(line.priceUnit)}',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.grey[600],
+                                        color: theme.textTheme.bodySmall?.color,
                                       ),
                                     ),
                                   ],
@@ -670,10 +693,10 @@ Terima kasih atas kepercayaan Anda! 🙏
                                 children: [
                                   Text(
                                     _currencyFormat.format(subtotal),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 13,
-                                      color: Colors.black87,
+                                      color: theme.textTheme.bodyLarge?.color,
                                     ),
                                   ),
                                 ],
@@ -683,8 +706,12 @@ Terima kasih atas kepercayaan Anda! 🙏
                           if (!isLast)
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 12),
-                              child:
-                                  Divider(color: Colors.grey[200], height: 1),
+                              child: Divider(
+                                color: theme.brightness == Brightness.dark
+                                    ? Colors.grey[700]
+                                    : Colors.grey[200],
+                                height: 1,
+                              ),
                             ),
                         ],
                       );
@@ -699,11 +726,19 @@ Terima kasih atas kepercayaan Anda! 🙏
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.cardTheme.color,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.brightness == Brightness.dark
+                      ? Colors.grey[700]!
+                      : Colors.grey[200]!,
+                  width: 1,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
+                    color: Colors.black.withValues(
+                        alpha:
+                            theme.brightness == Brightness.dark ? 0.3 : 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -719,7 +754,7 @@ Terima kasih atas kepercayaan Anda! 🙏
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[700],
+                          color: theme.textTheme.bodyMedium?.color,
                         ),
                       ),
                       Text(
@@ -727,23 +762,28 @@ Terima kasih atas kepercayaan Anda! 🙏
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[700],
+                          color: theme.textTheme.bodyMedium?.color,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Divider(color: Colors.grey[200], height: 1),
+                  Divider(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]
+                        : Colors.grey[200],
+                    height: 1,
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Grand Total',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: Colors.black87,
+                          color: theme.textTheme.bodyLarge?.color,
                         ),
                       ),
                       Text(
@@ -767,6 +807,8 @@ Terima kasih atas kepercayaan Anda! 🙏
   }
 
   Widget _buildInfoGrid(List<Map<String, String>> items) {
+    final theme = Theme.of(context);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: items.map((item) {
@@ -779,16 +821,16 @@ Terima kasih atas kepercayaan Anda! 🙏
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[600],
+                  color: theme.textTheme.bodySmall?.color,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 item['value'] ?? '-',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: theme.textTheme.bodyLarge?.color,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
