@@ -978,11 +978,32 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
       logger.d(
           '   Raw district_id: ${_selectedCustomer!['district_id']} (type: ${_selectedCustomer!['district_id']?.runtimeType})');
 
-      final customerState =
-          _extractLocationName(_selectedCustomer!['state_id']);
-      final customerCity = _extractLocationName(_selectedCustomer!['city_id']);
-      final customerDistrict =
-          _extractLocationName(_selectedCustomer!['district_id']);
+      // Safe extraction with try-catch for each field
+      String customerState = '';
+      String customerCity = '';
+      String customerDistrict = '';
+
+      try {
+        customerState = _extractLocationName(_selectedCustomer!['state_id']);
+      } catch (e) {
+        logger.e('❌ Error extracting state: $e');
+        customerState = '';
+      }
+
+      try {
+        customerCity = _extractLocationName(_selectedCustomer!['city_id']);
+      } catch (e) {
+        logger.e('❌ Error extracting city: $e');
+        customerCity = '';
+      }
+
+      try {
+        customerDistrict =
+            _extractLocationName(_selectedCustomer!['district_id']);
+      } catch (e) {
+        logger.e('❌ Error extracting district: $e');
+        customerDistrict = '';
+      }
 
       logger.i('   Customer: $customerName');
       logger.i('   Phone: $customerPhone');
