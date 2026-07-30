@@ -1,4 +1,5 @@
 // services/sales_service.dart
+import 'dart:convert';
 import 'package:dio/dio.dart';
 
 import '../config/api_config.dart';
@@ -42,10 +43,23 @@ class SalesService {
       final response = await _api.get(ApiConfig.getSaleOrder);
 
       print('🔍 [SALES] Response status: ${response.statusCode}');
+      print('🔍 [SALES] Response type: ${response.data.runtimeType}');
 
       if (response.statusCode == 200) {
-        // Response is direct array (like products and customers)
-        final orders = response.data as List;
+        // Handle response - could be List or String
+        List orders;
+        
+        if (response.data is String) {
+          // Response is JSON string, parse it
+          final parsed = jsonDecode(response.data);
+          orders = parsed is List ? parsed : [];
+        } else if (response.data is List) {
+          // Response is already List
+          orders = response.data as List;
+        } else {
+          orders = [];
+        }
+
         print('✅ [SALES] Fetched ${orders.length} sale orders');
 
         return {

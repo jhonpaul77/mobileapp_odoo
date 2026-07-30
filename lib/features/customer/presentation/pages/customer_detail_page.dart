@@ -268,13 +268,6 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                   _buildAdditionalInfo(details),
                   const SizedBox(height: 20),
 
-                  // Debug Info Section
-                  _buildSectionHeader(
-                      'Debug Info (Raw Data)', Icons.bug_report_rounded),
-                  const SizedBox(height: 12),
-                  _buildDebugInfo(),
-                  const SizedBox(height: 20),
-
                   // Sales History Section
                   _buildSectionHeader(
                       'Riwayat Penjualan', Icons.shopping_bag_rounded),
@@ -465,9 +458,22 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
   /// Build address information section
   Widget _buildAddressSection(CustomerDetails details) {
     final customer = details.customer;
+    
+    // Combine street and street2
+    String fullAddressLine = '';
+    if (customer.street != null && customer.street!.isNotEmpty) {
+      fullAddressLine = customer.street!;
+    }
+    if (customer.street2 != null && customer.street2!.isNotEmpty) {
+      if (fullAddressLine.isNotEmpty) {
+        fullAddressLine += ', ${customer.street2}';
+      } else {
+        fullAddressLine = customer.street2!;
+      }
+    }
+    
     final hasAddress =
-        (customer.street != null && customer.street!.isNotEmpty) ||
-            (customer.street2 != null && customer.street2!.isNotEmpty) ||
+        fullAddressLine.isNotEmpty ||
             (customer.zip != null && customer.zip!.isNotEmpty) ||
             details.districtName != null ||
             details.cityName != null ||
@@ -484,47 +490,19 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
       child: hasAddress
           ? Column(
               children: [
-                if (customer.fullAddress.isNotEmpty)
-                  _buildDetailRow(
-                    icon: Icons.location_on_rounded,
-                    iconColor: Colors.red,
-                    label: 'Alamat Lengkap',
-                    value: customer.fullAddress,
-                    onCopy: () => _copyToClipboard(customer.fullAddress),
-                  ),
-                if (customer.fullAddress.isNotEmpty &&
-                    ((customer.street != null && customer.street!.isNotEmpty) ||
-                        (customer.street2 != null &&
-                            customer.street2!.isNotEmpty) ||
-                        (customer.zip != null && customer.zip!.isNotEmpty) ||
-                        details.districtName != null ||
-                        details.cityName != null ||
-                        details.stateName != null))
-                  const Divider(height: 24),
-                if (customer.street != null && customer.street!.isNotEmpty)
+                if (fullAddressLine.isNotEmpty)
                   _buildDetailRow(
                     icon: Icons.home_rounded,
                     iconColor: Colors.orange,
                     label: 'Alamat',
-                    value: customer.street!,
-                    onCopy: () => _copyToClipboard(customer.street!),
+                    value: fullAddressLine,
+                    onCopy: () => _copyToClipboard(fullAddressLine),
                   ),
-                if (customer.street != null &&
-                    customer.street!.isNotEmpty &&
-                    customer.street2 != null &&
-                    customer.street2!.isNotEmpty)
-                  const Divider(height: 24),
-                if (customer.street2 != null && customer.street2!.isNotEmpty)
-                  _buildDetailRow(
-                    icon: Icons.home_work_rounded,
-                    iconColor: Colors.deepOrange,
-                    label: 'Alamat Lanjutan',
-                    value: customer.street2!,
-                    onCopy: () => _copyToClipboard(customer.street2!),
-                  ),
-                if ((customer.street2 != null &&
-                        customer.street2!.isNotEmpty) &&
-                    (customer.zip != null && customer.zip!.isNotEmpty))
+                if (fullAddressLine.isNotEmpty &&
+                    ((customer.zip != null && customer.zip!.isNotEmpty) ||
+                        details.districtName != null ||
+                        details.cityName != null ||
+                        details.stateName != null))
                   const Divider(height: 24),
                 if (customer.zip != null && customer.zip!.isNotEmpty)
                   _buildDetailRow(
@@ -541,7 +519,7 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                   _buildDetailRow(
                     icon: Icons.location_city_rounded,
                     iconColor: Colors.purple,
-                    label: 'Kelurahan',
+                    label: 'Kecamatan',
                     value: details.districtName!,
                   ),
                 if ((details.districtName != null) && details.cityName != null)
@@ -586,118 +564,6 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
             label: 'Customer ID',
             value: customer.id.toString(),
             onCopy: () => _copyToClipboard(customer.id.toString()),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build debug info section - shows raw data from API
-  Widget _buildDebugInfo() {
-    final customer = widget.customer;
-
-    String formatValue(dynamic value) {
-      if (value == null || value == false) return '-';
-      return value.toString();
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange[200]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.info_outline, size: 16, color: Colors.orange[700]),
-              const SizedBox(width: 8),
-              Text(
-                'Data mentah dari API (untuk debugging)',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.orange[700],
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _buildDebugRow('ID', customer.id.toString()),
-          _buildDebugRow('Name', formatValue(customer.name)),
-          _buildDebugRow('Email', formatValue(customer.email)),
-          _buildDebugRow('Phone', formatValue(customer.phone)),
-          _buildDebugRow('User ID', formatValue(customer.userId)),
-          _buildDebugRow('Street', formatValue(customer.street)),
-          _buildDebugRow('Street2', formatValue(customer.street2)),
-          _buildDebugRow('District ID', formatValue(customer.districtId)),
-          _buildDebugRow('City ID', formatValue(customer.cityId)),
-          _buildDebugRow('State ID', formatValue(customer.stateId)),
-          _buildDebugRow('ZIP', formatValue(customer.zip)),
-          _buildDebugRow('Country ID', formatValue(customer.countryId)),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.yellow[100],
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.lightbulb_outline,
-                    size: 14, color: Colors.orange[700]),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'Nilai "null" atau "false" dari API ditampilkan sebagai "-"',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.orange[900],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build debug row for displaying raw data
-  Widget _buildDebugRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
-              ),
-            ),
-          ),
-          const Text(
-            ': ',
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 11,
-                color: value == '-' ? Colors.red[300] : Colors.black87,
-                fontFamily: 'monospace',
-              ),
-            ),
           ),
         ],
       ),
