@@ -7,6 +7,7 @@ import '../../../../config/theme.dart';
 import '../../../../services/config_service.dart';
 import '../../../../services/sales_service.dart';
 import '../../../../services/secure_storage_service.dart';
+import '../../../analytic/presentation/pages/analytic_search_modal.dart';
 import '../../../customer/data/datasources/customer_remote_datasource.dart';
 import '../../../customer/domain/entities/customer.dart';
 import '../../../customer/presentation/pages/customer_search_modal.dart';
@@ -82,6 +83,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   late final TextEditingController _addressController;
   late final TextEditingController _districtController;
   late final TextEditingController _cityController;
+  late final TextEditingController _stateController;
+  late final TextEditingController _notesController;
   late final List<OrderLine> _orderLines;
   late final List<Map<String, TextEditingController>> _lineControllers;
   late List<ProductModel> _allProducts = [];
@@ -110,6 +113,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     _districtController =
         TextEditingController(text: order.partnerDistrict?.toString() ?? '');
     _cityController = TextEditingController(text: order.partnerCity?.toString() ?? '');
+    _stateController = TextEditingController(text: order.partnerState?.toString() ?? '');
+    _notesController = TextEditingController(text: order.notes?.toString() ?? '');
     _warehouseNameController =
         TextEditingController(text: order.warehouseNameDisplay ?? '');
     _kurirNameController =
@@ -293,6 +298,17 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     }
   }
 
+  Future<void> _selectAnalytic(int lineIndex) async {
+    final selected = await AnalyticSearchModal.show(context);
+
+    if (selected != null) {
+      setState(() {
+        _lineControllers[lineIndex]['analyticAccount']!.text = selected.name;
+      });
+      logger.i('Selected analytic: ${selected.name} (ID: ${selected.id})');
+    }
+  }
+
   Future<void> _selectDistrict() async {
     final selected = await showDialog<District>(
       context: context,
@@ -341,6 +357,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     _addressController.dispose();
     _districtController.dispose();
     _cityController.dispose();
+    _stateController.dispose();
+    _notesController.dispose();
     _warehouseNameController.dispose();
     _kurirNameController.dispose();
     _awbController.dispose();
@@ -439,12 +457,6 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       logger.i('Order ID: ${order.id}');
       logger.i('Customer ID: $_selectedCustomerId');
       logger.i('Order lines: ${_orderLines.length}');
-
-      // Get state name from city
-      final stateId =
-          _selectedCityId != null ? _cityToStateMap[_selectedCityId] : null;
-      final stateName = stateId != null ? _stateMap[stateId] : '';
-
       // Prepare order lines for API
       final apiOrderLines = _orderLines.map((line) {
         // Get analytic account from controller
@@ -455,36 +467,71 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           'product_id': line.productId,
           'product_uom_qty': line.productUomQty,
           'price_unit': line.priceUnit,
-          'analytic_distribution':
-              analyticAccount.isEmpty ? false : {analyticAccount: 100.0},
+          'analytic_distribution': analyticAccount.isNotEmpty ? analyticAccount : false,
         };
       }).toList();
 
       // Extract phone from customer name (format: "Name (phone)")
-      String customerPhone = '';
-      if (order.customerName.contains('(') &&
-          order.customerName.contains(')')) {
-        final match = RegExp(r'\((\d+)\)').firstMatch(order.customerName);
-        if (match != null) {
-          customerPhone = match.group(1) ?? '';
+      // Also handle direct phone number from order
+      String customerPhone = order.partnerPhone ?? '';
+      if (customerPhone.isEmpty || customerPhone == 'false') {
+        // Try to extract from customer name (format: "Name (phone)")
+        if (order.customerName.contains('(') &&
+            order.customerName.contains(')')) {
+          final match = RegExp(r'\((\d+)\)').firstMatch(order.customerName);
+          if (match != null) {
+            customerPhone = match.group(1) ?? '';
+          }
         }
       }
 
       // Call edit API
+      // Handle kurirId: could be false (boolean) from API, convert to int? or null
+      int? kurirIdToSend;
+      if (order.kurirId is int) {
+        kurirIdToSend = order.kurirId as int;
+      } else if (order.kurirId is List && (order.kurirId as List).isNotEmpty) {
+        // Handle array format [id, name]
+        kurirIdToSend = order.kurirId[0] as int?;
+      } else {
+        kurirIdToSend = null;
+      }
+
+      // Handle warehouseId: could be int or [id, name]
+      int warehouseIdToSend = 1;
+      if (order.warehouseId is int) {
+        warehouseIdToSend = order.warehouseId as int;
+      } else if (order.warehouseId is List && (order.warehouseId as List).isNotEmpty) {
+        // Handle array format [id, name]
+        warehouseIdToSend = order.warehouseId[0] as int? ?? 1;
+      }
+
+      // Get current values for fields - preserve original if not edited
+      String districtToSend = _districtController.text.trim();
+      String cityToSend = _cityController.text.trim();
+      String stateToSend = _stateController.text.trim();
+      String awbToSend = _awbController.text.trim();
+      
+      // Get notes - preserve original if field is empty (not edited)
+      String notesToSend = _notesController.text.trim();
+      if (notesToSend.isEmpty && order.notes != null) {
+        // If notes field is empty but original had notes, keep the original
+        notesToSend = order.notes!;
+      }
+
       final result = await _salesService.editSaleOrder(
         id: order.id,
         partnerId: _selectedCustomerId!,
         partnerPhone: customerPhone,
-        partnerDistrict: _districtController.text.trim(),
-        partnerCity: _cityController.text.trim(),
-        partnerState: stateName ?? '',
+        partnerDistrict: districtToSend,
+        partnerCity: cityToSend,
+        partnerState: stateToSend,
         dateOrder: order.dateOrder, // Already in string format "YYYY-MM-DD"
-        warehouseId: order.warehouseId ?? 1,
-        kurirId: order.kurirId,
-        awb: _awbController.text.trim().isEmpty
-            ? null
-            : _awbController.text.trim(),
+        warehouseId: warehouseIdToSend,
+        kurirId: kurirIdToSend,
+        awb: awbToSend.isEmpty ? null : awbToSend,
         state: order.state,
+        notes: notesToSend.isEmpty ? null : notesToSend,
         orderLines: apiOrderLines,
       );
 
@@ -757,9 +804,77 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                 ],
               ),
             ),
-            _buildEditField(
-              'Analytic Account',
-              controllers['analyticAccount']!,
+            // Analytic Account field dengan search button
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Analytic Account',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: controllers['analyticAccount']!,
+                          readOnly: true,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.black87,
+                          ),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                color: Colors.grey[300]!,
+                                width: 1,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                color: Colors.grey[300]!,
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 42,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _selectAnalytic(index),
+                          icon: const Icon(Icons.search, size: 16),
+                          label: const Text('Search'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             Row(
               children: [
@@ -1051,11 +1166,14 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                     ),
                   ),
                   _buildEditField('City', _cityController, readOnly: true),
+                  _buildEditField('State', _stateController, readOnly: true),
                   _buildEditField('Warehouse', _warehouseNameController,
                       readOnly: true),
                   _buildEditField('Kurir', _kurirNameController,
                       readOnly: true),
-                  _buildEditField('AWB', _awbController),
+                  _buildEditField('AWB', _awbController, readOnly: true),
+                  _buildEditField('Notes', _notesController,
+                      readOnly: true, maxLines: 3),
                 ],
               ),
             ),

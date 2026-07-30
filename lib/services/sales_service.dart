@@ -331,6 +331,7 @@ class SalesService {
     required int warehouseId,
     int? kurirId,
     String? awb,
+    String? notes,
     String? state,
     required List<Map<String, dynamic>> orderLines,
   }) async {
@@ -359,6 +360,7 @@ class SalesService {
         'warehouse_id': warehouseId,
         'kurir_id': kurirId ?? false,
         'awb': awb ?? false,
+        'notes': notes ?? false,
         'state': state ?? 'draft',
         'order_lines': orderLines,
       };

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../config/theme.dart';
+import '../../../../services/sales_service.dart';
 import '../../domain/entities/order_line.dart';
 import '../../domain/entities/sales_order.dart';
 import 'sales_order_edit_page.dart';
@@ -26,6 +28,10 @@ class SalesOrderDetailPage extends StatefulWidget {
 class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
   final _currencyFormat =
       NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+  final _salesService = SalesService();
+  final logger = Logger();
+
+  late SalesOrder _currentOrder;
 
   String _formatDate(String dateStr) {
     try {
@@ -39,6 +45,7 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
   @override
   void initState() {
     super.initState();
+    _currentOrder = widget.order;
     // No need to load names anymore - API provides them directly
   }
 
@@ -62,7 +69,7 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
 
   /// Send WhatsApp order confirmation message
   Future<void> _sendWhatsAppReminder() async {
-    final order = widget.order;
+    final order = _currentOrder;
 
     // Get customer phone from order
     String? customerPhone;
@@ -252,7 +259,7 @@ TERIMA KASIH''';
 
   /// Send WhatsApp shipment tracking message (for Sale/Confirm status)
   Future<void> _sendWhatsAppShipment() async {
-    final order = widget.order;
+    final order = _currentOrder;
 
     // Get customer phone from order
     String? customerPhone;
@@ -465,12 +472,12 @@ TERIMA KASIH''';
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const Divider(),
-                Text('No. SO: ${widget.order.name}',
+                Text('No. SO: ${_currentOrder.name}',
                     style: const TextStyle(fontSize: 12)),
-                Text('Tanggal: ${_formatDate(widget.order.dateOrder)}',
+                Text('Tanggal: ${_formatDate(_currentOrder.dateOrder)}',
                     style: const TextStyle(fontSize: 12)),
                 const SizedBox(height: 8),
-                Text('Customer: ${_getCustomerName(widget.order.customerId)}',
+                Text('Customer: ${_getCustomerName(_currentOrder.customerId)}',
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 12)),
                 const SizedBox(height: 8),
@@ -478,7 +485,7 @@ TERIMA KASIH''';
                     style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 const Divider(),
-                ...widget.order.orderLines.map((line) {
+                ..._currentOrder.orderLines.map((line) {
                   final subtotal = line.productUomQty * line.priceUnit;
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,7 +515,7 @@ TERIMA KASIH''';
                     const Text('TOTAL:',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 12)),
-                    Text(_currencyFormat.format(widget.order.amountTotal),
+                    Text(_currencyFormat.format(_currentOrder.amountTotal),
                         style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
@@ -537,14 +544,45 @@ TERIMA KASIH''';
   Future<void> _openEditPage() async {
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => SalesOrderEditPage(order: widget.order),
+        builder: (_) => SalesOrderEditPage(order: _currentOrder),
       ),
     );
 
-    if (result == true) {
-      // Update is successful - return to previous page to trigger refresh
-      if (mounted) {
-        Navigator.of(context).pop(true); // Return success to parent
+    if (result == true && mounted) {
+      // Refresh order data from API
+      try {
+        final refreshedOrder = await _salesService.getSaleOrderById(_currentOrder.id);
+        
+        if (refreshedOrder['Success'] == true) {
+          final orderData = refreshedOrder['Data'] as Map<String, dynamic>;
+          final updatedOrder = SalesOrder.fromJson(orderData);
+          
+          setState(() {
+            _currentOrder = updatedOrder;
+          });
+          
+          logger.i('✅ Order refreshed successfully');
+          
+          // Show success message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white),
+                    SizedBox(width: 12),
+                    Text('✅ Data telah diperbarui'),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        logger.e('❌ Error refreshing order: $e');
       }
     }
   }
@@ -552,7 +590,7 @@ TERIMA KASIH''';
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final order = widget.order;
+    final order = _currentOrder;
     final isEditable = order.state.toLowerCase() == 'draft' ||
         order.state.toLowerCase() == 'sent';
     final isCancel = order.state.toLowerCase() == 'cancel';

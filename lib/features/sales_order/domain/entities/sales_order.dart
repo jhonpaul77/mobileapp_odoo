@@ -37,6 +37,7 @@ class SalesOrder {
   final String state;
   final int? orderCount; // From API - number of orders for this customer
   final List<OrderLine> orderLines;
+  final String? partnerPhone; // Partner phone number
   final String? partnerStreet; // Partner street address
   final String? partnerStreet2; // Partner street2 address
   final String? partnerDistrict; // Partner district
@@ -59,6 +60,7 @@ class SalesOrder {
     required this.state,
     this.orderCount,
     required this.orderLines,
+    this.partnerPhone,
     this.partnerStreet,
     this.partnerStreet2,
     this.partnerDistrict,
@@ -85,6 +87,13 @@ class SalesOrder {
     final partnerNameRaw = json['partner_name'];
     if (partnerNameRaw is String && partnerNameRaw.isNotEmpty) {
       partnerNameParsed = partnerNameRaw;
+    }
+
+    // Safely parse phone - can be string or false
+    String? partnerPhoneParsed;
+    final partnerPhoneRaw = json['partner_phone'];
+    if (partnerPhoneRaw is String && partnerPhoneRaw.isNotEmpty) {
+      partnerPhoneParsed = partnerPhoneRaw;
     }
 
     // Parse warehouse_name - can be string or false
@@ -169,6 +178,7 @@ class SalesOrder {
       state: json['state'] as String? ?? 'draft',
       orderCount: json['order_count'] as int?,
       orderLines: orderLines,
+      partnerPhone: partnerPhoneParsed,
       partnerStreet: partnerStreetParsed,
       partnerStreet2: partnerStreet2Parsed,
       partnerDistrict: partnerDistrictParsed,
@@ -302,6 +312,7 @@ class SalesOrder {
       'name': name,
       'partner_id': partnerId,
       'partner_name': partnerName,
+      'partner_phone': partnerPhone,
       'date_order': dateOrder,
       'amount_total': amountTotal,
       'warehouse_id': warehouseId,
