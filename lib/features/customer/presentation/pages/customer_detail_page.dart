@@ -11,6 +11,7 @@ import '../../../location/data/datasources/location_remote_datasource.dart';
 import '../../../sales_order/domain/entities/sales_order.dart';
 import '../../../sales_order/presentation/pages/sales_order_detail_page.dart';
 import '../../domain/entities/customer.dart';
+import 'customer_edit_page.dart';
 
 /// Helper class to hold customer details with resolved names
 class CustomerDetails {
@@ -151,12 +152,42 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.edit, color: Colors.white),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Fitur edit customer akan segera hadir'),
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          CustomerEditPage(customer: widget.customer),
                     ),
                   );
+                  
+                  // Refresh customer details if edit was successful
+                  if (result == true && mounted) {
+                    // Show success snackbar
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: const [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text('Customer berhasil diperbarui'),
+                          ],
+                        ),
+                        backgroundColor: AppTheme.successColor,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        margin: const EdgeInsets.all(16),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                    
+                    // Refresh customer details
+                    setState(() {
+                      _customerDetailsFuture = _loadCustomerDetails();
+                    });
+                  }
                 },
               ),
               IconButton(
