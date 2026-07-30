@@ -106,7 +106,7 @@ class _LocationListPageState extends State<LocationListPage> {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _onRefresh,
-                color: AppTheme.primaryColor, 
+                color: AppTheme.primaryColor,
                 child: _buildBody(),
               ),
             ),
@@ -118,7 +118,8 @@ class _LocationListPageState extends State<LocationListPage> {
           : FloatingActionButton(
               onPressed: _navigateToAdd,
               backgroundColor: AppTheme.brandBlue,
-              child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+              child:
+                  const Icon(Icons.add_rounded, color: Colors.white, size: 28),
             ),
     );
   }
@@ -207,7 +208,7 @@ class _LocationListPageState extends State<LocationListPage> {
     }
 
     return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(), 
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       itemCount: _filteredLocations.length,
       itemBuilder: (context, index) {
@@ -253,7 +254,9 @@ class _LocationListPageState extends State<LocationListPage> {
               ),
               child: Center(
                 child: Text(
-                  location.nama.isNotEmpty ? location.nama[0].toUpperCase() : '?',
+                  location.nama.isNotEmpty
+                      ? location.nama[0].toUpperCase()
+                      : '?',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -400,8 +403,8 @@ class _LocationListPageState extends State<LocationListPage> {
           Text(
             _errorMessage ?? 'Gagal memuat data',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppTheme.textSecondary,
-            ),
+                  color: AppTheme.textSecondary,
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppTheme.paddingLarge),

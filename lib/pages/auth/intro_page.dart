@@ -12,19 +12,20 @@ class IntroPage extends StatefulWidget {
   State<IntroPage> createState() => _IntroPageState();
 }
 
-class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMixin {
+class _IntroPageState extends State<IntroPage>
+    with SingleTickerProviderStateMixin {
   final _storage = SecureStorageService();
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _scaleAnimation;
-  
+
   bool _showIntro = true;
 
   @override
   void initState() {
     super.initState();
-    
+
     // ✅ Set status bar untuk halaman intro (background putih → icon gelap)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       StatusBarService.setLightStatusBar();
@@ -60,7 +61,7 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
     );
 
     _animationController.forward();
-    
+
     // ✅ Langsung cek auth tanpa delay
     _checkAuthStatus();
   }
@@ -73,7 +74,7 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
 
   Future<void> _checkAuthStatus() async {
     // ✅ Tanpa delay! Langsung cek
-    
+
     // ✅ PRIORITY 1: Cek auth dulu (Returning user)
     final isPinSet = await _storage.isPinSet();
     final accessToken = await _storage.getAccessToken();
@@ -92,7 +93,7 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
 
     // ✅ PRIORITY 2: Cek intro (First time atau after logout)
     final hasSeenIntro = await _storage.getHasSeenIntro();
-    
+
     if (!hasSeenIntro) {
       // First time → Show intro
       print('✅ [INTRO] First time → Show intro');
@@ -110,7 +111,7 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
 
   void _onStartPressed() async {
     await _storage.setHasSeenIntro(true);
-    
+
     if (!mounted) return;
 
     Navigator.pushReplacement(
@@ -151,50 +152,50 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
                   child: Column(
                     children: [
                       const Spacer(flex: 1),
-                      
+
                       // ✅ LOGO SECTION (Animated)
                       ScaleTransition(
                         scale: _scaleAnimation,
                         child: _buildLogo(),
                       ),
-                      
+
                       const SizedBox(height: AppTheme.paddingXLarge),
-                      
+
                       // ✅ TITLE SECTION (Animated)
                       SlideTransition(
                         position: _slideAnimation,
                         child: _buildTitle(),
                       ),
-                      
+
                       const SizedBox(height: AppTheme.paddingMedium),
-                      
+
                       // ✅ DESCRIPTION (Animated)
                       SlideTransition(
                         position: _slideAnimation,
                         child: _buildDescription(),
                       ),
-                      
+
                       const SizedBox(height: AppTheme.paddingXLarge + 8),
-                      
+
                       // ✅ FEATURES (Animated)
                       SlideTransition(
                         position: _slideAnimation,
                         child: _buildFeatures(),
                       ),
-                      
+
                       const Spacer(flex: 2),
-                      
+
                       // ✅ BUTTON (Animated)
                       SlideTransition(
                         position: _slideAnimation,
                         child: _buildStartButton(),
                       ),
-                      
+
                       const SizedBox(height: AppTheme.paddingMedium),
-                      
+
                       // ✅ FOOTER
                       _buildFooter(),
-                      
+
                       const SizedBox(height: AppTheme.paddingSmall),
                     ],
                   ),
@@ -302,11 +303,11 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
         Text(
           'Next Sales Pro+',
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
-            height: 1.2,
-          ),
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+                height: 1.2,
+              ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 6),
@@ -322,10 +323,10 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
           child: Text(
             'Made By nextnusantara.com',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: AppTheme.primaryColor,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
           ),
         ),
       ],
@@ -338,10 +339,10 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
       child: Text(
         'Solusi pintar untuk pencatatan,\ntransaksi, dan laporan usahamu\nsecara real-time.',
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-          color: AppTheme.textSecondary,
-          height: 1.6,
-          fontSize: 15,
-        ),
+              color: AppTheme.textSecondary,
+              height: 1.6,
+              fontSize: 15,
+            ),
         textAlign: TextAlign.center,
       ),
     );
@@ -418,18 +419,18 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
               Text(
                 title,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
-                  fontSize: 15,
-                ),
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                      fontSize: 15,
+                    ),
               ),
               const SizedBox(height: 2),
               Text(
                 subtitle,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondary,
-                  fontSize: 12,
-                ),
+                      color: AppTheme.textSecondary,
+                      fontSize: 12,
+                    ),
               ),
             ],
           ),
@@ -481,9 +482,9 @@ class _IntroPageState extends State<IntroPage> with SingleTickerProviderStateMix
     return Text(
       '© 2025 App Pintar • All Rights Reserved',
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-        color: AppTheme.textHint,
-        fontSize: 11,
-      ),
+            color: AppTheme.textHint,
+            fontSize: 11,
+          ),
       textAlign: TextAlign.center,
     );
   }

@@ -37,7 +37,8 @@ class _ProductGroupDetailPageState extends State<ProductGroupDetailPage> {
       _errorMessage = null;
     });
 
-    final response = await _productGroupService.getProductGroupDetail(widget.groupId);
+    final response =
+        await _productGroupService.getProductGroupDetail(widget.groupId);
 
     if (mounted) {
       setState(() {
@@ -46,9 +47,9 @@ class _ProductGroupDetailPageState extends State<ProductGroupDetailPage> {
           _group = response.singleData;
         } else {
           _errorMessage = response.message;
-          
+
           // Check if session expired - redirect to login
-          if (response.message.contains('Sesi') || 
+          if (response.message.contains('Sesi') ||
               response.message.contains('login') ||
               response.message.contains('403')) {
             _showSessionExpiredDialog();
@@ -195,7 +196,8 @@ class _ProductGroupDetailPageState extends State<ProductGroupDetailPage> {
       ),
     );
 
-    final response = await _productGroupService.deleteProductGroup(widget.groupId);
+    final response =
+        await _productGroupService.deleteProductGroup(widget.groupId);
 
     if (mounted) {
       Navigator.pop(context); // Close loading
@@ -657,9 +659,9 @@ class _ProductGroupDetailPageState extends State<ProductGroupDetailPage> {
   }
 
   Widget _buildErrorState() {
-    final isSessionExpired = _errorMessage?.contains('Sesi') == true || 
-                              _errorMessage?.contains('login') == true ||
-                              _errorMessage?.contains('403') == true;
+    final isSessionExpired = _errorMessage?.contains('Sesi') == true ||
+        _errorMessage?.contains('login') == true ||
+        _errorMessage?.contains('403') == true;
 
     return Center(
       child: Padding(
@@ -674,7 +676,9 @@ class _ProductGroupDetailPageState extends State<ProductGroupDetailPage> {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                isSessionExpired ? Icons.lock_clock : Icons.error_outline_rounded,
+                isSessionExpired
+                    ? Icons.lock_clock
+                    : Icons.error_outline_rounded,
                 size: 64,
                 color: isSessionExpired ? Colors.orange[700] : Colors.red[700],
               ),
@@ -699,13 +703,17 @@ class _ProductGroupDetailPageState extends State<ProductGroupDetailPage> {
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: isSessionExpired 
-                  ? () => Navigator.of(context).popUntil((route) => route.isFirst)
+              onPressed: isSessionExpired
+                  ? () =>
+                      Navigator.of(context).popUntil((route) => route.isFirst)
                   : _loadDetail,
-              icon: Icon(isSessionExpired ? Icons.logout : Icons.refresh_rounded),
+              icon:
+                  Icon(isSessionExpired ? Icons.logout : Icons.refresh_rounded),
               label: Text(isSessionExpired ? 'Kembali ke Login' : 'Coba Lagi'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isSessionExpired ? Colors.orange[600] : AppTheme.brandOrange,
+                backgroundColor: isSessionExpired
+                    ? Colors.orange[600]
+                    : AppTheme.brandOrange,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,

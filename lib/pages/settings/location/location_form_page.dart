@@ -32,7 +32,7 @@ class _LocationFormPageState extends State<LocationFormPage> {
   void initState() {
     super.initState();
     StatusBarService.setLightStatusBar();
-    
+
     // Initialize controllers
     _kodeController = TextEditingController(
       text: widget.location?.kode ?? '',
@@ -465,16 +465,15 @@ class _LocationFormPageState extends State<LocationFormPage> {
           child: ElevatedButton(
             onPressed: _isLoading ? null : _submit,
             style: ElevatedButton.styleFrom(
-              backgroundColor: _isEditMode 
-                  ? Colors.orange[600] 
-                  : AppTheme.primaryColor,
+              backgroundColor:
+                  _isEditMode ? Colors.orange[600] : AppTheme.primaryColor,
               foregroundColor: Colors.white,
               disabledBackgroundColor: Colors.grey[300],
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
               elevation: _isLoading ? 0 : 2,
-              shadowColor: _isEditMode 
+              shadowColor: _isEditMode
                   ? Colors.orange.withValues(alpha: 0.3)
                   : AppTheme.primaryColor.withValues(alpha: 0.3),
             ),

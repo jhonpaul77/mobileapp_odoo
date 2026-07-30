@@ -163,9 +163,10 @@ TERIMA KASIH''';
       bool launched = false;
 
       // Use api.whatsapp.com - the only reliable method that works
-      final whatsappUrl = 'https://api.whatsapp.com/send?phone=$formattedPhone&text=$encodedMessage';
+      final whatsappUrl =
+          'https://api.whatsapp.com/send?phone=$formattedPhone&text=$encodedMessage';
       print('🔵 Opening WhatsApp: $whatsappUrl');
-      
+
       try {
         if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
           await launchUrl(
@@ -360,7 +361,8 @@ TERIMA KASIH''';
       bool launched = false;
 
       // Use api.whatsapp.com - the only reliable method that works
-      final whatsappUrl = 'https://api.whatsapp.com/send?phone=$formattedPhone&text=$encodedMessage';
+      final whatsappUrl =
+          'https://api.whatsapp.com/send?phone=$formattedPhone&text=$encodedMessage';
       print('🔵 Opening WhatsApp: $whatsappUrl');
 
       try {
@@ -488,10 +490,11 @@ TERIMA KASIH''';
                           'Qty: ${line.productUomQty} | Harga: ${_currencyFormat.format(line.priceUnit)}',
                           style:
                               TextStyle(fontSize: 10, color: Colors.grey[600])),
-                      if (line.analyticDistributionName.isNotEmpty && line.analyticDistributionName != '-')
+                      if (line.analyticDistributionName.isNotEmpty &&
+                          line.analyticDistributionName != '-')
                         Text('Analytic: ${line.analyticDistributionName}',
-                            style:
-                                TextStyle(fontSize: 10, color: Colors.grey[600])),
+                            style: TextStyle(
+                                fontSize: 10, color: Colors.grey[600])),
                       Text('Subtotal: ${_currencyFormat.format(subtotal)}',
                           style: const TextStyle(
                               fontSize: 11, fontWeight: FontWeight.w600)),
@@ -533,22 +536,16 @@ TERIMA KASIH''';
   }
 
   Future<void> _openEditPage() async {
-    final updatedLines = await Navigator.of(context).push<List>(
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => SalesOrderEditPage(order: widget.order),
       ),
     );
 
-    if (updatedLines != null) {
-      // Update is successful, you can show a message or refresh the page
+    if (result == true) {
+      // Update is successful - return to previous page to trigger refresh
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Changes saved successfully'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
+        Navigator.of(context).pop(true); // Return success to parent
       }
     }
   }
@@ -977,7 +974,10 @@ TERIMA KASIH''';
                                         color: theme.textTheme.bodyLarge?.color,
                                       ),
                                     ),
-                                    if (line.analyticDistributionName.isNotEmpty && line.analyticDistributionName != '-') ...[
+                                    if (line.analyticDistributionName
+                                            .isNotEmpty &&
+                                        line.analyticDistributionName !=
+                                            '-') ...[
                                       const SizedBox(height: 2),
                                       Text(
                                         'Analytic: ${line.analyticDistributionName}',

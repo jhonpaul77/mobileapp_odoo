@@ -37,7 +37,8 @@ class _OrganizationDetailPageState extends State<OrganizationDetailPage> {
       _errorMessage = null;
     });
 
-    final response = await _organizationService.getOrganizationDetail(widget.organizationId);
+    final response =
+        await _organizationService.getOrganizationDetail(widget.organizationId);
 
     if (mounted) {
       setState(() {
@@ -135,7 +136,8 @@ class _OrganizationDetailPageState extends State<OrganizationDetailPage> {
       ),
     );
 
-    final response = await _organizationService.deleteOrganization(widget.organizationId);
+    final response =
+        await _organizationService.deleteOrganization(widget.organizationId);
 
     if (mounted) {
       Navigator.pop(context);
@@ -600,7 +602,8 @@ class _OrganizationDetailPageState extends State<OrganizationDetailPage> {
         color: _organization!.isActive ? Colors.green[50] : Colors.red[50],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _organization!.isActive ? Colors.green[200]! : Colors.red[200]!,
+          color:
+              _organization!.isActive ? Colors.green[200]! : Colors.red[200]!,
           width: 1,
         ),
       ),
@@ -609,14 +612,16 @@ class _OrganizationDetailPageState extends State<OrganizationDetailPage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: _organization!.isActive ? Colors.green[100] : Colors.red[100],
+              color:
+                  _organization!.isActive ? Colors.green[100] : Colors.red[100],
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               _organization!.isActive
                   ? Icons.check_circle_rounded
                   : Icons.cancel_rounded,
-              color: _organization!.isActive ? Colors.green[700] : Colors.red[700],
+              color:
+                  _organization!.isActive ? Colors.green[700] : Colors.red[700],
               size: 20,
             ),
           ),

@@ -37,7 +37,8 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
       _errorMessage = null;
     });
 
-    final response = await _customerService.getCustomerDetail(widget.customerId);
+    final response =
+        await _customerService.getCustomerDetail(widget.customerId);
 
     if (mounted) {
       setState(() {
@@ -592,9 +593,8 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: _customer!.isActive
-                      ? Colors.green[700]
-                      : Colors.red[700],
+                  color:
+                      _customer!.isActive ? Colors.green[700] : Colors.red[700],
                 ),
               ),
             ],

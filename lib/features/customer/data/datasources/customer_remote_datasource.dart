@@ -136,41 +136,46 @@ class CustomerRemoteDataSource {
       // Response as simple Map with id (new format)
       if (responseData is Map<String, dynamic>) {
         print('📦 [CUSTOMER_DS] Response keys: ${responseData.keys}');
-        
+
         // If response contains only 'id' (simple response), merge with request data
         if (responseData.containsKey('id') && responseData.keys.length == 1) {
-          print('✅ [CUSTOMER_DS] Simple response format - ID: ${responseData['id']}');
+          print(
+              '✅ [CUSTOMER_DS] Simple response format - ID: ${responseData['id']}');
           // Merge the ID with the original request data to create full CustomerModel
           final fullData = {
             ...data,
             'id': responseData['id'],
           };
-          print('📦 [CUSTOMER_DS] Creating CustomerModel from merged data: $fullData');
+          print(
+              '📦 [CUSTOMER_DS] Creating CustomerModel from merged data: $fullData');
           return CustomerModel.fromJson(fullData);
         }
-        
+
         // If response has more fields, use it directly
-        if (responseData.containsKey('id') && responseData.containsKey('name')) {
+        if (responseData.containsKey('id') &&
+            responseData.containsKey('name')) {
           print('✅ [CUSTOMER_DS] Full response format');
           return CustomerModel.fromJson(responseData);
         }
-        
+
         // Handle wrapped response format with Success/Message/Data
         print('📦 [CUSTOMER_DS] Success value: ${responseData['Success']}');
-        
+
         // Handle Success as boolean or string
         bool isSuccess = false;
         if (responseData['Success'] is bool) {
           isSuccess = responseData['Success'] as bool;
         } else if (responseData['Success'] is String) {
-          isSuccess = (responseData['Success'] as String).toLowerCase() == 'true';
+          isSuccess =
+              (responseData['Success'] as String).toLowerCase() == 'true';
         }
-        
+
         if (isSuccess) {
           final customerData = responseData['Data'] as Map<String, dynamic>;
           return CustomerModel.fromJson(customerData);
         } else {
-          final errorMsg = responseData['Message'] ?? 'Failed to create customer';
+          final errorMsg =
+              responseData['Message'] ?? 'Failed to create customer';
           print('❌ [CUSTOMER_DS] API error: $errorMsg');
           throw Exception(errorMsg);
         }

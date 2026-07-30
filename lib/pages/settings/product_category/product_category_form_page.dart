@@ -13,7 +13,8 @@ class ProductCategoryFormPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<ProductCategoryFormPage> createState() => _ProductCategoryFormPageState();
+  State<ProductCategoryFormPage> createState() =>
+      _ProductCategoryFormPageState();
 }
 
 class _ProductCategoryFormPageState extends State<ProductCategoryFormPage> {
@@ -32,7 +33,7 @@ class _ProductCategoryFormPageState extends State<ProductCategoryFormPage> {
   void initState() {
     super.initState();
     StatusBarService.setLightStatusBar();
-    
+
     _namaController = TextEditingController(
       text: widget.category?.nama ?? '',
     );
@@ -304,7 +305,6 @@ class _ProductCategoryFormPageState extends State<ProductCategoryFormPage> {
             ],
           ),
           const SizedBox(height: 20),
-
           _buildTextField(
             controller: _namaController,
             label: 'Nama Kategori',
@@ -323,7 +323,6 @@ class _ProductCategoryFormPageState extends State<ProductCategoryFormPage> {
             },
           ),
           const SizedBox(height: 16),
-
           _buildTextField(
             controller: _keteranganController,
             label: 'Keterangan',
@@ -339,7 +338,6 @@ class _ProductCategoryFormPageState extends State<ProductCategoryFormPage> {
             },
           ),
           const SizedBox(height: 16),
-
           _buildTextField(
             controller: _catatanController,
             label: 'Catatan',
@@ -457,16 +455,15 @@ class _ProductCategoryFormPageState extends State<ProductCategoryFormPage> {
           child: ElevatedButton(
             onPressed: _isLoading ? null : _submit,
             style: ElevatedButton.styleFrom(
-              backgroundColor: _isEditMode 
-                  ? Colors.orange[600] 
-                  : AppTheme.primaryColor,
+              backgroundColor:
+                  _isEditMode ? Colors.orange[600] : AppTheme.primaryColor,
               foregroundColor: Colors.white,
               disabledBackgroundColor: Colors.grey[300],
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
               elevation: _isLoading ? 0 : 2,
-              shadowColor: _isEditMode 
+              shadowColor: _isEditMode
                   ? Colors.orange.withValues(alpha: 0.3)
                   : AppTheme.primaryColor.withValues(alpha: 0.3),
             ),

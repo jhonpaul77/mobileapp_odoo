@@ -34,7 +34,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> {
   void initState() {
     super.initState();
     StatusBarService.setLightStatusBar();
-    
+
     _namaController = TextEditingController(
       text: widget.customer?.nama ?? '',
     );
@@ -47,7 +47,7 @@ class _CustomerFormPageState extends State<CustomerFormPage> {
     _catatanController = TextEditingController(
       text: widget.customer?.catatan ?? '',
     );
-    
+
     _isActive = widget.customer?.isActive ?? true;
   }
 
@@ -553,7 +553,8 @@ class _CustomerFormPageState extends State<CustomerFormPage> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: _isActive ? Colors.green[700] : Colors.red[700],
+                          color:
+                              _isActive ? Colors.green[700] : Colors.red[700],
                         ),
                       ),
                     ],
@@ -676,9 +677,8 @@ class _CustomerFormPageState extends State<CustomerFormPage> {
           child: ElevatedButton(
             onPressed: _isLoading ? null : _submit,
             style: ElevatedButton.styleFrom(
-              backgroundColor: _isEditMode
-                  ? Colors.orange[600]
-                  : AppTheme.primaryColor,
+              backgroundColor:
+                  _isEditMode ? Colors.orange[600] : AppTheme.primaryColor,
               foregroundColor: Colors.white,
               disabledBackgroundColor: Colors.grey[300],
               shape: RoundedRectangleBorder(

@@ -187,7 +187,7 @@ class SalesOrder {
 
   /// Get kurir name - use API value if available
   String? get kurirNameDisplay {
-    if (kurirName != null && kurirName != false) {
+    if (kurirName != null && kurirName!.isNotEmpty) {
       return kurirName;
     }
     if (kurirId == null || kurirId == false) return null;

@@ -15,7 +15,8 @@ class ProductCategoryDetailPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<ProductCategoryDetailPage> createState() => _ProductCategoryDetailPageState();
+  State<ProductCategoryDetailPage> createState() =>
+      _ProductCategoryDetailPageState();
 }
 
 class _ProductCategoryDetailPageState extends State<ProductCategoryDetailPage> {
@@ -37,7 +38,8 @@ class _ProductCategoryDetailPageState extends State<ProductCategoryDetailPage> {
       _errorMessage = null;
     });
 
-    final response = await _categoryService.getCategoryDetail(widget.categoryId);
+    final response =
+        await _categoryService.getCategoryDetail(widget.categoryId);
 
     if (mounted) {
       setState(() {

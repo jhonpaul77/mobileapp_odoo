@@ -133,13 +133,13 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
       final cityName = _cityMap[selected.cityId] ?? '';
       final stateId = _cityToStateMap[selected.cityId];
       final stateName = stateId != null ? _stateMap[stateId] ?? '' : '';
-      
+
       // Build display text: District, City, State
       final displayParts = [selected.name];
       if (cityName.isNotEmpty) displayParts.add(cityName);
       if (stateName.isNotEmpty) displayParts.add(stateName);
       final displayText = displayParts.join(', ');
-      
+
       setState(() {
         _selectedDistrictId = selected.id;
         _selectedCityId = selected.cityId;
@@ -157,20 +157,16 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
 
     try {
       final phoneNumber = _phoneController.text.trim();
-      final formattedPhone = phoneNumber.isNotEmpty ? '+62${phoneNumber}' : '';
-      
+      final formattedPhone = phoneNumber.isNotEmpty ? '+62$phoneNumber' : '';
+
       final data = {
         'name': _nameController.text.trim(),
-        if (formattedPhone.isNotEmpty)
-          'phone': formattedPhone,
+        if (formattedPhone.isNotEmpty) 'phone': formattedPhone,
         if (_streetController.text.trim().isNotEmpty)
           'street': _streetController.text.trim(),
-        if (_selectedDistrictId != null)
-          'district_id': _selectedDistrictId,
-        if (_selectedCityId != null)
-          'city_id': _selectedCityId,
-        if (_selectedStateId != null)
-          'state_id': _selectedStateId,
+        if (_selectedDistrictId != null) 'district_id': _selectedDistrictId,
+        if (_selectedCityId != null) 'city_id': _selectedCityId,
+        if (_selectedStateId != null) 'state_id': _selectedStateId,
         if (_zipController.text.trim().isNotEmpty)
           'zip': _zipController.text.trim(),
       };
@@ -399,8 +395,8 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
                     readOnly: true,
                     decoration: InputDecoration(
                       hintText: 'Pilih District',
-                      prefixIcon:
-                          Icon(Icons.location_on_outlined, color: Colors.red, size: 20),
+                      prefixIcon: Icon(Icons.location_on_outlined,
+                          color: Colors.red, size: 20),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
@@ -435,7 +431,8 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : const Icon(Icons.search, size: 16),
@@ -463,8 +460,8 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
               readOnly: true,
               decoration: InputDecoration(
                 hintText: 'Distrik, Kota, Provinsi akan muncul otomatis',
-                prefixIcon:
-                    Icon(Icons.location_city_outlined, color: Colors.purple, size: 20),
+                prefixIcon: Icon(Icons.location_city_outlined,
+                    color: Colors.purple, size: 20),
                 filled: true,
                 fillColor: Colors.grey[100],
                 border: OutlineInputBorder(

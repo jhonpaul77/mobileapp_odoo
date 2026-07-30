@@ -38,7 +38,7 @@ class _OrganizationFormPageState extends State<OrganizationFormPage> {
   void initState() {
     super.initState();
     StatusBarService.setLightStatusBar();
-    
+
     _namaController = TextEditingController(
       text: widget.organization?.nama ?? '',
     );
@@ -63,7 +63,7 @@ class _OrganizationFormPageState extends State<OrganizationFormPage> {
     _catatanController = TextEditingController(
       text: widget.organization?.catatan ?? '',
     );
-    
+
     _isActive = widget.organization?.isActive ?? true;
   }
 
@@ -692,7 +692,8 @@ class _OrganizationFormPageState extends State<OrganizationFormPage> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: _isActive ? Colors.green[700] : Colors.red[700],
+                          color:
+                              _isActive ? Colors.green[700] : Colors.red[700],
                         ),
                       ),
                     ],
@@ -815,9 +816,8 @@ class _OrganizationFormPageState extends State<OrganizationFormPage> {
           child: ElevatedButton(
             onPressed: _isLoading ? null : _submit,
             style: ElevatedButton.styleFrom(
-              backgroundColor: _isEditMode
-                  ? Colors.orange[600]
-                  : AppTheme.primaryColor,
+              backgroundColor:
+                  _isEditMode ? Colors.orange[600] : AppTheme.primaryColor,
               foregroundColor: Colors.white,
               disabledBackgroundColor: Colors.grey[300],
               shape: RoundedRectangleBorder(

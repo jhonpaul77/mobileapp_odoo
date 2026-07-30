@@ -16,7 +16,7 @@ class ProductCategoryService {
       print('📦 [CATEGORY] Fetching categories...');
       print('📦 [CATEGORY] URL: $url');
       print('📦 [CATEGORY] Params: length=$length, start=$start');
-      
+
       final response = await _api.get(
         ApiConfig.productCategoryFetch,
         queryParameters: {
@@ -28,10 +28,12 @@ class ProductCategoryService {
       print('📦 [CATEGORY] Response status: ${response.statusCode}');
       print('📦 [CATEGORY] Response data: ${response.data}');
 
-      final categoryResponse = ProductCategoryResponse.fromJsonList(response.data);
+      final categoryResponse =
+          ProductCategoryResponse.fromJsonList(response.data);
 
       if (categoryResponse.success) {
-        print('✅ [CATEGORY] Fetched ${categoryResponse.data?.length ?? 0} categories');
+        print(
+            '✅ [CATEGORY] Fetched ${categoryResponse.data?.length ?? 0} categories');
       } else {
         print('⚠️ [CATEGORY] Fetch warning: ${categoryResponse.message}');
       }
@@ -62,16 +64,20 @@ class ProductCategoryService {
   // GET - Get single category by ID
   Future<ProductCategoryResponse> getCategoryDetail(String categoryId) async {
     try {
-      final url = '${ApiConfig.baseUrl}${ApiConfig.productCategoryGet}/$categoryId';
+      final url =
+          '${ApiConfig.baseUrl}${ApiConfig.productCategoryGet}/$categoryId';
       print('📦 [CATEGORY] Getting detail for: $categoryId');
       print('📦 [CATEGORY] URL: $url');
-      
-      final response = await _api.get('${ApiConfig.productCategoryGet}/$categoryId');
 
-      final categoryResponse = ProductCategoryResponse.fromJsonSingle(response.data);
-      
+      final response =
+          await _api.get('${ApiConfig.productCategoryGet}/$categoryId');
+
+      final categoryResponse =
+          ProductCategoryResponse.fromJsonSingle(response.data);
+
       if (categoryResponse.success) {
-        print('✅ [CATEGORY] Detail loaded: ${categoryResponse.singleData?.nama}');
+        print(
+            '✅ [CATEGORY] Detail loaded: ${categoryResponse.singleData?.nama}');
       }
 
       return categoryResponse;
@@ -98,7 +104,7 @@ class ProductCategoryService {
       final url = '${ApiConfig.baseUrl}${ApiConfig.productCategoryCreate}';
       print('📦 [CATEGORY] Creating category: $nama');
       print('📦 [CATEGORY] URL: $url');
-      
+
       final response = await _api.post(
         ApiConfig.productCategoryCreate,
         data: {
@@ -110,8 +116,9 @@ class ProductCategoryService {
 
       print('📦 [CATEGORY] Create response: ${response.data}');
 
-      final categoryResponse = ProductCategoryResponse.fromJsonSingle(response.data);
-      
+      final categoryResponse =
+          ProductCategoryResponse.fromJsonSingle(response.data);
+
       if (categoryResponse.success) {
         print('✅ [CATEGORY] Created successfully');
       } else {
@@ -165,7 +172,8 @@ class ProductCategoryService {
 
       print('📦 [CATEGORY] Update response: ${response.data}');
 
-      final categoryResponse = ProductCategoryResponse.fromJsonSingle(response.data);
+      final categoryResponse =
+          ProductCategoryResponse.fromJsonSingle(response.data);
 
       if (categoryResponse.success) {
         print('✅ [CATEGORY] Updated successfully');

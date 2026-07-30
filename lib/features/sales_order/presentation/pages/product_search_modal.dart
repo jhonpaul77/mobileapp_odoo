@@ -51,7 +51,11 @@ class _ProductSearchModalState extends State<ProductSearchModal> {
       } else {
         _filteredProducts = widget.allProducts.where((product) {
           return product.name.toLowerCase().contains(lowercaseQuery) ||
-              (product.defaultCode?.toString().toLowerCase().contains(lowercaseQuery) ?? false);
+              (product.defaultCode
+                      ?.toString()
+                      .toLowerCase()
+                      .contains(lowercaseQuery) ??
+                  false);
         }).toList();
       }
     });
@@ -170,13 +174,11 @@ class _ProductSearchModalState extends State<ProductSearchModal> {
                     : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide:
-                      BorderSide(color: Colors.grey[300]!, width: 1),
+                  borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide:
-                      BorderSide(color: Colors.grey[300]!, width: 1),
+                  borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),

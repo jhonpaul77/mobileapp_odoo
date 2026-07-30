@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 
 class SecureStorageService {
-  static final SecureStorageService _instance = SecureStorageService._internal();
+  static final SecureStorageService _instance =
+      SecureStorageService._internal();
   factory SecureStorageService() => _instance;
   SecureStorageService._internal();
 

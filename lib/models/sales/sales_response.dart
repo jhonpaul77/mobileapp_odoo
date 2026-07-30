@@ -44,8 +44,9 @@ class SalesResponse {
     return SalesResponse(
       success: json['Success'] ?? json['success'] ?? false,
       message: json['Message'] ?? json['message'] ?? '',
-      singleData:
-          (data != null && data is Map<String, dynamic>) ? Sales.fromJson(data) : null,
+      singleData: (data != null && data is Map<String, dynamic>)
+          ? Sales.fromJson(data)
+          : null,
     );
   }
 

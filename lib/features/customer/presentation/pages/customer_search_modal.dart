@@ -40,13 +40,12 @@ class _CustomerSearchModalState extends State<CustomerSearchModal> {
         _filteredCustomers = widget.allCustomers;
       } else {
         final lowerQuery = query.toLowerCase();
-        _filteredCustomers = widget.allCustomers
-            .where((customer) {
-              final nameMatch = customer.name.toLowerCase().contains(lowerQuery);
-              final phoneMatch = (customer.phone ?? '').toLowerCase().contains(lowerQuery);
-              return nameMatch || phoneMatch;
-            })
-            .toList();
+        _filteredCustomers = widget.allCustomers.where((customer) {
+          final nameMatch = customer.name.toLowerCase().contains(lowerQuery);
+          final phoneMatch =
+              (customer.phone ?? '').toLowerCase().contains(lowerQuery);
+          return nameMatch || phoneMatch;
+        }).toList();
       }
     });
   }
@@ -130,7 +129,7 @@ class _CustomerSearchModalState extends State<CustomerSearchModal> {
                     itemCount: _filteredCustomers.length,
                     itemBuilder: (context, index) {
                       final customer = _filteredCustomers[index];
-                      
+
                       return InkWell(
                         onTap: () => Navigator.pop(context, customer),
                         child: Container(
@@ -154,7 +153,8 @@ class _CustomerSearchModalState extends State<CustomerSearchModal> {
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              if (customer.phone != null && customer.phone!.isNotEmpty)
+                              if (customer.phone != null &&
+                                  customer.phone!.isNotEmpty)
                                 Text(
                                   customer.phone!,
                                   style: TextStyle(

@@ -75,8 +75,8 @@ class _ProductGroupListPageState extends State<ProductGroupListPage> {
   }
 
   void _navigateToDetail(ProductGroup group) {
-   Navigator.push(
-     context,
+    Navigator.push(
+      context,
       MaterialPageRoute(
         builder: (context) => ProductGroupDetailPage(groupId: group.id),
       ),
@@ -118,7 +118,8 @@ class _ProductGroupListPageState extends State<ProductGroupListPage> {
           : FloatingActionButton(
               onPressed: _navigateToAdd,
               backgroundColor: AppTheme.brandOrange,
-              child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+              child:
+                  const Icon(Icons.add_rounded, color: Colors.white, size: 28),
             ),
     );
   }

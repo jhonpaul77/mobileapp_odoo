@@ -161,8 +161,8 @@ class _SalesPageState extends State<SalesPage> {
                   child: Column(
                     children: [
                       Container(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 12),
                         color: Colors.grey[100],
                         child: Row(
                           children: const [
@@ -187,9 +187,10 @@ class _SalesPageState extends State<SalesPage> {
                               Expanded(
                                 flex: 4,
                                 child: DropdownButtonFormField<String>(
-                                  initialValue: d.productId.isEmpty ? null : d.productId,
-                                  decoration:
-                                      const InputDecoration(border: InputBorder.none),
+                                  initialValue:
+                                      d.productId.isEmpty ? null : d.productId,
+                                  decoration: const InputDecoration(
+                                      border: InputBorder.none),
                                   items: _products
                                       .map((p) => DropdownMenuItem<String>(
                                             value: p['id'],
@@ -203,7 +204,8 @@ class _SalesPageState extends State<SalesPage> {
                                       _details[i] = SalesDetail(
                                         productId: v!,
                                         jumlah: d.jumlah,
-                                        harga: (prod['harga'] as num).toDouble(),
+                                        harga:
+                                            (prod['harga'] as num).toDouble(),
                                       );
                                     });
                                   },

@@ -284,14 +284,19 @@ class _SalesNotificationPageState extends State<SalesNotificationPage> {
     final theme = Theme.of(context);
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         // Navigate to detail page
-        Navigator.push(
+        final result = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
             builder: (context) => SalesOrderDetailPage(order: order),
           ),
         );
+
+        // Refresh if order was updated
+        if (result == true && mounted) {
+          context.read<SalesOrderProvider>().fetchSalesOrders();
+        }
       },
       child: Container(
         decoration: BoxDecoration(

@@ -835,6 +835,12 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
         return _SalesHistoryAccordion(
           orders: orders,
           customerId: widget.customer.id,
+          onRefreshNeeded: () {
+            // Reload the customer details when order is updated
+            setState(() {
+              _customerDetailsFuture = _loadCustomerDetails();
+            });
+          },
         );
       },
     );
@@ -1174,10 +1180,12 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
 class _SalesHistoryAccordion extends StatefulWidget {
   final List<dynamic> orders;
   final int customerId;
+  final VoidCallback onRefreshNeeded;
 
   const _SalesHistoryAccordion({
     required this.orders,
     required this.customerId,
+    required this.onRefreshNeeded,
   });
 
   @override
@@ -1541,7 +1549,9 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                                       try {
                                         final salesOrder =
                                             SalesOrder.fromJson(order);
-                                        await Navigator.of(context).push(
+                                        final result =
+                                            await Navigator.of(context)
+                                                .push<bool>(
                                           MaterialPageRoute(
                                             builder: (_) =>
                                                 SalesOrderDetailPage(
@@ -1549,6 +1559,11 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                                             ),
                                           ),
                                         );
+
+                                        // Refresh if order was updated
+                                        if (result == true && mounted) {
+                                          widget.onRefreshNeeded();
+                                        }
                                       } catch (e) {
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(

@@ -92,9 +92,9 @@ class _ProductListPageState extends State<ProductListPage> {
 
   String _formatCurrency(double value) {
     final formatted = value.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (match) => '.',
-    );
+          RegExp(r'\B(?=(\d{3})+(?!\d))'),
+          (match) => '.',
+        );
     return 'Rp $formatted';
   }
 
@@ -113,7 +113,8 @@ class _ProductListPageState extends State<ProductListPage> {
       appBar: AppBar(
         title: const Text(
           'Daftar Produk',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
+          style: TextStyle(
+              color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
         ),
         backgroundColor: AppTheme.primaryColor,
         elevation: 0,
@@ -140,7 +141,8 @@ class _ProductListPageState extends State<ProductListPage> {
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
             ),
             const SizedBox(height: 14),
@@ -152,7 +154,8 @@ class _ProductListPageState extends State<ProductListPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.shopping_bag_outlined, size: 64, color: Colors.grey[300]),
+                          Icon(Icons.shopping_bag_outlined,
+                              size: 64, color: Colors.grey[300]),
                           const SizedBox(height: 16),
                           Text(
                             'Tidak ada produk',
@@ -176,7 +179,8 @@ class _ProductListPageState extends State<ProductListPage> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[200]!, width: 1),
+                            border:
+                                Border.all(color: Colors.grey[200]!, width: 1),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.03),
@@ -215,10 +219,12 @@ class _ProductListPageState extends State<ProductListPage> {
 
                                 // Bottom: Price & Stock
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      _formatCurrency(product['price'] as double),
+                                      _formatCurrency(
+                                          product['price'] as double),
                                       style: const TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w700,
@@ -226,11 +232,13 @@ class _ProductListPageState extends State<ProductListPage> {
                                       ),
                                     ),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: isOutOfStock
                                             ? Colors.red.withValues(alpha: 0.1)
-                                            : Colors.green.withValues(alpha: 0.1),
+                                            : Colors.green
+                                                .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
@@ -240,7 +248,9 @@ class _ProductListPageState extends State<ProductListPage> {
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.w600,
-                                          color: isOutOfStock ? Colors.red : Colors.green,
+                                          color: isOutOfStock
+                                              ? Colors.red
+                                              : Colors.green,
                                         ),
                                       ),
                                     ),

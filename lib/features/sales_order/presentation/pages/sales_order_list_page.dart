@@ -319,15 +319,20 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
                     ],
                   ),
                   child: InkWell(
-                    onTap: () {
+                    onTap: () async {
                       // Navigate to detail page
-                      Navigator.push(
+                      final result = await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
                               SalesOrderDetailPage(order: order),
                         ),
                       );
+
+                      // Refresh list if order was updated
+                      if (result == true && mounted) {
+                        context.read<SalesOrderProvider>().fetchSalesOrders();
+                      }
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Padding(
@@ -448,15 +453,15 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
                                     const SizedBox(width: 12),
                                     Icon(Icons.receipt_long_outlined,
                                         size: 14,
-                                        color:
-                                            itemTheme.textTheme.bodySmall?.color),
+                                        color: itemTheme
+                                            .textTheme.bodySmall?.color),
                                     const SizedBox(width: 6),
                                     Text(
                                       'Order #${order.orderCount}',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color:
-                                            itemTheme.textTheme.bodyMedium?.color,
+                                        color: itemTheme
+                                            .textTheme.bodyMedium?.color,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),

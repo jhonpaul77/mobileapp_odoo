@@ -99,7 +99,7 @@ class _ProductGroupFormPageState extends State<ProductGroupFormPage> {
           Navigator.pop(context, true);
         } else {
           // Check if session expired
-          if (response.message.contains('Sesi') || 
+          if (response.message.contains('Sesi') ||
               response.message.contains('login')) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -107,7 +107,8 @@ class _ProductGroupFormPageState extends State<ProductGroupFormPage> {
                   children: [
                     Icon(Icons.lock_clock, color: Colors.white),
                     SizedBox(width: 12),
-                    Expanded(child: Text('Sesi berakhir. Silakan login kembali.')),
+                    Expanded(
+                        child: Text('Sesi berakhir. Silakan login kembali.')),
                   ],
                 ),
                 backgroundColor: Colors.orange[700],
@@ -227,7 +228,10 @@ class _ProductGroupFormPageState extends State<ProductGroupFormPage> {
         gradient: LinearGradient(
           colors: _isEditMode
               ? [Colors.orange[400]!, Colors.orange[600]!]
-              : [AppTheme.brandOrange, AppTheme.brandOrange.withValues(alpha: 0.7)],
+              : [
+                  AppTheme.brandOrange,
+                  AppTheme.brandOrange.withValues(alpha: 0.7)
+                ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -486,9 +490,8 @@ class _ProductGroupFormPageState extends State<ProductGroupFormPage> {
           child: ElevatedButton(
             onPressed: _isLoading ? null : _submit,
             style: ElevatedButton.styleFrom(
-              backgroundColor: _isEditMode
-                  ? Colors.orange[600]
-                  : AppTheme.brandOrange,
+              backgroundColor:
+                  _isEditMode ? Colors.orange[600] : AppTheme.brandOrange,
               foregroundColor: Colors.white,
               disabledBackgroundColor: Colors.grey[300],
               shape: RoundedRectangleBorder(

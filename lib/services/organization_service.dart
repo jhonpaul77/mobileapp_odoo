@@ -13,9 +13,10 @@ class OrganizationService {
   }) async {
     try {
       print('🔍 [ORGANIZATION] Fetching organizations...');
-      print('🔍 [ORGANIZATION] URL: ${ApiConfig.baseUrl}${ApiConfig.organizationFetch}');
+      print(
+          '🔍 [ORGANIZATION] URL: ${ApiConfig.baseUrl}${ApiConfig.organizationFetch}');
       print('🔍 [ORGANIZATION] Params: length=$length, start=$start');
-      
+
       final response = await _api.get(
         ApiConfig.organizationFetch,
         queryParameters: {
@@ -28,9 +29,10 @@ class OrganizationService {
       print('🔍 [ORGANIZATION] Response data: ${response.data}');
 
       final orgResponse = OrganizationResponse.fromJsonList(response.data);
-      
+
       if (orgResponse.success) {
-        print('✅ [ORGANIZATION] Fetched ${orgResponse.data?.length ?? 0} organizations');
+        print(
+            '✅ [ORGANIZATION] Fetched ${orgResponse.data?.length ?? 0} organizations');
       } else {
         print('⚠️ [ORGANIZATION] Fetch warning: ${orgResponse.message}');
       }
@@ -42,7 +44,8 @@ class OrganizationService {
       print('❌ [ORGANIZATION] Response: ${e.response?.data}');
       return OrganizationResponse(
         success: false,
-        message: e.response?.data['Message'] ?? 'Failed to fetch organizations: ${e.message}',
+        message: e.response?.data['Message'] ??
+            'Failed to fetch organizations: ${e.message}',
       );
     } catch (e) {
       print('❌ [ORGANIZATION] Unexpected error: $e');
@@ -54,18 +57,20 @@ class OrganizationService {
   }
 
   // ✅ GET - Get single organization by ID
-  Future<OrganizationResponse> getOrganizationDetail(String organizationId) async {
+  Future<OrganizationResponse> getOrganizationDetail(
+      String organizationId) async {
     try {
       print('🔍 [ORGANIZATION] Getting detail for: $organizationId');
-      
+
       final response = await _api.get(
         '${ApiConfig.organizationGet}/$organizationId',
       );
 
       final orgResponse = OrganizationResponse.fromJsonSingle(response.data);
-      
+
       if (orgResponse.success) {
-        print('✅ [ORGANIZATION] Detail loaded: ${orgResponse.singleData?.nama}');
+        print(
+            '✅ [ORGANIZATION] Detail loaded: ${orgResponse.singleData?.nama}');
       }
 
       return orgResponse;
@@ -73,7 +78,8 @@ class OrganizationService {
       print('❌ [ORGANIZATION] Detail error: ${e.message}');
       return OrganizationResponse(
         success: false,
-        message: e.response?.data['Message'] ?? 'Failed to get organization detail',
+        message:
+            e.response?.data['Message'] ?? 'Failed to get organization detail',
       );
     }
   }
@@ -92,8 +98,9 @@ class OrganizationService {
   }) async {
     try {
       print('🔍 [ORGANIZATION] Creating organization: $nama');
-      print('🔍 [ORGANIZATION] URL: ${ApiConfig.baseUrl}${ApiConfig.organizationCreate}');
-      
+      print(
+          '🔍 [ORGANIZATION] URL: ${ApiConfig.baseUrl}${ApiConfig.organizationCreate}');
+
       final response = await _api.post(
         ApiConfig.organizationCreate,
         data: {
@@ -112,7 +119,7 @@ class OrganizationService {
       print('🔍 [ORGANIZATION] Create response: ${response.data}');
 
       final orgResponse = OrganizationResponse.fromJsonSingle(response.data);
-      
+
       if (orgResponse.success) {
         print('✅ [ORGANIZATION] Created successfully');
       } else {
@@ -124,10 +131,11 @@ class OrganizationService {
       print('❌ [ORGANIZATION] Create error: ${e.message}');
       print('❌ [ORGANIZATION] Status: ${e.response?.statusCode}');
       print('❌ [ORGANIZATION] Response: ${e.response?.data}');
-      
+
       return OrganizationResponse(
         success: false,
-        message: e.response?.data['Message'] ?? 'Failed to create organization: ${e.message}',
+        message: e.response?.data['Message'] ??
+            'Failed to create organization: ${e.message}',
       );
     } catch (e) {
       print('❌ [ORGANIZATION] Unexpected error: $e');
@@ -153,7 +161,8 @@ class OrganizationService {
   }) async {
     try {
       print('🔍 [ORGANIZATION] Updating organization: $id');
-      print('🔍 [ORGANIZATION] URL: ${ApiConfig.baseUrl}${ApiConfig.organizationUpdate}');
+      print(
+          '🔍 [ORGANIZATION] URL: ${ApiConfig.baseUrl}${ApiConfig.organizationUpdate}');
 
       final response = await _api.put(
         ApiConfig.organizationUpdate,
@@ -189,7 +198,8 @@ class OrganizationService {
 
       return OrganizationResponse(
         success: false,
-        message: e.response?.data['Message'] ?? 'Failed to update organization: ${e.message}',
+        message: e.response?.data['Message'] ??
+            'Failed to update organization: ${e.message}',
       );
     } catch (e) {
       print('❌ [ORGANIZATION] Unexpected error: $e');
@@ -204,8 +214,9 @@ class OrganizationService {
   Future<OrganizationResponse> deleteOrganization(String organizationId) async {
     try {
       print('🔍 [ORGANIZATION] Deleting organization: $organizationId');
-      print('🔍 [ORGANIZATION] URL: ${ApiConfig.baseUrl}${ApiConfig.organizationUpdate}/$organizationId');
-      
+      print(
+          '🔍 [ORGANIZATION] URL: ${ApiConfig.baseUrl}${ApiConfig.organizationUpdate}/$organizationId');
+
       final response = await _api.delete(
         '${ApiConfig.organizationUpdate}/$organizationId',
       );
@@ -213,7 +224,7 @@ class OrganizationService {
       print('🔍 [ORGANIZATION] Delete response: ${response.data}');
 
       final orgResponse = OrganizationResponse.fromJsonNoData(response.data);
-      
+
       if (orgResponse.success) {
         print('✅ [ORGANIZATION] Deleted successfully');
       } else {
@@ -225,10 +236,11 @@ class OrganizationService {
       print('❌ [ORGANIZATION] Delete error: ${e.message}');
       print('❌ [ORGANIZATION] Status: ${e.response?.statusCode}');
       print('❌ [ORGANIZATION] Response: ${e.response?.data}');
-      
+
       return OrganizationResponse(
         success: false,
-        message: e.response?.data['Message'] ?? 'Failed to delete organization: ${e.message}',
+        message: e.response?.data['Message'] ??
+            'Failed to delete organization: ${e.message}',
       );
     } catch (e) {
       print('❌ [ORGANIZATION] Unexpected error: $e');

@@ -37,7 +37,8 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
       _errorMessage = null;
     });
 
-    final response = await _locationService.getLocationDetail(widget.locationId);
+    final response =
+        await _locationService.getLocationDetail(widget.locationId);
 
     if (mounted) {
       setState(() {
@@ -333,8 +334,8 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
             ),
             child: Center(
               child: Text(
-                _location!.nama.isNotEmpty 
-                    ? _location!.nama[0].toUpperCase() 
+                _location!.nama.isNotEmpty
+                    ? _location!.nama[0].toUpperCase()
                     : '?',
                 style: const TextStyle(
                   color: Colors.white,
@@ -345,7 +346,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Nama
           Text(
             _location!.nama,
@@ -357,7 +358,7 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
-          
+
           // Kode Badge
           Container(
             padding: const EdgeInsets.symmetric(

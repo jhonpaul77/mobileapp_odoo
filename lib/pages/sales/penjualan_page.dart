@@ -8,7 +8,7 @@ import 'package:pintarx/features/sales_order/presentation/pages/sales_order_deta
 import 'package:pintarx/features/sales_order/presentation/pages/sales_order_list_page.dart';
 import 'package:pintarx/features/sales_order/presentation/providers/sales_order_provider.dart';
 import 'package:pintarx/pages/sales/notification/sales_notification_page.dart';
-import 'package:pintarx/pages/sales/transaction/sales_page.dart';
+import 'package:pintarx/pages/sales/transaction/transaction_create_page.dart';
 import 'package:pintarx/services/status_bar_service.dart';
 import 'package:pintarx/widgets/common/app_header.dart';
 import 'package:pintarx/widgets/common/section_header.dart';
@@ -187,7 +187,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 15),
           Row(
             children: [
               Expanded(
@@ -195,17 +195,23 @@ class _PenjualanPageState extends State<PenjualanPage> {
                   "Transaksi Baru",
                   Icons.add_shopping_cart_rounded,
                   AppTheme.successColor,
-                  () {
-                    Navigator.push(
+                  () async {
+                    // Navigate to TransactionCreatePage (Production with Odoo API)
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const SalesPage(),
+                        builder: (context) => const TransactionCreatePage(),
                       ),
                     );
+
+                    // Refresh sales orders if a new order was created
+                    if (result == true && mounted) {
+                      context.read<SalesOrderProvider>().fetchSalesOrders();
+                    }
                   },
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: _buildQuickActionButton(
                   "Daftar Transaksi",
@@ -242,7 +248,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(11),
           border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
           // Subtle shadow for depth
           boxShadow: [
@@ -262,7 +268,7 @@ class _PenjualanPageState extends State<PenjualanPage> {
               label,
               style: TextStyle(
                 color: color,
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
                 // Ensure text is always readable
                 shadows: theme.brightness == Brightness.dark
@@ -537,14 +543,19 @@ class _PenjualanPageState extends State<PenjualanPage> {
           children: [
             // Transaction Card
             GestureDetector(
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                final result = await Navigator.push<bool>(
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
                         SalesOrderDetailPage(order: latestOrder),
                   ),
                 );
+
+                // Refresh if order was updated
+                if (result == true && mounted) {
+                  context.read<SalesOrderProvider>().fetchSalesOrders();
+                }
               },
               child: Container(
                 decoration: BoxDecoration(

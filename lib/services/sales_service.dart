@@ -138,4 +138,249 @@ class SalesService {
       return SalesResponse(success: false, message: e.toString());
     }
   }
+
+  // ✅ ODOO: Create sale order
+  ///
+  /// **Endpoint**: `/create_sale_order`
+  /// **Method**: `POST`
+  /// **Headers**:
+  /// ```
+  /// db: demotest
+  /// api-key: {api_key}
+  /// Content-Type: application/json
+  /// ```
+  ///
+  /// **Request Body**:
+  /// ```json
+  /// {
+  ///   "partner_name": "Customer Name",
+  ///   "partner_phone": "+62 812-3456-7890",
+  ///   "partner_street": "Address Line 1",
+  ///   "partner_street2": "Address Line 2",
+  ///   "partner_district": "District Name",
+  ///   "partner_city": "City Name",
+  ///   "partner_state": "State/Province Name",
+  ///   "date_order": "2026-07-29",
+  ///   "warehouse_id": 1,
+  ///   "kurir_id": 20,
+  ///   "awb": "ABC123456",
+  ///   "notes": "Order notes",
+  ///   "state": "confirm",
+  ///   "order_lines": [
+  ///     {
+  ///       "product_id": 2050,
+  ///       "product_uom_qty": 2.0,
+  ///       "analytic_distribution": "Channel Name",
+  ///       "price_unit": 215000.0
+  ///     }
+  ///   ]
+  /// }
+  /// ```
+  ///
+  /// **Response**: Success/Error message with created order data
+  Future<Map<String, dynamic>> createSaleOrder({
+    required String partnerName,
+    required String partnerPhone,
+    required String partnerStreet,
+    String? partnerStreet2,
+    required String partnerDistrict,
+    required String partnerCity,
+    required String partnerState,
+    required String dateOrder, // Format: "YYYY-MM-DD"
+    int? warehouseId, // Optional, API will use default
+    int? kurirId,
+    String? awb,
+    String? notes,
+    String state = 'draft', // draft, sent, sale, done, cancel
+    required List<Map<String, dynamic>> orderLines,
+  }) async {
+    try {
+      print('📝 [SALES] Creating sale order...');
+      print('📝 [SALES] Partner: $partnerName');
+      print('📝 [SALES] Order lines: ${orderLines.length} items');
+
+      // Validate order lines
+      if (orderLines.isEmpty) {
+        return {
+          'Success': false,
+          'Message': 'Order lines cannot be empty',
+        };
+      }
+
+      // Build request body
+      final requestBody = {
+        'partner_name': partnerName,
+        'partner_phone': partnerPhone,
+        'partner_street': partnerStreet,
+        'partner_street2': partnerStreet2 ?? '',
+        'partner_district': partnerDistrict,
+        'partner_city': partnerCity,
+        'partner_state': partnerState,
+        'date_order': dateOrder,
+        if (warehouseId != null) 'warehouse_id': warehouseId,
+        'kurir_id': kurirId ?? false,
+        'awb': awb ?? false,
+        'notes': notes ?? '',
+        'state': state,
+        'order_lines': orderLines,
+      };
+
+      print('📝 [SALES] Request body: $requestBody');
+
+      final response = await _api.post(
+        ApiConfig.createSaleOrder,
+        data: requestBody,
+      );
+
+      print('📝 [SALES] Response status: ${response.statusCode}');
+      print('📝 [SALES] Response data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        return {
+          'Success': true,
+          'Message': 'Sale order created successfully',
+          'Data': response.data,
+        };
+      } else {
+        return {
+          'Success': false,
+          'Message': 'Failed to create sale order',
+          'Data': response.data,
+        };
+      }
+    } on DioException catch (e) {
+      print('❌ [SALES] Create error: ${e.message}');
+      print('❌ [SALES] Response: ${e.response?.data}');
+
+      return {
+        'Success': false,
+        'Message': e.response?.data['Message'] ??
+            e.response?.data['message'] ??
+            'Failed to create sale order: ${e.message}',
+      };
+    } catch (e) {
+      print('❌ [SALES] Unexpected error: $e');
+      return {
+        'Success': false,
+        'Message': 'Unexpected error: $e',
+      };
+    }
+  }
+
+  // ✅ ODOO: Edit sale order
+  ///
+  /// **Endpoint**: `/edit_sale_order`
+  /// **Method**: `POST`
+  /// **Headers**:
+  /// ```
+  /// db: demotest
+  /// api-key: {api_key}
+  /// Content-Type: application/json
+  /// ```
+  ///
+  /// **Request Body**:
+  /// ```json
+  /// {
+  ///   "id": 4223,
+  ///   "partner_id": 32763,
+  ///   "partner_phone": "+62 812-3456-7890",
+  ///   "partner_district": "District Name",
+  ///   "partner_city": "City Name",
+  ///   "partner_state": "State/Province Name",
+  ///   "date_order": "2026-07-29",
+  ///   "warehouse_id": 1,
+  ///   "kurir_id": 20,
+  ///   "awb": "ABC123456",
+  ///   "state": "confirm",
+  ///   "order_lines": [...]
+  /// }
+  /// ```
+  ///
+  /// **Note**: Uses `partner_id` (not `partner_name`) for existing customer
+  ///
+  /// **Response**: Success/Error message with updated order data
+  Future<Map<String, dynamic>> editSaleOrder({
+    required int id,
+    required int partnerId,
+    required String partnerPhone,
+    required String partnerDistrict,
+    required String partnerCity,
+    required String partnerState,
+    required String dateOrder, // Format: "YYYY-MM-DD"
+    required int warehouseId,
+    int? kurirId,
+    String? awb,
+    String? state,
+    required List<Map<String, dynamic>> orderLines,
+  }) async {
+    try {
+      print('📝 [SALES] Editing sale order #$id...');
+      print('📝 [SALES] Partner ID: $partnerId');
+      print('📝 [SALES] Order lines: ${orderLines.length} items');
+
+      // Validate order lines
+      if (orderLines.isEmpty) {
+        return {
+          'Success': false,
+          'Message': 'Order lines cannot be empty',
+        };
+      }
+
+      // Build request body
+      final requestBody = {
+        'id': id,
+        'partner_id': partnerId,
+        'partner_phone': partnerPhone,
+        'partner_district': partnerDistrict,
+        'partner_city': partnerCity,
+        'partner_state': partnerState,
+        'date_order': dateOrder,
+        'warehouse_id': warehouseId,
+        'kurir_id': kurirId ?? false,
+        'awb': awb ?? false,
+        'state': state ?? 'draft',
+        'order_lines': orderLines,
+      };
+
+      print('📝 [SALES] Request body: $requestBody');
+
+      final response = await _api.post(
+        ApiConfig.editSaleOrder,
+        data: requestBody,
+      );
+
+      print('📝 [SALES] Response status: ${response.statusCode}');
+      print('📝 [SALES] Response data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        return {
+          'Success': true,
+          'Message': 'Sale order updated successfully',
+          'Data': response.data,
+        };
+      } else {
+        return {
+          'Success': false,
+          'Message': 'Failed to update sale order',
+          'Data': response.data,
+        };
+      }
+    } on DioException catch (e) {
+      print('❌ [SALES] Edit error: ${e.message}');
+      print('❌ [SALES] Response: ${e.response?.data}');
+
+      return {
+        'Success': false,
+        'Message': e.response?.data['Message'] ??
+            e.response?.data['message'] ??
+            'Failed to update sale order: ${e.message}',
+      };
+    } catch (e) {
+      print('❌ [SALES] Unexpected error: $e');
+      return {
+        'Success': false,
+        'Message': 'Unexpected error: $e',
+      };
+    }
+  }
 }

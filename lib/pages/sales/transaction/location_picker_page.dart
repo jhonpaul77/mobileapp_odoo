@@ -68,7 +68,8 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Pilih Lokasi', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+        title: const Text('Pilih Lokasi',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
         backgroundColor: AppTheme.primaryColor,
         elevation: 0,
         centerTitle: false,
@@ -87,7 +88,8 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
               controller: _searchController,
               onChanged: _search,
               decoration: InputDecoration(
-                prefixIcon: Icon(Icons.search, color: Colors.grey[600], size: 18),
+                prefixIcon:
+                    Icon(Icons.search, color: Colors.grey[600], size: 18),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? SizedBox(
                         width: 32,
@@ -105,7 +107,8 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
                 filled: true,
                 fillColor: Colors.grey[50],
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
@@ -116,7 +119,8 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
+                  borderSide: const BorderSide(
+                      color: AppTheme.primaryColor, width: 1.5),
                 ),
               ),
             ),
@@ -128,21 +132,28 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.location_off, size: 48, color: Colors.grey[300]),
+                        Icon(Icons.location_off,
+                            size: 48, color: Colors.grey[300]),
                         const SizedBox(height: 16),
                         Text(
-                          _searchController.text.isEmpty ? 'Search a location' : 'No location found',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 15, fontWeight: FontWeight.w500),
+                          _searchController.text.isEmpty
+                              ? 'Search a location'
+                              : 'No location found',
+                          style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     itemCount: _filteredResults.length,
                     itemBuilder: (context, index) {
                       final location = _filteredResults[index];
-                      
+
                       return GestureDetector(
                         onTap: () => _selectLocation(location),
                         child: AnimatedContainer(
@@ -170,7 +181,8 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                  color: AppTheme.primaryColor
+                                      .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
@@ -200,7 +212,8 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                               Icon(
                                 Icons.arrow_forward_ios,
                                 size: 14,
-                                color: AppTheme.primaryColor.withValues(alpha: 0.5),
+                                color: AppTheme.primaryColor
+                                    .withValues(alpha: 0.5),
                               ),
                             ],
                           ),

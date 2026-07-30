@@ -100,7 +100,8 @@ class _CustomerListPageState extends State<CustomerListPage> {
       appBar: AppBar(
         title: const Text(
           'Daftar Customer',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
+          style: TextStyle(
+              color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
         ),
         backgroundColor: AppTheme.primaryColor,
         elevation: 0,
@@ -127,7 +128,8 @@ class _CustomerListPageState extends State<CustomerListPage> {
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
             ),
             const SizedBox(height: 14),
@@ -139,7 +141,8 @@ class _CustomerListPageState extends State<CustomerListPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.people_outline, size: 64, color: Colors.grey[300]),
+                          Icon(Icons.people_outline,
+                              size: 64, color: Colors.grey[300]),
                           const SizedBox(height: 16),
                           Text(
                             'Tidak ada customer',
@@ -162,7 +165,8 @@ class _CustomerListPageState extends State<CustomerListPage> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[200]!, width: 1),
+                            border:
+                                Border.all(color: Colors.grey[200]!, width: 1),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.03),
@@ -178,7 +182,8 @@ class _CustomerListPageState extends State<CustomerListPage> {
                               children: [
                                 // Header: Name & Phone
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
                                       child: Text(
@@ -194,14 +199,18 @@ class _CustomerListPageState extends State<CustomerListPage> {
                                     ),
                                     const SizedBox(width: 8),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                        color: AppTheme.primaryColor
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Row(
                                         children: [
-                                          Icon(Icons.phone_rounded, size: 12, color: AppTheme.primaryColor),
+                                          Icon(Icons.phone_rounded,
+                                              size: 12,
+                                              color: AppTheme.primaryColor),
                                           const SizedBox(width: 4),
                                           Text(
                                             customer['phone'] as String,
@@ -221,7 +230,8 @@ class _CustomerListPageState extends State<CustomerListPage> {
                                 // Type & Address
                                 Row(
                                   children: [
-                                    Icon(Icons.location_on_rounded, size: 14, color: AppTheme.primaryColor),
+                                    Icon(Icons.location_on_rounded,
+                                        size: 14, color: AppTheme.primaryColor),
                                     const SizedBox(width: 6),
                                     Expanded(
                                       child: Text(

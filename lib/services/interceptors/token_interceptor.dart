@@ -10,15 +10,18 @@ class TokenInterceptor extends Interceptor {
 
   bool _isAuthEndpoint(String path) {
     return path.contains('/auth/signin') ||
-           path.contains('/auth/refresh') ||
-           path.contains('/auth/signout');
+        path.contains('/auth/refresh') ||
+        path.contains('/auth/signout');
   }
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  void onRequest(
+      RequestOptions options, RequestInterceptorHandler handler) async {
     if (_isAuthEndpoint(options.path)) return handler.next(options);
 
-    var token = options.headers['Authorization']?.toString().replaceFirst('Bearer ', '');
+    var token = options.headers['Authorization']
+        ?.toString()
+        .replaceFirst('Bearer ', '');
     token ??= await _storage.getAccessToken();
 
     if (token != null) {
@@ -37,7 +40,7 @@ class TokenInterceptor extends Interceptor {
       final data = err.response?.data;
       final isExpired = data is Map &&
           (data['Data'] == 'Token is expired' ||
-           data['Message']?.toString().contains('expired') == true);
+              data['Message']?.toString().contains('expired') == true);
 
       if (isExpired) {
         print('🔄 [INTERCEPTOR] Token expired, refreshing...');

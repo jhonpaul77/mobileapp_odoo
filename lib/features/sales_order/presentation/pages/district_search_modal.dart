@@ -46,14 +46,13 @@ class _DistrictSearchModalState extends State<DistrictSearchModal> {
         _filteredDistricts = widget.allDistricts;
       } else {
         final lowerQuery = query.toLowerCase();
-        _filteredDistricts = widget.allDistricts
-            .where((district) {
-              final districtMatch = district.name.toLowerCase().contains(lowerQuery);
-              final cityName = widget.cityNames?[district.cityId] ?? '';
-              final cityMatch = cityName.toLowerCase().contains(lowerQuery);
-              return districtMatch || cityMatch;
-            })
-            .toList();
+        _filteredDistricts = widget.allDistricts.where((district) {
+          final districtMatch =
+              district.name.toLowerCase().contains(lowerQuery);
+          final cityName = widget.cityNames?[district.cityId] ?? '';
+          final cityMatch = cityName.toLowerCase().contains(lowerQuery);
+          return districtMatch || cityMatch;
+        }).toList();
       }
     });
   }
@@ -149,13 +148,13 @@ class _DistrictSearchModalState extends State<DistrictSearchModal> {
                       final district = _filteredDistricts[index];
                       final cityName = _getCityName(district.cityId);
                       final stateName = _getStateName(district.cityId);
-                      
+
                       // Build display text: District, City, State
                       final displayParts = [district.name];
                       if (cityName.isNotEmpty) displayParts.add(cityName);
                       if (stateName.isNotEmpty) displayParts.add(stateName);
                       final displayText = displayParts.join(', ');
-                      
+
                       return InkWell(
                         onTap: () => Navigator.pop(context, district),
                         child: Container(

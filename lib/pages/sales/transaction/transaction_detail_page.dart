@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/pages/sales/transaction/transaction_edit_page.dart';
+// import 'package:pintarx/pages/sales/transaction/transaction_edit_page.dart'; // Archived - use SalesOrderEditPage instead
 import 'package:url_launcher/url_launcher.dart';
 
 class TransactionDetailPage extends StatefulWidget {
@@ -34,17 +34,28 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
   }
 
   Future<void> _openEditPage() async {
-    final updated = await Navigator.of(context).push<Map<String, dynamic>>(
-      MaterialPageRoute(
-        builder: (_) => TransactionEditPage(transaction: transaction),
+    // NOTE: This is a mockup detail page. For production, use:
+    // SalesOrderDetailPage → SalesOrderEditPage
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('⚠️ Edit feature available in SalesOrderDetailPage'),
+        backgroundColor: Colors.orange,
       ),
     );
 
-    if (updated != null) {
-      setState(() {
-        transaction = Map<String, dynamic>.from(updated);
-      });
-    }
+    // Old code (archived):
+    // final updated = await Navigator.of(context).push<Map<String, dynamic>>(
+    //   MaterialPageRoute(
+    //     builder: (_) => TransactionEditPage(transaction: transaction),
+    //   ),
+    // );
+    //
+    // if (updated != null) {
+    //   setState(() {
+    //     transaction = Map<String, dynamic>.from(updated);
+    //   });
+    // }
   }
 
   void _changeStatusToOpen() {

@@ -88,7 +88,8 @@ class _OrganizationListPageState extends State<OrganizationListPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => OrganizationDetailPage(organizationId: organization.id),
+        builder: (context) =>
+            OrganizationDetailPage(organizationId: organization.id),
       ),
     ).then((_) => _loadOrganizations());
   }
@@ -128,7 +129,8 @@ class _OrganizationListPageState extends State<OrganizationListPage> {
           : FloatingActionButton(
               onPressed: _navigateToAdd,
               backgroundColor: AppTheme.brandBlue,
-              child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+              child:
+                  const Icon(Icons.add_rounded, color: Colors.white, size: 28),
             ),
     );
   }
@@ -204,7 +206,7 @@ class _OrganizationListPageState extends State<OrganizationListPage> {
             ),
           ),
           const SizedBox(height: 12),
-          
+
           // Filter Status
           Row(
             children: [
@@ -216,7 +218,9 @@ class _OrganizationListPageState extends State<OrganizationListPage> {
                     color: AppTheme.backgroundColor,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: _showInactive ? AppTheme.primaryColor : Colors.grey[300]!,
+                      color: _showInactive
+                          ? AppTheme.primaryColor
+                          : Colors.grey[300]!,
                       width: _showInactive ? 2 : 1,
                     ),
                   ),
@@ -225,7 +229,9 @@ class _OrganizationListPageState extends State<OrganizationListPage> {
                       Icon(
                         Icons.check_circle_rounded,
                         size: 18,
-                        color: _showInactive ? Colors.grey[600] : AppTheme.primaryColor,
+                        color: _showInactive
+                            ? Colors.grey[600]
+                            : AppTheme.primaryColor,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -233,7 +239,9 @@ class _OrganizationListPageState extends State<OrganizationListPage> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: _showInactive ? Colors.grey[600] : AppTheme.primaryColor,
+                          color: _showInactive
+                              ? Colors.grey[600]
+                              : AppTheme.primaryColor,
                         ),
                       ),
                     ],
@@ -309,7 +317,8 @@ class _OrganizationListPageState extends State<OrganizationListPage> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: organization.isActive ? Colors.grey[200]! : Colors.grey[300]!,
+            color:
+                organization.isActive ? Colors.grey[200]! : Colors.grey[300]!,
             width: 1,
           ),
           boxShadow: [
@@ -350,7 +359,7 @@ class _OrganizationListPageState extends State<OrganizationListPage> {
               ),
             ),
             const SizedBox(width: 12),
-            
+
             // Content
             Expanded(
               child: Column(
@@ -397,7 +406,7 @@ class _OrganizationListPageState extends State<OrganizationListPage> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  
+
                   // Kota & Kecamatan
                   Text(
                     '${organization.kecamatan}, ${organization.kota}',
@@ -409,7 +418,7 @@ class _OrganizationListPageState extends State<OrganizationListPage> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
-                  
+
                   // No Telp
                   Row(
                     children: [
@@ -434,7 +443,7 @@ class _OrganizationListPageState extends State<OrganizationListPage> {
               ),
             ),
             const SizedBox(width: 8),
-            
+
             // Chevron
             Icon(
               Icons.chevron_right_rounded,
@@ -517,8 +526,8 @@ class _OrganizationListPageState extends State<OrganizationListPage> {
           Text(
             _errorMessage ?? 'Gagal memuat data',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppTheme.textSecondary,
-            ),
+                  color: AppTheme.textSecondary,
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppTheme.paddingLarge),

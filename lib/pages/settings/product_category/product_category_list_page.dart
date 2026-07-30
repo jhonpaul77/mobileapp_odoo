@@ -13,7 +13,8 @@ class ProductCategoryListPage extends StatefulWidget {
   const ProductCategoryListPage({Key? key}) : super(key: key);
 
   @override
-  State<ProductCategoryListPage> createState() => _ProductCategoryListPageState();
+  State<ProductCategoryListPage> createState() =>
+      _ProductCategoryListPageState();
 }
 
 class _ProductCategoryListPageState extends State<ProductCategoryListPage> {
@@ -81,7 +82,8 @@ class _ProductCategoryListPageState extends State<ProductCategoryListPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ProductCategoryDetailPage(categoryId: category.id),
+        builder: (context) =>
+            ProductCategoryDetailPage(categoryId: category.id),
       ),
     ).then((_) => _loadCategories());
   }
@@ -121,7 +123,8 @@ class _ProductCategoryListPageState extends State<ProductCategoryListPage> {
           : FloatingActionButton(
               onPressed: _navigateToAdd,
               backgroundColor: AppTheme.brandBlue,
-              child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+              child:
+                  const Icon(Icons.add_rounded, color: Colors.white, size: 28),
             ),
     );
   }
@@ -375,8 +378,8 @@ class _ProductCategoryListPageState extends State<ProductCategoryListPage> {
           Text(
             _errorMessage ?? 'Gagal memuat data',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppTheme.textSecondary,
-            ),
+                  color: AppTheme.textSecondary,
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppTheme.paddingLarge),

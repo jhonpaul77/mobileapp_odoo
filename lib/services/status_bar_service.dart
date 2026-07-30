@@ -33,8 +33,8 @@ class StatusBarService {
   /// Set status bar dengan warna theme
   static void setThemeStatusBar(Color bgColor, Color? statusBarColor) {
     // Tentukan brightness berdasarkan color luminance
-    final brightness = bgColor.computeLuminance() > 0.5 
-        ? Brightness.dark  // Background terang → icon gelap
+    final brightness = bgColor.computeLuminance() > 0.5
+        ? Brightness.dark // Background terang → icon gelap
         : Brightness.light; // Background gelap → icon putih
 
     SystemChrome.setSystemUIOverlayStyle(
