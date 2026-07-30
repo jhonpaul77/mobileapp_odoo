@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -699,8 +698,8 @@ TERIMA KASIH''';
                             ),
                           ],
                         ),
-                        child: const FaIcon(
-                          FontAwesomeIcons.whatsapp,
+                        child: const Icon(
+                          Icons.message,
                           color: Colors.white,
                           size: 16,
                         ),
@@ -731,8 +730,8 @@ TERIMA KASIH''';
                             ),
                           ],
                         ),
-                        child: const FaIcon(
-                          FontAwesomeIcons.whatsapp,
+                        child: const Icon(
+                          Icons.message,
                           color: Colors.white,
                           size: 16,
                         ),

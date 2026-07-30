@@ -414,12 +414,43 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
       child: Column(
         children: [
           if (customer.phone != null && customer.phone!.isNotEmpty)
-            _buildDetailRow(
-              icon: Icons.phone_rounded,
-              iconColor: Colors.green,
-              label: 'Telepon',
-              value: customer.phone!,
-              onCopy: () => _copyToClipboard(customer.phone!),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _buildDetailRow(
+                    icon: Icons.phone_rounded,
+                    iconColor: Colors.green,
+                    label: 'Telepon',
+                    value: customer.phone!,
+                    onCopy: () => _copyToClipboard(customer.phone!),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // WhatsApp Button
+                Padding(
+                  padding: const EdgeInsets.only(top: 24),
+                  child: GestureDetector(
+                    onTap: () => _openWhatsApp(customer.phone!),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF25D366).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0xFF25D366).withValues(alpha: 0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.message_rounded,
+                        size: 20,
+                        color: Color(0xFF25D366),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           if (customer.phone != null &&
               customer.phone!.isNotEmpty &&
@@ -1087,6 +1118,64 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Open WhatsApp chat
+  void _openWhatsApp(String phone) async {
+    if (phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nomor telepon tidak tersedia'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Format phone number for WhatsApp
+      String formattedPhone = phone.trim().replaceAll(RegExp(r'[^\d+]'), '');
+      
+      // Handle Indonesian format
+      if (formattedPhone.startsWith('0')) {
+        formattedPhone = formattedPhone.substring(1);
+      }
+      if (!formattedPhone.startsWith('+')) {
+        formattedPhone = '+62$formattedPhone';
+      }
+
+      // WhatsApp URI format: https://api.whatsapp.com/send?phone=PHONENUMBER
+      final Uri whatsappUri = Uri.parse(
+        'https://api.whatsapp.com/send?phone=$formattedPhone',
+      );
+
+      if (await canLaunchUrl(whatsappUri)) {
+        await launchUrl(
+          whatsappUri,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Tidak dapat membuka WhatsApp\nNomor: $formattedPhone'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error membuka WhatsApp: $e'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),

@@ -43,9 +43,6 @@ dependencies:
   # ✅ BARU: untuk error logging
   path_provider: ^2.1.5
   
-  # ✅ BARU: untuk WhatsApp icon
-  font_awesome_flutter: ^10.7.0
-  
   # ✅ BARU: untuk logging (JANGAN pakai print!)
   logger: ^2.4.0
   
