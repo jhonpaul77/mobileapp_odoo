@@ -86,6 +86,10 @@ class ApiConfig {
   static const String sales = '$apiVersion/sales'; // POST - Create
   //static const String sales = "/sales";
 
+  // ✅ SALES ENDPOINTS - ODOO
+  static const String getSalesOrder = '/get_sale_order'; // GET - Get all sales orders
+  static const String editSalesOrder = '/edit_sale_order'; // POST - Edit sales order
+
   // ========================================
   // 📋 HEADERS CONFIGURATION
   // ========================================

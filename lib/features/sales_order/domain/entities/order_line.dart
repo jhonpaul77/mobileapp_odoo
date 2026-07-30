@@ -15,6 +15,7 @@ class OrderLine {
   final String? productName; // From API - product name
   final double productUomQty;
   final dynamic analyticDistribution; // Can be String or Map<String, dynamic>
+  final int? analyticId; // Analytic ID for selection/editing
   final double priceUnit;
   final double? priceSubtotal;
 
@@ -23,6 +24,7 @@ class OrderLine {
     this.productName,
     required this.productUomQty,
     this.analyticDistribution,
+    this.analyticId,
     required this.priceUnit,
     this.priceSubtotal,
   });
@@ -47,11 +49,21 @@ class OrderLine {
       productNameParsed = productNameRaw;
     }
 
+    // Parse analytic_id if available
+    int? analyticIdParsed;
+    final analyticIdRaw = json['analytic_id'];
+    if (analyticIdRaw is int) {
+      analyticIdParsed = analyticIdRaw;
+    } else if (analyticIdRaw is String) {
+      analyticIdParsed = int.tryParse(analyticIdRaw);
+    }
+
     return OrderLine(
       productId: json['product_id'],
       productName: productNameParsed,
       productUomQty: (json['product_uom_qty'] as num?)?.toDouble() ?? 0.0,
       analyticDistribution: analyticDist,
+      analyticId: analyticIdParsed,
       priceUnit: (json['price_unit'] as num?)?.toDouble() ?? 0.0,
       priceSubtotal: (json['price_subtotal'] as num?)?.toDouble(),
     );
@@ -107,6 +119,7 @@ class OrderLine {
       'product_name': productName,
       'product_uom_qty': productUomQty,
       'analytic_distribution': analyticDistribution,
+      if (analyticId != null) 'analytic_id': analyticId,
       'price_unit': priceUnit,
       if (priceSubtotal != null) 'price_subtotal': priceSubtotal,
     };
