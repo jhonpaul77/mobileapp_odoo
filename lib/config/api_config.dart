@@ -76,19 +76,23 @@ class ApiConfig {
   // ✅ SALES ORDER ENDPOINTS - ODOO
   static const String getSaleOrder =
       '/get_sale_order'; // GET - Get all sales orders
+  static const String createSaleOrder =
+      '/create_sale_order'; // POST - Create sales order
+  static const String editSaleOrder =
+      '/edit_sale_order'; // POST - Edit sales order
 
   // ✅ LOCATION ENDPOINTS - ODOO
   static const String getState = '/get_state'; // GET - Get all states/provinces
   static const String getCity = '/get_city'; // GET - Get all cities
   static const String getDistrict = '/get_district'; // GET - Get all districts
 
+  // ✅ ANALYTIC ENDPOINTS - ODOO
+  static const String getAnalytic =
+      '/get_analytic'; // GET - Get all analytic accounts
+
   // ✅ SALES ENDPOINTS - TAMBAHAN
   static const String sales = '$apiVersion/sales'; // POST - Create
   //static const String sales = "/sales";
-
-  // ✅ SALES ENDPOINTS - ODOO
-  static const String getSalesOrder = '/get_sale_order'; // GET - Get all sales orders
-  static const String editSalesOrder = '/edit_sale_order'; // POST - Edit sales order
 
   // ========================================
   // 📋 HEADERS CONFIGURATION

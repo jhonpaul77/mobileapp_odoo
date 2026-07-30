@@ -1,25 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 
 import '../../../../config/theme.dart';
-import '../../domain/entities/sales_order.dart';
-import '../../domain/entities/order_line.dart';
-import '../../data/repositories/sales_order_repository.dart';
-import '../../../product/data/datasources/product_remote_datasource.dart';
-import '../../../product/data/models/product_model.dart';
-import '../../../location/data/datasources/location_remote_datasource.dart';
-import '../../../location/domain/entities/district.dart';
+import '../../../../services/config_service.dart';
+import '../../../../services/sales_service.dart';
+import '../../../../services/secure_storage_service.dart';
 import '../../../customer/data/datasources/customer_remote_datasource.dart';
 import '../../../customer/domain/entities/customer.dart';
 import '../../../customer/presentation/pages/customer_search_modal.dart';
-import '../../../analytic/domain/entities/analytic.dart';
-import '../../../analytic/data/datasources/analytic_remote_datasource.dart';
-import '../../../analytic/presentation/pages/analytic_search_modal.dart';
-import '../../../../services/config_service.dart';
-import '../../../../services/secure_storage_service.dart';
-import 'product_search_modal.dart';
+import '../../../location/data/datasources/location_remote_datasource.dart';
+import '../../../location/domain/entities/district.dart';
+import '../../../product/data/datasources/product_remote_datasource.dart';
+import '../../../product/data/models/product_model.dart';
+import '../../domain/entities/order_line.dart';
+import '../../domain/entities/sales_order.dart';
 import 'district_search_modal.dart';
+import 'product_search_modal.dart';
 
 /// Input formatter untuk menambahkan separator pada angka
 class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
@@ -74,6 +72,9 @@ class SalesOrderEditPage extends StatefulWidget {
 }
 
 class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
+  final _salesService = SalesService();
+  final logger = Logger();
+
   late final TextEditingController _customerNameController;
   late final TextEditingController _warehouseNameController;
   late final TextEditingController _kurirNameController;
@@ -86,33 +87,37 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   late List<ProductModel> _allProducts = [];
   late List<District> _allDistricts = [];
   late List<Customer> _allCustomers = [];
-  late List<Analytic> _allAnalytics = [];
   late Map<int, String> _cityMap = {}; // cityId -> cityName
   late Map<int, String> _stateMap = {}; // stateId -> stateName
   late Map<int, int> _cityToStateMap = {}; // cityId -> stateId
-  bool _loadingData = false;
-  int? _selectedCustomerId;
   final _currencyFormat =
       NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+
+  // State variables
+  bool _isLoading = false;
+  int? _selectedCustomerId;
+  // int? _selectedDistrictId; // Removed: unused field
+  int? _selectedCityId;
 
   @override
   void initState() {
     super.initState();
     final order = widget.order;
 
-    _customerNameController =
-        TextEditingController(text: order.customerName);
+    _customerNameController = TextEditingController(text: order.customerName);
     _addressController =
         TextEditingController(text: order.address?.toString() ?? '');
     _districtController =
         TextEditingController(text: order.district?.toString() ?? '');
-    _cityController =
-        TextEditingController(text: order.city?.toString() ?? '');
-    _warehouseNameController = TextEditingController(
-        text: order.warehouseNameDisplay ?? '');
+    _cityController = TextEditingController(text: order.city?.toString() ?? '');
+    _warehouseNameController =
+        TextEditingController(text: order.warehouseNameDisplay ?? '');
     _kurirNameController =
         TextEditingController(text: order.kurirNameDisplay ?? '');
     _awbController = TextEditingController(text: order.awb?.toString() ?? '');
+
+    // Store IDs for API calls
+    _selectedCustomerId = order.partnerId;
 
     _orderLines = order.orderLines
         .map((line) => OrderLine(
@@ -120,7 +125,6 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
               productName: line.productName, // Keep the product name from API
               productUomQty: line.productUomQty,
               analyticDistribution: line.analyticDistribution,
-              analyticId: line.analyticId,
               priceUnit: line.priceUnit,
               priceSubtotal: line.priceSubtotal,
             ))
@@ -129,7 +133,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     _lineControllers = _orderLines.map((line) {
       // Parse analytic account from distribution
       String analyticAccount = '';
-      if (line.analyticDistributionName.isNotEmpty && line.analyticDistributionName != '-') {
+      if (line.analyticDistributionName.isNotEmpty &&
+          line.analyticDistributionName != '-') {
         analyticAccount = line.analyticDistributionName;
       }
 
@@ -137,8 +142,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         'product': TextEditingController(text: line.productNameDisplay),
         'analyticAccount': TextEditingController(text: analyticAccount),
         'qty': TextEditingController(text: line.productUomQty.toString()),
-        'price': TextEditingController(
-            text: _formatPrice(line.priceUnit)),
+        'price': TextEditingController(text: _formatPrice(line.priceUnit)),
       };
     }).toList();
 
@@ -147,8 +151,6 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
 
   Future<void> _loadData() async {
     try {
-      setState(() => _loadingData = true);
-
       final configService = ConfigService();
       final storage = SecureStorageService();
 
@@ -156,39 +158,41 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       final db = config['database'] as String?;
       final apiKey = await storage.getAccessToken();
 
-      print('🔵 Loading edit page data: db=$db, apiKey=${apiKey != null}');
+      logger.i('🔵 Loading edit page data: db=$db, apiKey=${apiKey != null}');
 
       if (db == null || apiKey == null) {
-        print('❌ Missing config: db=$db, apiKey=$apiKey');
+        logger.e('❌ Missing config: db=$db, apiKey=$apiKey');
         return;
       }
 
       // Load products
       try {
         final productDatasource = ProductRemoteDataSource();
-        final products = await productDatasource.getProducts(db: db, apiKey: apiKey);
-        print('✅ Loaded ${products.length} products');
+        final products =
+            await productDatasource.getProducts(db: db, apiKey: apiKey);
+        logger.i('✅ Loaded ${products.length} products');
         if (mounted) {
           setState(() {
             _allProducts = products;
           });
         }
       } catch (e) {
-        print('❌ Error loading products: $e');
+        logger.e('❌ Error loading products', error: e);
       }
 
       // Load customers
       try {
         final customerDatasource = CustomerRemoteDataSource();
-        final customers = await customerDatasource.getCustomers(db: db, apiKey: apiKey);
-        print('✅ Loaded ${customers.length} customers');
+        final customers =
+            await customerDatasource.getCustomers(db: db, apiKey: apiKey);
+        logger.i('✅ Loaded ${customers.length} customers');
         if (mounted) {
           setState(() {
             _allCustomers = customers.map((model) => model.toEntity()).toList();
           });
         }
       } catch (e) {
-        print('❌ Error loading customers: $e');
+        logger.e('❌ Error loading customers', error: e);
       }
 
       // Load cities
@@ -198,8 +202,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           db: db,
           apiKey: apiKey,
         );
-        print('✅ Loaded ${cities.length} cities');
-        
+        logger.i('✅ Loaded ${cities.length} cities');
+
         // Build city map and city-to-state map
         final cityMap = <int, String>{};
         final cityToStateMap = <int, int>{};
@@ -207,7 +211,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           cityMap[city.id] = city.name;
           cityToStateMap[city.id] = city.stateId;
         }
-        
+
         if (mounted) {
           setState(() {
             _cityMap = cityMap;
@@ -215,7 +219,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           });
         }
       } catch (e) {
-        print('❌ Error loading cities: $e');
+        logger.e('❌ Error loading cities', error: e);
       }
 
       // Load states
@@ -225,21 +229,21 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           db: db,
           apiKey: apiKey,
         );
-        print('✅ Loaded ${states.length} states');
-        
+        logger.i('✅ Loaded ${states.length} states');
+
         // Build state map
         final stateMap = <int, String>{};
         for (final state in states) {
           stateMap[state.id] = state.name;
         }
-        
+
         if (mounted) {
           setState(() {
             _stateMap = stateMap;
           });
         }
       } catch (e) {
-        print('❌ Error loading states: $e');
+        logger.e('❌ Error loading states', error: e);
       }
 
       // Load districts
@@ -249,36 +253,17 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           db: db,
           apiKey: apiKey,
         );
-        print('✅ Loaded ${districts.length} districts');
+        logger.i('✅ Loaded ${districts.length} districts');
         if (mounted) {
           setState(() {
             _allDistricts = districts;
           });
         }
       } catch (e) {
-        print('❌ Error loading districts: $e');
-      }
-
-      // Load analytics
-      try {
-        final analyticDatasource = AnalyticRemoteDataSource();
-        final analytics = await analyticDatasource.getAnalytics(
-          db: db,
-          apiKey: apiKey,
-        );
-        print('✅ Loaded ${analytics.length} analytics');
-        if (mounted) {
-          setState(() {
-            _allAnalytics = analytics;
-          });
-        }
-      } catch (e) {
-        print('❌ Error loading analytics: $e');
+        logger.e('❌ Error loading districts', error: e);
       }
     } catch (e) {
-      print('❌ Error in _loadData: $e');
-    } finally {
-      if (mounted) setState(() => _loadingData = false);
+      logger.e('❌ Error in _loadData', error: e);
     }
   }
 
@@ -292,15 +277,15 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       final line = _orderLines[lineIndex];
       setState(() {
         _lineControllers[lineIndex]['product']!.text = selected.name;
-        _lineControllers[lineIndex]['price']!.text = _formatPrice(selected.listPrice);
-        
+        _lineControllers[lineIndex]['price']!.text =
+            _formatPrice(selected.listPrice);
+
         // Update the order line with new product info
         _orderLines[lineIndex] = OrderLine(
           productId: selected.id,
           productName: selected.name,
           productUomQty: line.productUomQty,
           analyticDistribution: line.analyticDistribution,
-          analyticId: line.analyticId,
           priceUnit: selected.listPrice,
           priceSubtotal: line.productUomQty * selected.listPrice,
         );
@@ -322,73 +307,15 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     if (selected != null) {
       // Get city name from map or by looking it up
       String cityName = _cityMap[selected.cityId] ?? '';
-      
+
       setState(() {
+        // _selectedDistrictId = selected.id; // Removed: variable not used elsewhere
+        _selectedCityId = selected.cityId;
         _districtController.text = selected.name;
         _cityController.text = cityName;
       });
-    }
-  }
 
-  Future<void> _selectAnalytic(int lineIndex) async {
-    // If analytics not loaded yet, try to load them
-    if (_allAnalytics.isEmpty) {
-      print('⚠️ Analytics not loaded yet, loading on-demand...');
-      try {
-        final configService = ConfigService();
-        final storage = SecureStorageService();
-        final config = await configService.load();
-        final db = config['database'] as String?;
-        final apiKey = await storage.getAccessToken();
-
-        if (db != null && apiKey != null) {
-          final analyticDatasource = AnalyticRemoteDataSource();
-          _allAnalytics = await analyticDatasource.getAnalytics(
-            db: db,
-            apiKey: apiKey,
-          );
-          print('✅ Analytics loaded on-demand: ${_allAnalytics.length} items');
-        }
-      } catch (e) {
-        print('❌ Error loading analytics on-demand: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error loading analytics: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-    }
-
-    final selected = await AnalyticSearchModal.show(
-      context,
-      selectedAnalytic: _orderLines[lineIndex].analyticId != null
-          ? _allAnalytics.firstWhere(
-              (a) => a.id == _orderLines[lineIndex].analyticId,
-              orElse: () => Analytic(id: 0, name: 'Unknown'),
-            )
-          : null,
-    );
-
-    if (selected != null) {
-      setState(() {
-        _lineControllers[lineIndex]['analyticAccount']!.text = selected.name;
-        
-        // Update the order line with analytic info
-        final line = _orderLines[lineIndex];
-        _orderLines[lineIndex] = OrderLine(
-          productId: line.productId,
-          productName: line.productName,
-          productUomQty: line.productUomQty,
-          analyticDistribution: selected.name,
-          analyticId: selected.id,
-          priceUnit: line.priceUnit,
-          priceSubtotal: line.priceSubtotal,
-        );
-      });
+      logger.i('Selected district: ${selected.name}, city: $cityName');
     }
   }
 
@@ -403,6 +330,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         _selectedCustomerId = selected.id;
         _customerNameController.text = selected.name;
       });
+
+      logger.i('Selected customer: ${selected.name} (ID: ${selected.id})');
     }
   }
 
@@ -428,11 +357,13 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     final line = _orderLines[index];
 
     // Update qty
-    final newQty = double.tryParse(controllers['qty']!.text.replaceAll('.', '')) ??
-        line.productUomQty;
+    final newQty =
+        double.tryParse(controllers['qty']!.text.replaceAll('.', '')) ??
+            line.productUomQty;
 
     // Update price - remove separator first
-    final priceText = controllers['price']!.text.replaceAll('Rp ', '').replaceAll('.', '');
+    final priceText =
+        controllers['price']!.text.replaceAll('Rp ', '').replaceAll('.', '');
     final newPrice = double.tryParse(priceText) ?? line.priceUnit;
 
     _orderLines[index] = OrderLine(
@@ -440,7 +371,6 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       productName: line.productName, // Preserve product name
       productUomQty: newQty,
       analyticDistribution: line.analyticDistribution,
-      analyticId: line.analyticId, // Preserve analytic ID
       priceUnit: newPrice,
       priceSubtotal: newQty * newPrice,
     );
@@ -448,117 +378,177 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
 
   String _formatPrice(double value) {
     final formatted = value.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (match) => '.',
-    );
+          RegExp(r'\B(?=(\d{3})+(?!\d))'),
+          (match) => '.',
+        );
     return formatted;
   }
 
-  void _saveChanges() async {
+  // Removed unused method: _formatDateForOdoo
+
+  Future<void> _saveChanges() async {
+    // Validate required fields
+    if (_selectedCustomerId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Customer harus dipilih'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (_districtController.text.trim().isEmpty ||
+        _cityController.text.trim().isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ District dan City harus diisi'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (_orderLines.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Minimal 1 produk harus ditambahkan'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
     // Sync all line items before saving
     for (int i = 0; i < _orderLines.length; i++) {
       _syncLineItem(i);
     }
 
-    // Show loading dialog
-    if (!mounted) return;
-    
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              const Text('Saving order...'),
-            ],
-          ),
-        ),
-      ),
-    );
+    setState(() => _isLoading = true);
 
     try {
-      final configService = ConfigService();
-      final storage = SecureStorageService();
+      final order = widget.order;
 
-      final config = await configService.load();
-      final db = config['database'] as String?;
-      final apiKey = await storage.getAccessToken();
+      logger.i('📝 Saving sales order changes...');
+      logger.i('Order ID: ${order.id}');
+      logger.i('Customer ID: $_selectedCustomerId');
+      logger.i('Order lines: ${_orderLines.length}');
 
-      if (db == null || apiKey == null) {
-        throw Exception('Missing database or API key');
+      // Get state name from city
+      final stateId =
+          _selectedCityId != null ? _cityToStateMap[_selectedCityId] : null;
+      final stateName = stateId != null ? _stateMap[stateId] : '';
+
+      // Prepare order lines for API
+      final apiOrderLines = _orderLines.map((line) {
+        // Get analytic account from controller
+        final controller = _lineControllers[_orderLines.indexOf(line)];
+        final analyticAccount = controller['analyticAccount']!.text.trim();
+
+        return {
+          'product_id': line.productId,
+          'product_uom_qty': line.productUomQty,
+          'price_unit': line.priceUnit,
+          'analytic_distribution':
+              analyticAccount.isEmpty ? false : {analyticAccount: 100.0},
+        };
+      }).toList();
+
+      // Extract phone from customer name (format: "Name (phone)")
+      String customerPhone = '';
+      if (order.customerName.contains('(') &&
+          order.customerName.contains(')')) {
+        final match = RegExp(r'\((\d+)\)').firstMatch(order.customerName);
+        if (match != null) {
+          customerPhone = match.group(1) ?? '';
+        }
       }
 
-      // Build updated order with edited data
-      final updatedOrder = SalesOrder(
-        id: widget.order.id,
-        name: widget.order.name,
-        partnerId: widget.order.partnerId,
-        partnerName: _customerNameController.text,
-        dateOrder: widget.order.dateOrder,
-        amountTotal: _orderLines.fold(
-          0.0,
-          (sum, line) => sum + (line.productUomQty * line.priceUnit),
-        ),
-        warehouseId: widget.order.warehouseId,
-        warehouseName: _warehouseNameController.text,
-        kurirId: widget.order.kurirId,
-        kurirName: _kurirNameController.text,
-        awb: _awbController.text.isEmpty ? false : _awbController.text,
-        state: widget.order.state,
-        orderCount: widget.order.orderCount,
-        orderLines: _orderLines,
-        address: _addressController.text,
-        district: _districtController.text,
-        city: _cityController.text,
-      );
-
-      // Call repository to save
-      final repository = SalesOrderRepository();
-      final success = await repository.editSalesOrder(
-        db: db,
-        apiKey: apiKey,
-        order: updatedOrder,
+      // Call edit API
+      final result = await _salesService.editSaleOrder(
+        id: order.id,
+        partnerId: _selectedCustomerId!,
+        partnerPhone: customerPhone,
+        partnerDistrict: _districtController.text.trim(),
+        partnerCity: _cityController.text.trim(),
+        partnerState: stateName ?? '',
+        dateOrder: order.dateOrder, // Already in string format "YYYY-MM-DD"
+        warehouseId: order.warehouseId ?? 1,
+        kurirId: order.kurirId,
+        awb: _awbController.text.trim().isEmpty
+            ? null
+            : _awbController.text.trim(),
+        state: order.state,
+        orderLines: apiOrderLines,
       );
 
       if (!mounted) return;
-      
-      // Close loading dialog
-      Navigator.pop(context);
 
-      if (success) {
-        // Show success message
+      setState(() => _isLoading = false);
+
+      if (result['Success'] == true) {
+        logger.i('✅ Sales order updated successfully');
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Order saved successfully!'),
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('✅ Sales Order berhasil diupdate'),
+              ],
+            ),
             backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
           ),
         );
 
-        // Return to previous page
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            Navigator.pop(context);
-          }
-        });
+        // Return success flag to refresh parent page
+        Navigator.pop(context, true);
+      } else {
+        logger.e('❌ Failed to update sales order: ${result['Message']}');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text('❌ Error: ${result['Message']}'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
       }
     } catch (e) {
-      print('❌ Error saving order: $e');
+      logger.e('❌ Unexpected error saving changes', error: e);
 
       if (!mounted) return;
-      
-      // Close loading dialog
-      Navigator.pop(context);
 
-      // Show error message
+      setState(() => _isLoading = false);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error saving order: $e'),
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(child: Text('❌ Error: $e')),
+            ],
+          ),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     }
@@ -570,7 +560,6 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         productId: 0,
         productUomQty: 1.0,
         analyticDistribution: null,
-        analyticId: null,
         priceUnit: 0.0,
       ));
       _lineControllers.add({
@@ -669,7 +658,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppTheme.primaryColor,
                     borderRadius: BorderRadius.circular(6),
@@ -767,78 +757,9 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                 ],
               ),
             ),
-            // Analytic Distribution field dengan search button
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Analytic Distribution',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: controllers['analyticAccount']!,
-                          readOnly: true,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.black87,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'Select store...',
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                color: Colors.grey[300]!,
-                                width: 1,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                color: Colors.grey[300]!,
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        height: 42,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _selectAnalytic(index),
-                          icon: const Icon(Icons.store, size: 16),
-                          label: const Text('Select'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            _buildEditField(
+              'Analytic Account',
+              controllers['analyticAccount']!,
             ),
             Row(
               children: [
@@ -1005,11 +926,13 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                             fillColor: Colors.white,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide:
+                                  BorderSide(color: Colors.grey.shade300),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide:
+                                  BorderSide(color: Colors.grey.shade300),
                             ),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
@@ -1022,7 +945,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                       SizedBox(
                         height: 42,
                         child: ElevatedButton.icon(
-                          onPressed: _allCustomers.isEmpty ? null : _selectCustomer,
+                          onPressed:
+                              _allCustomers.isEmpty ? null : _selectCustomer,
                           icon: const Icon(Icons.search, size: 16),
                           label: const Text('Search'),
                           style: ElevatedButton.styleFrom(
@@ -1100,7 +1024,9 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                                         height: 16,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  Colors.grey),
                                         ),
                                       )
                                     : const Icon(Icons.search, size: 16),
@@ -1125,8 +1051,10 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                     ),
                   ),
                   _buildEditField('City', _cityController, readOnly: true),
-                  _buildEditField('Warehouse', _warehouseNameController, readOnly: true),
-                  _buildEditField('Kurir', _kurirNameController, readOnly: true),
+                  _buildEditField('Warehouse', _warehouseNameController,
+                      readOnly: true),
+                  _buildEditField('Kurir', _kurirNameController,
+                      readOnly: true),
                   _buildEditField('AWB', _awbController),
                 ],
               ),
@@ -1263,7 +1191,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: _isLoading ? null : () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.grey[700],
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1281,21 +1209,32 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _saveChanges,
+                    onPressed: _isLoading ? null : _saveChanges,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
+                      disabledBackgroundColor: Colors.grey[400],
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
-                      'Save Changes',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text(
+                            'Save Changes',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
               ],
