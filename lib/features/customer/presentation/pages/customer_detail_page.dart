@@ -318,6 +318,26 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
               },
             ),
           ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildActionButton(
+              icon: Icons.message_rounded,
+              label: 'WhatsApp',
+              color: const Color(0xFF25D366),
+              onTap: () {
+                if (customer.phone != null && customer.phone!.isNotEmpty) {
+                  _openWhatsApp(customer.phone!);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Nomor telepon tidak tersedia'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+              },
+            ),
+          ),
           if (customer.email != null && customer.email!.isNotEmpty)
             const SizedBox(width: 12),
           if (customer.email != null && customer.email!.isNotEmpty)
@@ -414,43 +434,12 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
       child: Column(
         children: [
           if (customer.phone != null && customer.phone!.isNotEmpty)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _buildDetailRow(
-                    icon: Icons.phone_rounded,
-                    iconColor: Colors.green,
-                    label: 'Telepon',
-                    value: customer.phone!,
-                    onCopy: () => _copyToClipboard(customer.phone!),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // WhatsApp Button
-                Padding(
-                  padding: const EdgeInsets.only(top: 24),
-                  child: GestureDetector(
-                    onTap: () => _openWhatsApp(customer.phone!),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF25D366).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: const Color(0xFF25D366).withValues(alpha: 0.3),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.message_rounded,
-                        size: 20,
-                        color: Color(0xFF25D366),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            _buildDetailRow(
+              icon: Icons.phone_rounded,
+              iconColor: Colors.green,
+              label: 'Telepon',
+              value: customer.phone!,
+              onCopy: () => _copyToClipboard(customer.phone!),
             ),
           if (customer.phone != null &&
               customer.phone!.isNotEmpty &&
