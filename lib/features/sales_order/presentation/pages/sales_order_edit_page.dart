@@ -106,10 +106,10 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
 
     _customerNameController = TextEditingController(text: order.customerName);
     _addressController =
-        TextEditingController(text: order.address?.toString() ?? '');
+        TextEditingController(text: order.partnerStreet?.toString() ?? '');
     _districtController =
-        TextEditingController(text: order.district?.toString() ?? '');
-    _cityController = TextEditingController(text: order.city?.toString() ?? '');
+        TextEditingController(text: order.partnerDistrict?.toString() ?? '');
+    _cityController = TextEditingController(text: order.partnerCity?.toString() ?? '');
     _warehouseNameController =
         TextEditingController(text: order.warehouseNameDisplay ?? '');
     _kurirNameController =

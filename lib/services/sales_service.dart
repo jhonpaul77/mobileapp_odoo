@@ -61,6 +61,13 @@ class SalesService {
         }
 
         print('✅ [SALES] Fetched ${orders.length} sale orders');
+        
+        // Debug: Print first order fields if available
+        if (orders.isNotEmpty) {
+          final firstOrder = orders.first;
+          print('📋 [SALES] First order fields: ${firstOrder.keys.toList()}');
+          print('📋 [SALES] First order data: $firstOrder');
+        }
 
         return {
           'Success': true,

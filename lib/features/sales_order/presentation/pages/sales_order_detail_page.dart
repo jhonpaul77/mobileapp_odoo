@@ -857,6 +857,52 @@ TERIMA KASIH''';
                     },
                   ]),
                   const SizedBox(height: 12),
+                  if ((order.partnerStreet != null && order.partnerStreet!.isNotEmpty) ||
+                      (order.partnerStreet2 != null && order.partnerStreet2!.isNotEmpty))
+                    _buildInfoGrid([
+                      {
+                        'label': 'Alamat',
+                        'value': [
+                          if (order.partnerStreet != null &&
+                              order.partnerStreet!.isNotEmpty)
+                            order.partnerStreet,
+                          if (order.partnerStreet2 != null &&
+                              order.partnerStreet2!.isNotEmpty)
+                            order.partnerStreet2,
+                        ].join(', '),
+                      },
+                    ]),
+                  if ((order.partnerStreet != null && order.partnerStreet!.isNotEmpty) ||
+                      (order.partnerStreet2 != null && order.partnerStreet2!.isNotEmpty))
+                    const SizedBox(height: 12),
+                  if ((order.partnerDistrict != null &&
+                          order.partnerDistrict!.isNotEmpty) ||
+                      (order.partnerCity != null && order.partnerCity!.isNotEmpty) ||
+                      (order.partnerState != null && order.partnerState!.isNotEmpty))
+                    _buildInfoGrid([
+                      {
+                        'label': 'Kecamatan',
+                        'value': order.partnerDistrict ?? '-',
+                      },
+                      {
+                        'label': 'Kota',
+                        'value': order.partnerCity ?? '-',
+                      },
+                    ]),
+                  if ((order.partnerDistrict != null &&
+                          order.partnerDistrict!.isNotEmpty) ||
+                      (order.partnerCity != null && order.partnerCity!.isNotEmpty) ||
+                      (order.partnerState != null && order.partnerState!.isNotEmpty))
+                    const SizedBox(height: 12),
+                  if (order.partnerState != null && order.partnerState!.isNotEmpty)
+                    _buildInfoGrid([
+                      {
+                        'label': 'Provinsi',
+                        'value': order.partnerState ?? '-',
+                      },
+                    ]),
+                  if (order.partnerState != null && order.partnerState!.isNotEmpty)
+                    const SizedBox(height: 12),
                   _buildInfoGrid([
                     {
                       'label': 'Warehouse',
@@ -868,6 +914,15 @@ TERIMA KASIH''';
                     },
                   ]),
                   const SizedBox(height: 12),
+                  if (order.notes != null && order.notes!.isNotEmpty)
+                    _buildInfoGrid([
+                      {
+                        'label': 'Catatan',
+                        'value': order.notes ?? '-',
+                      },
+                    ]),
+                  if (order.notes != null && order.notes!.isNotEmpty)
+                    const SizedBox(height: 12),
                   _buildInfoGrid([
                     {
                       'label': 'AWB',

@@ -37,9 +37,12 @@ class SalesOrder {
   final String state;
   final int? orderCount; // From API - number of orders for this customer
   final List<OrderLine> orderLines;
-  final String? address;
-  final String? district;
-  final String? city;
+  final String? partnerStreet; // Partner street address
+  final String? partnerStreet2; // Partner street2 address
+  final String? partnerDistrict; // Partner district
+  final String? partnerCity; // Partner city
+  final String? partnerState; // Partner state/province
+  final String? notes; // Order notes
 
   SalesOrder({
     required this.id,
@@ -56,12 +59,19 @@ class SalesOrder {
     required this.state,
     this.orderCount,
     required this.orderLines,
-    this.address,
-    this.district,
-    this.city,
+    this.partnerStreet,
+    this.partnerStreet2,
+    this.partnerDistrict,
+    this.partnerCity,
+    this.partnerState,
+    this.notes,
   });
 
   factory SalesOrder.fromJson(Map<String, dynamic> json) {
+    // DEBUG: Print all available fields
+    print('📋 [SALES_ORDER] JSON keys: ${json.keys.toList()}');
+    print('📋 [SALES_ORDER] Full JSON: $json');
+    
     // Parse order lines from 'order_lines' field
     final orderLinesJson = json['order_lines'] as List<dynamic>? ??
         json['order_line'] as List<dynamic>? ??
@@ -103,24 +113,45 @@ class SalesOrder {
     }
 
     // Safely parse address - ensure it's string
-    String? addressParsed;
-    final addressRaw = json['address'];
-    if (addressRaw is String && addressRaw.isNotEmpty) {
-      addressParsed = addressRaw;
+    String? partnerStreetParsed;
+    final partnerStreetRaw = json['partner_street'];
+    if (partnerStreetRaw is String && partnerStreetRaw.isNotEmpty) {
+      partnerStreetParsed = partnerStreetRaw;
+    }
+
+    // Safely parse street2 - ensure it's string
+    String? partnerStreet2Parsed;
+    final partnerStreet2Raw = json['partner_street2'];
+    if (partnerStreet2Raw is String && partnerStreet2Raw.isNotEmpty) {
+      partnerStreet2Parsed = partnerStreet2Raw;
     }
 
     // Safely parse district - ensure it's string
-    String? districtParsed;
-    final districtRaw = json['district'];
-    if (districtRaw is String && districtRaw.isNotEmpty) {
-      districtParsed = districtRaw;
+    String? partnerDistrictParsed;
+    final partnerDistrictRaw = json['partner_district'];
+    if (partnerDistrictRaw is String && partnerDistrictRaw.isNotEmpty) {
+      partnerDistrictParsed = partnerDistrictRaw;
     }
 
     // Safely parse city - ensure it's string
-    String? cityParsed;
-    final cityRaw = json['city'];
-    if (cityRaw is String && cityRaw.isNotEmpty) {
-      cityParsed = cityRaw;
+    String? partnerCityParsed;
+    final partnerCityRaw = json['partner_city'];
+    if (partnerCityRaw is String && partnerCityRaw.isNotEmpty) {
+      partnerCityParsed = partnerCityRaw;
+    }
+
+    // Safely parse state - ensure it's string
+    String? partnerStateParsed;
+    final partnerStateRaw = json['partner_state'];
+    if (partnerStateRaw is String && partnerStateRaw.isNotEmpty) {
+      partnerStateParsed = partnerStateRaw;
+    }
+
+    // Safely parse notes - ensure it's string
+    String? notesParsed;
+    final notesRaw = json['notes'];
+    if (notesRaw is String && notesRaw.isNotEmpty) {
+      notesParsed = notesRaw;
     }
 
     return SalesOrder(
@@ -138,9 +169,12 @@ class SalesOrder {
       state: json['state'] as String? ?? 'draft',
       orderCount: json['order_count'] as int?,
       orderLines: orderLines,
-      address: addressParsed,
-      district: districtParsed,
-      city: cityParsed,
+      partnerStreet: partnerStreetParsed,
+      partnerStreet2: partnerStreet2Parsed,
+      partnerDistrict: partnerDistrictParsed,
+      partnerCity: partnerCityParsed,
+      partnerState: partnerStateParsed,
+      notes: notesParsed,
     );
   }
 
@@ -278,9 +312,12 @@ class SalesOrder {
       'state': state,
       'order_count': orderCount,
       'order_lines': orderLines.map((line) => line.toJson()).toList(),
-      'address': address,
-      'district': district,
-      'city': city,
+      'partner_street': partnerStreet,
+      'partner_street2': partnerStreet2,
+      'partner_district': partnerDistrict,
+      'partner_city': partnerCity,
+      'partner_state': partnerState,
+      'notes': notes,
     };
   }
 }
