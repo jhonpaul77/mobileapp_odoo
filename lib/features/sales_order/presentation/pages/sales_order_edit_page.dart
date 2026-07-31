@@ -1062,7 +1062,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: const Text(
-          'Edit Sales Order',
+          'Edit Transaksi',
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
         ),
         backgroundColor: AppTheme.primaryColor,
