@@ -103,6 +103,9 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   // int? _selectedDistrictId; // Removed: unused field
   // int? _selectedCityId; // Removed: unused field
 
+  // State variables for real-time calculation
+  late Map<int, double> _lineSubtotals; // index -> subtotal
+
   @override
   void initState() {
     super.initState();
@@ -154,6 +157,12 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         'price': TextEditingController(text: _formatPrice(line.priceUnit)),
       };
     }).toList();
+
+    // Initialize subtotals for each line
+    _lineSubtotals = {};
+    for (int i = 0; i < _orderLines.length; i++) {
+      _lineSubtotals[i] = _orderLines[i].productUomQty * _orderLines[i].priceUnit;
+    }
 
     _loadData();
   }
@@ -478,6 +487,32 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     return formatted;
   }
 
+  // Recalculate subtotal for a specific line item
+  void _recalculateLineSubtotal(int index) {
+    final controller = _lineControllers[index];
+
+    // Parse qty from controller
+    String qtyText = controller['qty']!.text.trim();
+    qtyText = qtyText.replaceAll('.', ''); // Remove thousands separator
+    qtyText = qtyText.replaceAll(',', '.'); // Handle comma decimal
+    final qty = double.tryParse(qtyText) ?? 0.0;
+
+    // Parse price from controller
+    String priceText = controller['price']!.text.trim();
+    priceText = priceText.replaceAll('Rp ', '').replaceAll('.', '');
+    priceText = priceText.replaceAll(',', '.');
+    final price = double.tryParse(priceText) ?? 0.0;
+
+    // Calculate and update subtotal
+    final subtotal = qty * price;
+    
+    setState(() {
+      _lineSubtotals[index] = subtotal;
+    });
+
+    logger.i('Line $index recalculated: qty=$qty, price=$price, subtotal=$subtotal');
+  }
+
   // Removed unused method: _formatDateForOdoo
 
   Future<void> _saveChanges() async {
@@ -689,9 +724,14 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           ),
         );
 
-        // Close page with return true to refresh detail page
+        // Wait a moment then pop with true to signal successful update
         if (!mounted) return;
-        Navigator.of(context).pop(true);
+        
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            Navigator.of(context).pop(true);
+          }
+        });
       } else {
         logger.e('❌ Failed to update sales order: ${result['Message']}');
 
@@ -743,12 +783,15 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         analyticDistribution: null,
         priceUnit: 0.0,
       ));
+      final newIndex = _orderLines.length - 1;
       _lineControllers.add({
         'product': TextEditingController(text: ''),
         'analyticAccount': TextEditingController(text: ''),
         'qty': TextEditingController(text: '1'),
         'price': TextEditingController(text: '0'),
       });
+      // Initialize subtotal for new line
+      _lineSubtotals[newIndex] = 0.0;
     });
   }
 
@@ -759,6 +802,19 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       }
       _orderLines.removeAt(index);
       _lineControllers.removeAt(index);
+      
+      // Remove subtotal for deleted line and rebuild map indices
+      _lineSubtotals.remove(index);
+      // Rebuild map keys to be sequential (0, 1, 2, ...)
+      final newSubtotals = <int, double>{};
+      _lineSubtotals.forEach((oldIndex, value) {
+        if (oldIndex > index) {
+          newSubtotals[oldIndex - 1] = value;
+        } else {
+          newSubtotals[oldIndex] = value;
+        }
+      });
+      _lineSubtotals = newSubtotals;
     });
   }
 
@@ -771,6 +827,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     int maxLines = 1,
     bool isPrice = false,
     bool isQty = false,
+    ValueChanged<String>? onChanged,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -791,6 +848,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
             keyboardType: keyboardType,
             readOnly: readOnly,
             maxLines: maxLines,
+            onChanged: onChanged,
             inputFormatters: isPrice
                 ? [
                     FilteringTextInputFormatter.digitsOnly,
@@ -831,7 +889,6 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   }
 
   Widget _buildLineItemCard(int index) {
-    final line = _orderLines[index];
     final controllers = _lineControllers[index];
 
     return Card(
@@ -1026,6 +1083,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                     controllers['qty']!,
                     keyboardType: TextInputType.number,
                     isQty: true,
+                    onChanged: (_) => _recalculateLineSubtotal(index),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -1037,6 +1095,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                     keyboardType: TextInputType.number,
                     prefixText: 'Rp ',
                     isPrice: true,
+                    onChanged: (_) => _recalculateLineSubtotal(index),
                   ),
                 ),
               ],
@@ -1057,7 +1116,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                   ),
                   Text(
                     _currencyFormat.format(
-                      line.productUomQty * line.priceUnit,
+                      _lineSubtotals[index] ?? 0.0,
                     ),
                     style: const TextStyle(
                       fontSize: 12,
@@ -1427,11 +1486,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                       ),
                       Text(
                         _currencyFormat.format(
-                          _orderLines.fold(
-                            0.0,
-                            (sum, line) =>
-                                sum + (line.productUomQty * line.priceUnit),
-                          ),
+                          _lineSubtotals.values.fold(0.0, (sum, value) => sum + value),
                         ),
                         style: const TextStyle(
                           fontSize: 14,

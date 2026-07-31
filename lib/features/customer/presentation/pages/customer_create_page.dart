@@ -150,9 +150,7 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
         final cityToStateMap = <int, int>{};
         for (final city in cities) {
           cityMap[city.id] = city.name;
-          if (city.stateId != null) {
-            cityToStateMap[city.id] = city.stateId;
-          }
+          cityToStateMap[city.id] = city.stateId;
         }
 
         final stateMap = <int, String>{};
@@ -395,6 +393,57 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
                 }
                 if (value.trim().length < 3) {
                   return 'Nama customer minimal 3 karakter';
+                }
+                return null;
+              },
+              textInputAction: TextInputAction.next,
+            ),
+
+            const SizedBox(height: 15),
+
+            // Email Field
+            _buildSectionLabel('Email'),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                hintText: 'Contoh: customer@email.com',
+                prefixIcon: Icon(Icons.email_outlined,
+                    color: Colors.blue, size: 20),
+                filled: true,
+                fillColor: theme.cardTheme.color,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppTheme.brandBlue),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+              ),
+              validator: (value) {
+                if (value != null && value.isNotEmpty) {
+                  // Simple email validation
+                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                    return 'Email tidak valid';
+                  }
                 }
                 return null;
               },

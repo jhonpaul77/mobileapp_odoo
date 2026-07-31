@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../config/theme.dart';
@@ -27,6 +28,7 @@ class SalesOrderDetailPage extends StatefulWidget {
 class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
   final _currencyFormat =
       NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+  final logger = Logger();
 
   SalesOrder? _currentOrder;
 
@@ -546,9 +548,26 @@ TERIMA KASIH''';
     );
 
     if (result == true) {
-      // Update is successful - return to previous page to trigger refresh
+      // Update is successful - just confirm the page is updated
+      logger.i('✅ Sales order updated successfully');
+      
       if (mounted) {
-        Navigator.of(context).pop(true); // Return success to parent
+        // Simply show success message - the detail page already has the current order
+        // The order was already updated on the server, so the detail view reflects those changes
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('✅ Perubahan berhasil disimpan'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -648,7 +667,7 @@ TERIMA KASIH''';
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final order = widget.order;
+    final order = _currentOrder ?? widget.order;
     final isEditable = order.state.toLowerCase() == 'draft' ||
         order.state.toLowerCase() == 'sent';
     // final isCancel = order.state.toLowerCase() == 'cancel';
