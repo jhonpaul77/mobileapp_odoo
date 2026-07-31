@@ -232,19 +232,16 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Tambah Customer',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-          ),
+          style: theme.appBarTheme.titleTextStyle,
         ),
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon:
+              Icon(Icons.arrow_back, color: theme.appBarTheme.iconTheme?.color),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -293,14 +290,22 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
                 prefixIcon: Icon(Icons.person_outline,
                     color: AppTheme.brandBlue, size: 20),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: theme.cardTheme.color,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -334,22 +339,30 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
               decoration: InputDecoration(
                 hintText: 'Contoh: 8123456789',
                 prefixText: '+62 ',
-                prefixStyle: const TextStyle(
-                  color: Colors.black87,
+                prefixStyle: TextStyle(
+                  color: theme.textTheme.bodyLarge?.color,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
                 prefixIcon:
                     Icon(Icons.phone_outlined, color: Colors.green, size: 20),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: theme.cardTheme.color,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -376,14 +389,22 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
                 prefixIcon:
                     Icon(Icons.home_outlined, color: Colors.orange, size: 20),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: theme.cardTheme.color,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -410,14 +431,22 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
                 prefixIcon:
                     Icon(Icons.home_outlined, color: Colors.orange, size: 20),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: theme.cardTheme.color,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -447,14 +476,22 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
                       prefixIcon: Icon(Icons.location_on_outlined,
                           color: Colors.red, size: 20),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: theme.cardTheme.color,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide(
+                          color: theme.brightness == Brightness.dark
+                              ? Colors.grey[700]!
+                              : Colors.grey.shade300,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide(
+                          color: theme.brightness == Brightness.dark
+                              ? Colors.grey[700]!
+                              : Colors.grey.shade300,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -512,14 +549,24 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
                 prefixIcon: Icon(Icons.location_city_outlined,
                     color: Colors.purple, size: 20),
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: theme.brightness == Brightness.dark
+                    ? theme.cardTheme.color?.withValues(alpha: 0.5)
+                    : Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -542,14 +589,24 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
                 prefixIcon:
                     Icon(Icons.map_outlined, color: Colors.indigo, size: 20),
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: theme.brightness == Brightness.dark
+                    ? theme.cardTheme.color?.withValues(alpha: 0.5)
+                    : Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -571,14 +628,22 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
                 prefixIcon: Icon(Icons.markunread_mailbox_outlined,
                     color: Colors.teal, size: 20),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: theme.cardTheme.color,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -649,12 +714,13 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
   }
 
   Widget _buildSectionLabel(String label) {
+    final theme = Theme.of(context);
     return Text(
       label,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w600,
-        color: AppTheme.textPrimary,
+        color: theme.textTheme.titleMedium?.color,
       ),
     );
   }

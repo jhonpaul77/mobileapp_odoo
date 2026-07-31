@@ -129,15 +129,18 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return FutureBuilder<CustomerDetails>(
       future: _customerDetailsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
             appBar: AppBar(
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: theme.appBarTheme.backgroundColor,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(Icons.arrow_back,
+                    color: theme.appBarTheme.iconTheme?.color),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
@@ -165,14 +168,16 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
           SliverAppBar(
             expandedHeight: 200,
             pinned: true,
-            backgroundColor: AppTheme.primaryColor,
+            backgroundColor: theme.appBarTheme.backgroundColor,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: Icon(Icons.arrow_back,
+                  color: theme.appBarTheme.iconTheme?.color),
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.edit, color: Colors.white),
+                icon:
+                    Icon(Icons.edit, color: theme.appBarTheme.iconTheme?.color),
                 onPressed: () async {
                   final result = await Navigator.push(
                     context,
@@ -191,7 +196,8 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.more_vert, color: Colors.white),
+                icon: Icon(Icons.more_vert,
+                    color: theme.appBarTheme.iconTheme?.color),
                 onPressed: () {
                   _showMoreOptions(context);
                 },
