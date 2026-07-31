@@ -1270,7 +1270,7 @@ TERIMA KASIH''';
           value,
           style: TextStyle(
             fontSize: 13,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             color: theme.textTheme.bodyLarge?.color,
           ),
         ),
