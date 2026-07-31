@@ -25,9 +25,10 @@ class AnalyticProvider extends ChangeNotifier {
   String? _errorMessage;
   String _searchQuery = '';
 
-  List<Analytic> get analytics => _filteredAnalytics.isEmpty && _searchQuery.isEmpty
-      ? _analytics
-      : _filteredAnalytics;
+  List<Analytic> get analytics =>
+      _filteredAnalytics.isEmpty && _searchQuery.isEmpty
+          ? _analytics
+          : _filteredAnalytics;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get hasError => _errorMessage != null;

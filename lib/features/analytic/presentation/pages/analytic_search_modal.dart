@@ -146,7 +146,7 @@ class _AnalyticSearchModalState extends State<AnalyticSearchModal> {
                       return ListTile(
                         selected: isSelected,
                         selectedTileColor:
-                            AppTheme.brandBlue.withOpacity(0.1),
+                            AppTheme.brandBlue.withValues(alpha: 0.1),
                         title: Text(analytic.name),
                         subtitle: Text('ID: ${analytic.id}'),
                         trailing: isSelected

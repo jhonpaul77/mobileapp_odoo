@@ -101,7 +101,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   int? _selectedCustomerId;
   bool _orderSavedSuccessfully = false;
   // int? _selectedDistrictId; // Removed: unused field
-  int? _selectedCityId;
+  // int? _selectedCityId; // Removed: unused field
 
   @override
   void initState() {
@@ -113,9 +113,12 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         TextEditingController(text: order.partnerStreet?.toString() ?? '');
     _districtController =
         TextEditingController(text: order.partnerDistrict?.toString() ?? '');
-    _cityController = TextEditingController(text: order.partnerCity?.toString() ?? '');
-    _stateController = TextEditingController(text: order.partnerState?.toString() ?? '');
-    _notesController = TextEditingController(text: order.notes?.toString() ?? '');
+    _cityController =
+        TextEditingController(text: order.partnerCity?.toString() ?? '');
+    _stateController =
+        TextEditingController(text: order.partnerState?.toString() ?? '');
+    _notesController =
+        TextEditingController(text: order.notes?.toString() ?? '');
     _warehouseNameController =
         TextEditingController(text: order.warehouseNameDisplay ?? '');
     _kurirNameController =
@@ -327,7 +330,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
 
       setState(() {
         // _selectedDistrictId = selected.id; // Removed: variable not used elsewhere
-        _selectedCityId = selected.cityId;
+        // _selectedCityId = selected.cityId; // Removed: variable not used elsewhere
         _districtController.text = selected.name;
         _cityController.text = cityName;
       });
@@ -360,7 +363,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
 
       logger.i('📝 Confirming sales order #${order.id}...');
 
-      final result = await _salesService.confirmOrder(id: order.id);
+      final result = await _salesService.confirmOrder(orderId: order.id);
 
       if (!mounted) return;
 
@@ -508,7 +511,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       final analyticAccount = controller['analyticAccount']!.text.trim();
       final priceText = controller['price']!.text.trim();
 
-      logger.i('Item $i validation: analytic="$analyticAccount", price="$priceText"');
+      logger.i(
+          'Item $i validation: analytic="$analyticAccount", price="$priceText"');
 
       if (analyticAccount.isEmpty) {
         logger.e('Item $i: Analytic Account kosong!');
@@ -564,8 +568,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
 
         // Parse qty from controller (or use original if not edited)
         String qtyText = controller['qty']!.text.trim();
-        qtyText = qtyText.replaceAll('.', '');  // Remove thousands separator
-        qtyText = qtyText.replaceAll(',', '.');  // Handle comma decimal
+        qtyText = qtyText.replaceAll('.', ''); // Remove thousands separator
+        qtyText = qtyText.replaceAll(',', '.'); // Handle comma decimal
         final qty = double.tryParse(qtyText) ?? line.productUomQty;
 
         // Parse price from controller (or use original if not edited)
@@ -580,7 +584,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           'product_id': line.productId,
           'product_uom_qty': qty,
           'price_unit': price,
-          'analytic_distribution': analyticAccount.isNotEmpty ? analyticAccount : false,
+          'analytic_distribution':
+              analyticAccount.isNotEmpty ? analyticAccount : false,
         };
       }).toList();
 
@@ -614,7 +619,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       int warehouseIdToSend = 1;
       if (order.warehouseId is int) {
         warehouseIdToSend = order.warehouseId as int;
-      } else if (order.warehouseId is List && (order.warehouseId as List).isNotEmpty) {
+      } else if (order.warehouseId is List &&
+          (order.warehouseId as List).isNotEmpty) {
         // Handle array format [id, name]
         warehouseIdToSend = order.warehouseId[0] as int? ?? 1;
       }
@@ -624,7 +630,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       String cityToSend = _cityController.text.trim();
       String stateToSend = _stateController.text.trim();
       String awbToSend = _awbController.text.trim();
-      
+
       // Get notes - preserve original if field is empty (not edited)
       String notesToSend = _notesController.text.trim();
       if (notesToSend.isEmpty && order.notes != null) {
@@ -655,6 +661,10 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       if (result['Success'] == true) {
         logger.i('✅ Sales order updated successfully');
 
+        setState(() {
+          _orderSavedSuccessfully = true;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Row(
@@ -669,9 +679,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           ),
         );
 
-        // Close page with return true to refresh list/detail
-        if (!mounted) return;
-        Navigator.of(context).pop(true);
+        // Don't close page - allow user to continue editing
       } else {
         logger.e('❌ Failed to update sales order: ${result['Message']}');
 
@@ -1432,7 +1440,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: _isLoading ? null : () => Navigator.pop(context),
+                      onPressed:
+                          _isLoading ? null : () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.grey[700],
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1485,7 +1494,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: _isLoading ? null : () => Navigator.pop(context),
+                      onPressed:
+                          _isLoading ? null : () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.grey[700],
                         padding: const EdgeInsets.symmetric(vertical: 12),
