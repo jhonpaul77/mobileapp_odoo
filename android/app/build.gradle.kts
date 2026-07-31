@@ -5,6 +5,13 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Load signing configuration from key.properties
+val keystoreFile = rootProject.file("key.properties")
+val keyProperties = java.util.Properties()
+if (keystoreFile.exists()) {
+    keyProperties.load(keystoreFile.inputStream())
+}
+
 android {
     namespace = "id.pintarbisnis.pintarx"
     compileSdk = flutter.compileSdkVersion
@@ -28,10 +35,26 @@ android {
         versionName = flutter.versionName
     }
 
+    // Signing Configuration for Release
+    signingConfigs {
+        create("release") {
+            keyAlias = keyProperties.getProperty("keyAlias", "upload")
+            keyPassword = keyProperties.getProperty("keyPassword", "")
+            storeFile = if (keyProperties.containsKey("storeFile")) {
+                file(keyProperties.getProperty("storeFile"))
+            } else {
+                null
+            }
+            storePassword = keyProperties.getProperty("storePassword", "")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             isShrinkResources = false
+            // Sign release build with configured signing config
+            signingConfig = signingConfigs.getByName("release")
         }
         
         debug {
