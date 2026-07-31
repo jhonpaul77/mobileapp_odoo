@@ -1,5 +1,6 @@
 // services/sales_service.dart
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 import '../config/api_config.dart';
@@ -43,30 +44,59 @@ class SalesService {
       final response = await _api.get(ApiConfig.getSaleOrder);
 
       print('🔍 [SALES] Response status: ${response.statusCode}');
-      print('🔍 [SALES] Response type: ${response.data.runtimeType}');
+      print('🔍 [SALES] Response data type: ${response.data.runtimeType}');
 
       if (response.statusCode == 200) {
-        // Handle response - could be List or String
-        List orders;
-        
-        if (response.data is String) {
-          // Response is JSON string, parse it
-          final parsed = jsonDecode(response.data);
-          orders = parsed is List ? parsed : [];
-        } else if (response.data is List) {
-          // Response is already List
-          orders = response.data as List;
-        } else {
-          orders = [];
+        // Handle case where API returns JSON string instead of parsed JSON
+        dynamic ordersData = response.data;
+
+        // If response is a String, try to parse it as JSON
+        if (ordersData is String) {
+          print('⚠️ [SALES] Response is String, parsing as JSON...');
+          try {
+            ordersData = jsonDecode(ordersData);
+            print(
+                '✅ [SALES] JSON parsed successfully, type: ${ordersData.runtimeType}');
+          } catch (e) {
+            print('❌ [SALES] Failed to parse JSON: $e');
+            return {
+              'Success': false,
+              'Message': 'Invalid JSON response from API',
+              'Data': {'items': [], 'total': 0},
+            };
+          }
         }
 
+        // Now ordersData should be a List
+        if (ordersData is! List) {
+          print('❌ [SALES] Response is not a List: ${ordersData.runtimeType}');
+          return {
+            'Success': false,
+            'Message': 'Invalid response format from API',
+            'Data': {'items': [], 'total': 0},
+          };
+        }
+
+        final orders = ordersData;
         print('✅ [SALES] Fetched ${orders.length} sale orders');
-        
-        // Debug: Print first order fields if available
+
+        // Debug: Print structure of first 2 orders to see actual fields
         if (orders.isNotEmpty) {
-          final firstOrder = orders.first;
-          print('📋 [SALES] First order fields: ${firstOrder.keys.toList()}');
-          print('📋 [SALES] First order data: $firstOrder');
+          print('🔍 [SALES] Sample order 1 structure:');
+          final order1 = orders[0] as Map<String, dynamic>;
+          print('   Fields: ${order1.keys.toList()}');
+          print('   ID: ${order1['id']}');
+          print('   Name: ${order1['name']}');
+          print(
+              '   partner_id: ${order1['partner_id']} (type: ${order1['partner_id']?.runtimeType})');
+          print('   partner_name: ${order1['partner_name']}');
+
+          if (orders.length > 1) {
+            print('🔍 [SALES] Sample order 2:');
+            final order2 = orders[1] as Map<String, dynamic>;
+            print(
+                '   partner_id: ${order2['partner_id']} (type: ${order2['partner_id']?.runtimeType})');
+          }
         }
 
         return {
@@ -255,12 +285,27 @@ class SalesService {
 
       print('📝 [SALES] Response status: ${response.statusCode}');
       print('📝 [SALES] Response data: ${response.data}');
+      print('📝 [SALES] Response data type: ${response.data.runtimeType}');
 
       if (response.statusCode == 200) {
+        // Parse response - bisa berupa String JSON atau Map
+        dynamic parsedData = response.data;
+
+        if (response.data is String) {
+          try {
+            parsedData = json.decode(response.data);
+            print('📝 [SALES] Parsed JSON: $parsedData');
+          } catch (e) {
+            print('⚠️ [SALES] Failed to parse JSON: $e');
+            // If can't parse, return raw string
+            parsedData = {'message': response.data};
+          }
+        }
+
         return {
           'Success': true,
           'Message': 'Sale order created successfully',
-          'Data': response.data,
+          'Data': parsedData,
         };
       } else {
         return {
@@ -331,7 +376,6 @@ class SalesService {
     required int warehouseId,
     int? kurirId,
     String? awb,
-    String? notes,
     String? state,
     required List<Map<String, dynamic>> orderLines,
   }) async {
@@ -360,7 +404,6 @@ class SalesService {
         'warehouse_id': warehouseId,
         'kurir_id': kurirId ?? false,
         'awb': awb ?? false,
-        'notes': notes ?? false,
         'state': state ?? 'draft',
         'order_lines': orderLines,
       };
@@ -421,20 +464,31 @@ class SalesService {
   /// **Request Body**:
   /// ```json
   /// {
-  ///   "id": 4223
+  ///   "id": 4230
   /// }
   /// ```
   ///
-  /// **Response**: Success/Error message with confirmed order data
-  Future<Map<String, dynamic>> confirmOrder({
-    required int id,
-  }) async {
+  /// **Response**: Success/Error message
+  /// ```json
+  /// {
+  ///   "Success": true,
+  ///   "Message": "Order confirmed",
+  ///   "Data": {
+  ///     "id": 4230,
+  ///     "state": "confirm"
+  ///   }
+  /// }
+  /// ```
+  ///
+  /// **Notes**:
+  /// - Changes order state from `draft` to `confirm`
+  /// - Only works on orders with `draft` state
+  Future<Map<String, dynamic>> confirmOrder({required int orderId}) async {
     try {
-      print('📝 [SALES] Confirming sale order #$id...');
+      print('✅ [SALES] Confirming sale order #$orderId...');
 
-      // Build request body
       final requestBody = {
-        'id': id,
+        'id': orderId,
       };
 
       print('📝 [SALES] Request body: $requestBody');
@@ -450,13 +504,13 @@ class SalesService {
       if (response.statusCode == 200) {
         return {
           'Success': true,
-          'Message': 'Sale order confirmed successfully',
+          'Message': 'Order confirmed successfully',
           'Data': response.data,
         };
       } else {
         return {
           'Success': false,
-          'Message': 'Failed to confirm sale order',
+          'Message': 'Failed to confirm order',
           'Data': response.data,
         };
       }
@@ -468,7 +522,7 @@ class SalesService {
         'Success': false,
         'Message': e.response?.data['Message'] ??
             e.response?.data['message'] ??
-            'Failed to confirm sale order: ${e.message}',
+            'Failed to confirm order: ${e.message}',
       };
     } catch (e) {
       print('❌ [SALES] Unexpected error: $e');

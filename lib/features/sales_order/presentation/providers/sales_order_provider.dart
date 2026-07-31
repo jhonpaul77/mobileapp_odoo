@@ -40,6 +40,9 @@ class SalesOrderProvider extends ChangeNotifier {
   Future<void> fetchSalesOrders() async {
     _isLoading = true;
     _errorMessage = null;
+    // Reset filter to "All" when refreshing
+    _statusFilter = null;
+    _searchQuery = '';
     notifyListeners();
 
     try {

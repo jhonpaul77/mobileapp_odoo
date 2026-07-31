@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../config/theme.dart';
 import '../../../../services/config_service.dart';
-import '../../../../services/sales_service.dart';
 import '../../../../services/secure_storage_service.dart';
 import '../../../location/data/datasources/location_remote_datasource.dart';
 import '../../../sales_order/domain/entities/sales_order.dart';
 import '../../../sales_order/presentation/pages/sales_order_detail_page.dart';
+import '../../../sales_order/presentation/providers/sales_order_provider.dart';
 import '../../domain/entities/customer.dart';
+import '../providers/customer_provider.dart';
 import 'customer_edit_page.dart';
 
 /// Helper class to hold customer details with resolved names
@@ -52,6 +55,16 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
     _customerDetailsFuture = _loadCustomerDetails();
   }
 
+  /// Parse customer name to remove phone number in parentheses
+  /// Example: "John Doe (081234567890)" -> "John Doe"
+  String _parseCustomerName(String name) {
+    // Remove phone number in parentheses: (phone) or (phone number)
+    // Pattern: (digits and optional spaces/dashes)
+    final cleanName =
+        name.replaceAll(RegExp(r'\s*\([0-9\s\-+]+\)\s*'), '').trim();
+    return cleanName.isNotEmpty ? cleanName : name;
+  }
+
   Future<CustomerDetails> _loadCustomerDetails() async {
     try {
       final configService = ConfigService();
@@ -65,6 +78,11 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
         return CustomerDetails(customer: widget.customer);
       }
 
+      // Get fresh customer data from provider
+      final provider = context.read<CustomerProvider>();
+      final freshCustomer = provider.getCustomerById(widget.customer.id);
+      final customerToUse = freshCustomer ?? widget.customer;
+
       final locationDatasource = LocationRemoteDataSource();
 
       // Load location names
@@ -72,32 +90,32 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
       String? cityName;
       String? stateName;
 
-      if (widget.customer.districtId != null) {
+      if (customerToUse.districtId != null) {
         districtName = await locationDatasource.getDistrictName(
-          districtId: widget.customer.districtId!,
+          districtId: customerToUse.districtId!,
           db: db,
           apiKey: apiKey,
         );
       }
 
-      if (widget.customer.cityId != null) {
+      if (customerToUse.cityId != null) {
         cityName = await locationDatasource.getCityName(
-          cityId: widget.customer.cityId!,
+          cityId: customerToUse.cityId!,
           db: db,
           apiKey: apiKey,
         );
       }
 
-      if (widget.customer.stateId != null) {
+      if (customerToUse.stateId != null) {
         stateName = await locationDatasource.getStateName(
-          stateId: widget.customer.stateId!,
+          stateId: customerToUse.stateId!,
           db: db,
           apiKey: apiKey,
         );
       }
 
       return CustomerDetails(
-        customer: widget.customer,
+        customer: customerToUse,
         districtName: districtName,
         cityName: cityName,
         stateName: stateName,
@@ -156,34 +174,13 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
+                      builder: (_) =>
                           CustomerEditPage(customer: widget.customer),
                     ),
                   );
-                  
-                  // Refresh customer details if edit was successful
+
+                  // Reload customer details if edit was successful
                   if (result == true && mounted) {
-                    // Show success snackbar
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Row(
-                          children: const [
-                            Icon(Icons.check_circle, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text('Customer berhasil diperbarui'),
-                          ],
-                        ),
-                        backgroundColor: AppTheme.successColor,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        margin: const EdgeInsets.all(16),
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                    
-                    // Refresh customer details
                     setState(() {
                       _customerDetailsFuture = _loadCustomerDetails();
                     });
@@ -233,8 +230,10 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                           ),
                           child: Center(
                             child: Text(
-                              widget.customer.name.isNotEmpty
-                                  ? widget.customer.name[0].toUpperCase()
+                              _parseCustomerName(widget.customer.name)
+                                      .isNotEmpty
+                                  ? _parseCustomerName(widget.customer.name)[0]
+                                      .toUpperCase()
                                   : '?',
                               style: const TextStyle(
                                 fontSize: 36,
@@ -250,9 +249,9 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
-                          widget.customer.name,
+                          _parseCustomerName(widget.customer.name),
                           style: const TextStyle(
-                            fontSize: 22,
+                            fontSize: 18,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
                           ),
@@ -275,11 +274,7 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Quick Actions
-                  _buildQuickActions(),
-                  const SizedBox(height: 20),
-
-                  // Contact Information Section
+                  // Contact Information Section (with integrated action buttons)
                   _buildSectionHeader(
                       'Informasi Kontak', Icons.contacts_rounded),
                   const SizedBox(height: 12),
@@ -314,108 +309,6 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
     );
   }
 
-  /// Build quick action buttons
-  Widget _buildQuickActions() {
-    final customer = widget.customer;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildActionButton(
-              icon: Icons.phone_rounded,
-              label: 'Telepon',
-              color: Colors.green,
-              onTap: () {
-                _makePhoneCall(context, customer.phone);
-              },
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildActionButton(
-              icon: Icons.message_rounded,
-              label: 'WhatsApp',
-              color: const Color(0xFF25D366),
-              onTap: () {
-                if (customer.phone != null && customer.phone!.isNotEmpty) {
-                  _openWhatsApp(customer.phone!);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Nomor telepon tidak tersedia'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                }
-              },
-            ),
-          ),
-          if (customer.email != null && customer.email!.isNotEmpty)
-            const SizedBox(width: 12),
-          if (customer.email != null && customer.email!.isNotEmpty)
-            Expanded(
-              child: _buildActionButton(
-                icon: Icons.email_rounded,
-                label: 'Email',
-                color: Colors.blue,
-                onTap: () {
-                  _sendEmail(context, customer.email!);
-                },
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: color.withValues(alpha: 0.3),
-            width: 1.5,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// Build section header
   Widget _buildSectionHeader(String title, IconData icon) {
     return Row(
@@ -445,9 +338,12 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
     );
   }
 
-  /// Build contact information section
+  /// Build contact information section with integrated action buttons
   Widget _buildContactSection() {
     final customer = widget.customer;
+    final hasPhone = customer.phone != null && customer.phone!.isNotEmpty;
+    final hasEmail = customer.email != null && customer.email!.isNotEmpty;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -457,31 +353,118 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
       ),
       child: Column(
         children: [
-          if (customer.phone != null && customer.phone!.isNotEmpty)
-            _buildDetailRow(
-              icon: Icons.phone_rounded,
-              iconColor: Colors.green,
-              label: 'Telepon',
-              value: customer.phone!,
-              onCopy: () => _copyToClipboard(customer.phone!),
+          // Phone Row with Action Buttons below
+          if (hasPhone)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Phone Info
+                _buildDetailRow(
+                  icon: Icons.phone_rounded,
+                  iconColor: const Color(0xFF4CAF50),
+                  label: 'Telepon',
+                  value: customer.phone!,
+                  onCopy: () => _copyToClipboard(customer.phone!),
+                ),
+                const SizedBox(height: 12),
+                // Action Buttons (below phone number)
+                Row(
+                  children: [
+                    const SizedBox(width: 44), // Align with text after icon
+                    // Call Button
+                    _buildSmallIconButton(
+                      icon: Icons.phone_rounded,
+                      color: const Color(0xFF4CAF50),
+                      tooltip: 'Telepon',
+                      onTap: () => _makePhoneCall(context, customer.phone),
+                    ),
+                    const SizedBox(width: 10),
+                    // WhatsApp Button
+                    _buildSmallIconButton(
+                      icon: FontAwesomeIcons.whatsapp,
+                      color: const Color(0xFF25D366),
+                      tooltip: 'WhatsApp',
+                      onTap: () => _openWhatsApp(context, customer.phone!),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          if (customer.phone != null &&
-              customer.phone!.isNotEmpty &&
-              customer.email != null &&
-              customer.email!.isNotEmpty)
-            const Divider(height: 24),
-          if (customer.email != null && customer.email!.isNotEmpty)
-            _buildDetailRow(
-              icon: Icons.email_rounded,
-              iconColor: Colors.blue,
-              label: 'Email',
-              value: customer.email!,
-              onCopy: () => _copyToClipboard(customer.email!),
+          if (hasPhone && hasEmail) const Divider(height: 24),
+
+          // Email Row with Action Button below
+          if (hasEmail)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Email Info
+                _buildDetailRow(
+                  icon: Icons.email_rounded,
+                  iconColor: const Color(0xFF2196F3),
+                  label: 'Email',
+                  value: customer.email!,
+                  onCopy: () => _copyToClipboard(customer.email!),
+                ),
+                const SizedBox(height: 12),
+                // Action Button (below email)
+                Row(
+                  children: [
+                    const SizedBox(width: 44), // Align with text after icon
+                    // Send Email Button
+                    _buildSmallIconButton(
+                      icon: Icons.email_rounded,
+                      color: const Color(0xFF2196F3),
+                      tooltip: 'Kirim Email',
+                      onTap: () => _sendEmail(context, customer.email!),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          if ((customer.phone == null || customer.phone!.isEmpty) &&
-              (customer.email == null || customer.email!.isEmpty))
+
+          // Empty State
+          if (!hasPhone && !hasEmail)
             _buildEmptyState('Tidak ada informasi kontak'),
         ],
+      ),
+    );
+  }
+
+  /// Build small icon button for inline actions
+  Widget _buildSmallIconButton({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.25),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -489,22 +472,9 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
   /// Build address information section
   Widget _buildAddressSection(CustomerDetails details) {
     final customer = details.customer;
-    
-    // Combine street and street2
-    String fullAddressLine = '';
-    if (customer.street != null && customer.street!.isNotEmpty) {
-      fullAddressLine = customer.street!;
-    }
-    if (customer.street2 != null && customer.street2!.isNotEmpty) {
-      if (fullAddressLine.isNotEmpty) {
-        fullAddressLine += ', ${customer.street2}';
-      } else {
-        fullAddressLine = customer.street2!;
-      }
-    }
-    
     final hasAddress =
-        fullAddressLine.isNotEmpty ||
+        (customer.street != null && customer.street!.isNotEmpty) ||
+            (customer.street2 != null && customer.street2!.isNotEmpty) ||
             (customer.zip != null && customer.zip!.isNotEmpty) ||
             details.districtName != null ||
             details.cityName != null ||
@@ -521,36 +491,55 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
       child: hasAddress
           ? Column(
               children: [
-                if (fullAddressLine.isNotEmpty)
+                if (customer.fullAddress.isNotEmpty)
                   _buildDetailRow(
-                    icon: Icons.home_rounded,
-                    iconColor: Colors.orange,
-                    label: 'Alamat',
-                    value: fullAddressLine,
-                    onCopy: () => _copyToClipboard(fullAddressLine),
+                    icon: Icons.location_on_rounded,
+                    iconColor: Colors.red,
+                    label: 'Alamat Lengkap',
+                    value: customer.fullAddress,
+                    onCopy: () => _copyToClipboard(customer.fullAddress),
                   ),
-                if (fullAddressLine.isNotEmpty &&
-                    ((customer.zip != null && customer.zip!.isNotEmpty) ||
+                if (customer.fullAddress.isNotEmpty &&
+                    ((customer.street != null && customer.street!.isNotEmpty) ||
+                        (customer.street2 != null &&
+                            customer.street2!.isNotEmpty) ||
+                        (customer.zip != null && customer.zip!.isNotEmpty) ||
                         details.districtName != null ||
                         details.cityName != null ||
                         details.stateName != null))
                   const Divider(height: 24),
-                if (customer.zip != null && customer.zip!.isNotEmpty)
+                if (customer.street != null && customer.street!.isNotEmpty)
                   _buildDetailRow(
-                    icon: Icons.markunread_mailbox_rounded,
-                    iconColor: Colors.indigo,
-                    label: 'Kode POS',
-                    value: customer.zip!,
-                    onCopy: () => _copyToClipboard(customer.zip!),
+                    icon: Icons.home_rounded,
+                    iconColor: Colors.orange,
+                    label: 'Alamat',
+                    value: customer.street!,
+                    onCopy: () => _copyToClipboard(customer.street!),
                   ),
-                if ((customer.zip != null && customer.zip!.isNotEmpty) &&
-                    details.districtName != null)
+                if (customer.street != null &&
+                    customer.street!.isNotEmpty &&
+                    customer.street2 != null &&
+                    customer.street2!.isNotEmpty)
+                  const Divider(height: 24),
+                if (customer.street2 != null && customer.street2!.isNotEmpty)
+                  _buildDetailRow(
+                    icon: Icons.home_work_rounded,
+                    iconColor: Colors.deepOrange,
+                    label: 'Alamat Lanjutan',
+                    value: customer.street2!,
+                    onCopy: () => _copyToClipboard(customer.street2!),
+                  ),
+                if ((customer.street2 != null &&
+                        customer.street2!.isNotEmpty) &&
+                    (details.districtName != null ||
+                        details.cityName != null ||
+                        details.stateName != null))
                   const Divider(height: 24),
                 if (details.districtName != null)
                   _buildDetailRow(
                     icon: Icons.location_city_rounded,
                     iconColor: Colors.purple,
-                    label: 'Kecamatan',
+                    label: 'Kelurahan',
                     value: details.districtName!,
                   ),
                 if ((details.districtName != null) && details.cityName != null)
@@ -571,6 +560,19 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                     label: 'Provinsi',
                     value: details.stateName!,
                   ),
+                // Always show Kode POS (even if empty)
+                const Divider(height: 24),
+                _buildDetailRow(
+                  icon: Icons.markunread_mailbox_rounded,
+                  iconColor: Colors.indigo,
+                  label: 'Kode POS',
+                  value: (customer.zip != null && customer.zip!.isNotEmpty)
+                      ? customer.zip!
+                      : '-',
+                  onCopy: (customer.zip != null && customer.zip!.isNotEmpty)
+                      ? () => _copyToClipboard(customer.zip!)
+                      : null,
+                ),
               ],
             )
           : _buildEmptyState('Tidak ada informasi alamat'),
@@ -766,47 +768,81 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
   /// Load sales history for this customer
   Future<Map<String, dynamic>> _loadSalesHistory() async {
     try {
-      final salesService = SalesService();
-      final result = await salesService.getSaleOrders();
+      print(
+          '🔍 [SALES_HISTORY] Loading for customer ID: ${widget.customer.id}');
 
-      if (result['Success'] == true) {
-        final allOrders = result['Data']['items'] as List;
+      // Use the SalesOrderProvider to reuse cached data
+      final provider = Provider.of<SalesOrderProvider>(context, listen: false);
+
+      // If provider already has orders, use them
+      if (provider.orders.isNotEmpty) {
+        print(
+            '📦 [SALES_HISTORY] Using cached orders from Provider: ${provider.orders.length}');
+
+        final allOrders = provider.orders;
 
         // Filter orders for this customer
         final customerOrders = allOrders.where((order) {
-          final partnerId = order['partner_id'];
-
-          // Handle different formats of partner_id
-          if (partnerId is int) {
-            return partnerId == widget.customer.id;
-          } else if (partnerId is List && partnerId.isNotEmpty) {
-            return partnerId[0] == widget.customer.id;
+          // SalesOrder entity has customerId getter that extracts int from partnerId
+          final orderCustomerId = order.customerId;
+          final match = orderCustomerId == widget.customer.id;
+          if (match) {
+            print(
+                '   ✅ Match: Order ${order.name} - customerId: $orderCustomerId == ${widget.customer.id}');
           }
-
-          return false;
+          return match;
         }).toList();
 
+        print(
+            '🔍 [SALES_HISTORY] Filtered orders for customer ${widget.customer.id}: ${customerOrders.length}');
+
         // Sort by date (newest first)
-        customerOrders.sort((a, b) {
-          final dateA =
-              DateTime.tryParse(a['date_order'] ?? '') ?? DateTime(1970);
-          final dateB =
-              DateTime.tryParse(b['date_order'] ?? '') ?? DateTime(1970);
-          return dateB.compareTo(dateA);
-        });
+        customerOrders.sort((a, b) => b.dateOrder.compareTo(a.dateOrder));
+
+        // Convert back to Map format for compatibility
+        final ordersJson =
+            customerOrders.map((order) => order.toJson()).toList();
 
         return {
           'Success': true,
           'Data': {
-            'items': customerOrders,
-            'total': customerOrders.length,
+            'items': ordersJson,
+            'total': ordersJson.length,
           },
         };
       }
 
-      return result;
+      // If provider is empty, fetch fresh data
+      print('🔄 [SALES_HISTORY] Provider empty, fetching fresh data...');
+      await provider.fetchSalesOrders();
+
+      // Now use the fetched data
+      if (provider.orders.isNotEmpty) {
+        final customerOrders = provider.orders.where((order) {
+          return order.customerId == widget.customer.id;
+        }).toList();
+
+        customerOrders.sort((a, b) => b.dateOrder.compareTo(a.dateOrder));
+        final ordersJson =
+            customerOrders.map((order) => order.toJson()).toList();
+
+        return {
+          'Success': true,
+          'Data': {
+            'items': ordersJson,
+            'total': ordersJson.length,
+          },
+        };
+      }
+
+      // If still empty, no orders available
+      print('❌ [SALES_HISTORY] No orders available after fetch');
+      return {
+        'Success': true,
+        'Data': {'items': [], 'total': 0},
+      };
     } catch (e) {
-      print('❌ Error loading sales history: $e');
+      print('❌ [SALES_HISTORY] Error loading sales history: $e');
       return {
         'Success': false,
         'Message': 'Error: $e',
@@ -1012,52 +1048,83 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
     }
   }
 
-  /// Open WhatsApp chat
-  void _openWhatsApp(String phone) async {
+  /// Open WhatsApp
+  void _openWhatsApp(BuildContext context, String phone) async {
+    // Validate phone exists
     if (phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Nomor telepon tidak tersedia'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Tidak ada nomor telepon untuk customer ini',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
       return;
     }
 
     try {
+      print('💬 [WHATSAPP] Input phone: "$phone"');
+
       // Format phone number for WhatsApp
-      String formattedPhone = phone.trim().replaceAll(RegExp(r'[^\d+]'), '');
-      
+      String formattedPhone = phone.trim();
+
+      // Remove any non-digit characters except + at the beginning
+      formattedPhone = formattedPhone.replaceAll(RegExp(r'[^\d+]'), '');
+
+      print('💬 [WHATSAPP] Cleaned phone: "$formattedPhone"');
+
       // Handle Indonesian format
       if (formattedPhone.startsWith('0')) {
+        formattedPhone = '62${formattedPhone.substring(1)}';
+      } else if (formattedPhone.startsWith('+')) {
         formattedPhone = formattedPhone.substring(1);
-      }
-      if (!formattedPhone.startsWith('+')) {
-        formattedPhone = '+62$formattedPhone';
+      } else if (!formattedPhone.startsWith('62')) {
+        formattedPhone = '62$formattedPhone';
       }
 
-      // WhatsApp URI format: https://api.whatsapp.com/send?phone=PHONENUMBER
-      final Uri whatsappUri = Uri.parse(
-        'https://api.whatsapp.com/send?phone=$formattedPhone',
-      );
+      print('💬 [WHATSAPP] Final formatted: "$formattedPhone"');
+
+      // WhatsApp URL format: https://wa.me/6281234567890
+      final Uri whatsappUri = Uri.parse('https://wa.me/$formattedPhone');
+
+      print('💬 [WHATSAPP] URI: $whatsappUri');
 
       if (await canLaunchUrl(whatsappUri)) {
         await launchUrl(
           whatsappUri,
           mode: LaunchMode.externalApplication,
         );
+        print('✅ [WHATSAPP] Successfully launched');
       } else {
+        print('❌ [WHATSAPP] Cannot launch URL');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Tidak dapat membuka WhatsApp\nNomor: $formattedPhone'),
+              content: Text(
+                  'Tidak dapat membuka WhatsApp\nPastikan WhatsApp terinstall\nNomor: +$formattedPhone'),
               backgroundColor: Colors.red,
               behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
             ),
           );
         }
       }
     } catch (e) {
+      print('❌ [WHATSAPP] Error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1314,7 +1381,7 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
             itemBuilder: (context, index) {
               final order = widget.orders[index];
               final isExpanded = _expandedIndices.contains(index);
-              final orderLines = (order['order_line'] as List?) ?? [];
+              final orderLines = (order['order_lines'] as List?) ?? [];
               final state = order['state'] as String? ?? 'draft';
               final stateLabel = _getStateLabel(state);
               final stateColor = _getStateColor(state);
@@ -1371,7 +1438,7 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
 
                           // Amount and Status Row
                           Row(
@@ -1411,7 +1478,7 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
 
                           // Expanded Content
                           if (isExpanded) ...[
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
@@ -1518,7 +1585,7 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                                       ),
                                     );
                                   }),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 5),
                                   ElevatedButton.icon(
                                     onPressed: () async {
                                       try {
@@ -1550,7 +1617,7 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                                       }
                                     },
                                     icon: const Icon(Icons.visibility_rounded,
-                                        size: 16),
+                                        size: 14),
                                     label: const Text('Lihat Detail'),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppTheme.primaryColor,

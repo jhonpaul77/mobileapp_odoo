@@ -260,7 +260,12 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
 
     // Sales Order list
     return RefreshIndicator(
-      onRefresh: () => provider.fetchSalesOrders(),
+      onRefresh: () async {
+        // Clear search field when refreshing
+        _searchController.clear();
+        // Fetch will reset filter to "All" and search to ""
+        await provider.fetchSalesOrders();
+      },
       child: Column(
         children: [
           // Sales Order count
@@ -491,28 +496,52 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
         ? isAll
         : provider.statusFilter?.toLowerCase() == label.toLowerCase();
 
+    // Get color based on status (same as SalesOrder.stateColor)
+    Color getStatusColor(String status) {
+      switch (status.toLowerCase()) {
+        case 'open':
+          return const Color(0xFFFFA726); // Orange - for draft
+        case 'sale':
+          return const Color(0xFF42A5F5); // Blue
+        case 'confirm':
+          return const Color(0xFF66BB6A); // Green
+        case 'cancel':
+          return const Color(0xFFEF5350); // Red
+        default:
+          return AppTheme.primaryColor; // Primary blue for 'All'
+      }
+    }
+
+    final statusColor = isAll ? AppTheme.primaryColor : getStatusColor(label);
+
     return GestureDetector(
       onTap: () {
         provider.setStatusFilter(isAll ? null : label);
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
         decoration: BoxDecoration(
           color: selected
-              ? AppTheme.primaryColor.withValues(alpha: 0.15)
+              ? statusColor.withValues(alpha: 0.15)
               : theme.brightness == Brightness.dark
                   ? AppTheme.darkCard
                   : Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected
+                ? statusColor
+                : theme.brightness == Brightness.dark
+                    ? Colors.grey[700]!
+                    : Colors.grey[300]!,
+            width: selected ? 2 : 1,
+          ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected
-                ? AppTheme.primaryColor
-                : theme.textTheme.bodyMedium?.color,
+            color: selected ? statusColor : theme.textTheme.bodyMedium?.color,
             fontWeight: FontWeight.w600,
-            fontSize: 11,
+            fontSize: 12,
           ),
         ),
       ),

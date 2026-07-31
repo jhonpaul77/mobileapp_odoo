@@ -77,7 +77,7 @@ class _DistrictSearchModalState extends State<DistrictSearchModal> {
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: AppTheme.primaryColor,
               borderRadius: const BorderRadius.only(
@@ -138,7 +138,7 @@ class _DistrictSearchModalState extends State<DistrictSearchModal> {
                           : 'No matching districts',
                       style: TextStyle(
                         color: Colors.grey[600],
-                        fontSize: 14,
+                        fontSize: 12,
                       ),
                     ),
                   )
@@ -169,7 +169,7 @@ class _DistrictSearchModalState extends State<DistrictSearchModal> {
                           child: Text(
                             displayText,
                             style: const TextStyle(
-                              fontSize: 13,
+                              fontSize: 12,
                               fontWeight: FontWeight.w500,
                               color: Colors.black87,
                             ),

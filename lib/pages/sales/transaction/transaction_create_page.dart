@@ -7,6 +7,9 @@ import 'package:logger/logger.dart';
 
 import '../../../config/api_config.dart';
 import '../../../features/customer/data/datasources/customer_remote_datasource.dart';
+import '../../../features/sales_order/domain/entities/order_line.dart';
+import '../../../features/sales_order/domain/entities/sales_order.dart';
+import '../../../features/sales_order/presentation/pages/sales_order_detail_page.dart';
 import '../../../services/api_service.dart';
 import '../../../services/config_service.dart';
 import '../../../services/sales_service.dart';
@@ -22,13 +25,60 @@ import '../../../services/secure_storage_service.dart';
 /// - Customer selection with search
 /// - Multiple order lines
 /// - Auto date order (today)
+/// - Analytic account selection per line
+/// - Editable price per line
+/// - Save Draft → Confirm Order flow
 ///
-/// API Endpoint: POST /create_sale_order
+/// API Endpoint: POST /create_sale_order, PUT /confirm_order
 class TransactionCreatePage extends StatefulWidget {
   const TransactionCreatePage({super.key});
 
   @override
   State<TransactionCreatePage> createState() => _TransactionCreatePageState();
+}
+
+/// Formatter untuk price input dengan thousands separator
+class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+
+    // Remove all non-digit characters
+    final digitsOnly = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+
+    if (digitsOnly.isEmpty) {
+      return const TextEditingValue(text: '');
+    }
+
+    // Format with thousands separator
+    final number = int.parse(digitsOnly);
+    final formatted = _formatWithThousandsSeparator(number);
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+
+  String _formatWithThousandsSeparator(int number) {
+    final str = number.toString();
+    final parts = str.split('').reversed.toList();
+    final List<String> formatted = [];
+
+    for (var i = 0; i < parts.length; i++) {
+      if (i > 0 && i % 3 == 0) {
+        formatted.add('.');
+      }
+      formatted.add(parts[i]);
+    }
+
+    return formatted.reversed.join('');
+  }
 }
 
 class _TransactionCreatePageState extends State<TransactionCreatePage> {
@@ -48,11 +98,19 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
   // Data Lists
   List<dynamic> _customers = [];
   List<dynamic> _products = [];
+  List<dynamic> _analyticAccounts = []; // NEW: Analytic accounts
 
   // Loading States
   bool _isLoading = false;
   bool _isLoadingCustomers = true;
   bool _isLoadingProducts = true;
+  bool _isLoadingAnalytics = true; // NEW: Loading state for analytics
+
+  // Order State - for Save → Confirm flow
+  int? _createdOrderId; // NEW: Store created order ID
+  String? _createdOrderName; // NEW: Store created order name
+  bool _isOrderSaved = false; // NEW: Track if order is saved
+  bool _isConfirming = false; // NEW: Loading state for confirm action
 
   @override
   void initState() {
@@ -67,6 +125,8 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
             'product_name': '',
             'product_uom_qty': 1.0,
             'analytic_distribution': false,
+            'analytic_account_id': null, // NEW: Analytic account ID
+            'analytic_account_name': '', // NEW: Analytic account name
             'price_unit': 0.0,
           });
         });
@@ -84,6 +144,7 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
     await Future.wait([
       _loadCustomers(),
       _loadProducts(),
+      _loadAnalyticAccounts(), // NEW: Load analytic accounts
     ]);
   }
 
@@ -370,6 +431,94 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
     }
   }
 
+  Future<void> _loadAnalyticAccounts() async {
+    setState(() {
+      _isLoadingAnalytics = true;
+    });
+
+    try {
+      logger.i('📊 [LOAD_ANALYTICS] Starting to load analytic accounts...');
+
+      final secureStorage = SecureStorageService();
+      final configService = ConfigService();
+
+      final config = await configService.load();
+      final database = config['database'] as String?;
+      final apiKey = await secureStorage.getAccessToken();
+
+      logger.i('   Database: $database');
+      logger.i('   API Key exists: ${apiKey != null}');
+
+      if (database == null || database.isEmpty) {
+        throw Exception(
+            'Database not configured. Please logout and configure server settings.');
+      }
+
+      if (apiKey == null || apiKey.isEmpty) {
+        throw Exception('Not authenticated. Please login first.');
+      }
+
+      final dio = ApiService().dio;
+      final response = await dio.get(
+        ApiConfig.getAnalytic,
+        options: Options(
+          headers: {
+            'db': database,
+            'api-key': apiKey,
+          },
+        ),
+      );
+
+      logger.i('✅ [LOAD_ANALYTICS] Response status: ${response.statusCode}');
+
+      List<dynamic> analyticList;
+      if (response.data is String) {
+        final parsed = json.decode(response.data);
+        analyticList = parsed as List;
+      } else if (response.data is List) {
+        analyticList = response.data as List;
+      } else {
+        throw Exception(
+            'Unexpected response type: ${response.data.runtimeType}');
+      }
+
+      logger
+          .i('✅ [LOAD_ANALYTICS] API SUCCESS: ${analyticList.length} accounts');
+
+      setState(() {
+        _analyticAccounts = analyticList;
+        _isLoadingAnalytics = false;
+      });
+
+      if (analyticList.isNotEmpty) {
+        for (var i = 0;
+            i < (analyticList.length > 3 ? 3 : analyticList.length);
+            i++) {
+          logger.i(
+              '   Analytic ${i + 1}: ${analyticList[i]['name']} (ID: ${analyticList[i]['id']})');
+        }
+      }
+    } catch (e, stackTrace) {
+      logger.e('❌ [LOAD_ANALYTICS] Error loading analytic accounts', error: e);
+      logger.e('   Stack trace: $stackTrace');
+
+      setState(() {
+        _analyticAccounts = [];
+        _isLoadingAnalytics = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error loading analytics: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
   void _addNewOrderLine() {
     // Validasi 1: Customer harus dipilih dulu
     if (_selectedCustomer == null) {
@@ -420,9 +569,170 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
         'product_name': '',
         'product_uom_qty': 1.0,
         'analytic_distribution': false,
+        'analytic_account_id': null, // NEW: Analytic account ID
+        'analytic_account_name': '', // NEW: Analytic account name
         'price_unit': 0.0,
       });
     });
+  }
+
+  /// Show custom search dialog for analytic account selection
+  Future<Map<String, dynamic>?> _showAnalyticAccountSearchDialog() async {
+    if (_isLoadingAnalytics) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Analytic accounts masih loading, mohon tunggu...'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return null;
+    }
+
+    if (_analyticAccounts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tidak ada analytic account tersedia'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return null;
+    }
+
+    String searchQuery = '';
+    List<dynamic> filteredAccounts = _analyticAccounts;
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Cari Analytic Account'),
+              contentPadding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: MediaQuery.of(context).size.height * 0.6,
+                child: Column(
+                  children: [
+                    // Search TextField
+                    TextField(
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        hintText: 'Ketik nama analytic account...',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                      ),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          searchQuery = value.toLowerCase();
+                          filteredAccounts = _analyticAccounts.where((account) {
+                            final name = (account['name'] ?? '')
+                                .toString()
+                                .toLowerCase();
+                            return name.contains(searchQuery);
+                          }).toList();
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Analytic Account List
+                    Expanded(
+                      child: filteredAccounts.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'Tidak ada analytic account ditemukan',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: EdgeInsets.zero,
+                              itemCount: filteredAccounts.length,
+                              itemBuilder: (context, index) {
+                                final account = filteredAccounts[index];
+
+                                return InkWell(
+                                  onTap: () {
+                                    Navigator.pop(dialogContext, account);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border: Border(
+                                        bottom: BorderSide(
+                                          color: Colors.grey.shade200,
+                                          width: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        // Analytic Icon
+                                        CircleAvatar(
+                                          radius: 16,
+                                          backgroundColor:
+                                              const Color(0xFF10B981)
+                                                  .withValues(alpha: 0.1),
+                                          child: const Icon(
+                                            Icons.analytics_outlined,
+                                            size: 16,
+                                            color: Color(0xFF10B981),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+
+                                        // Analytic Info
+                                        Expanded(
+                                          child: Text(
+                                            account['name'] ?? '',
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+
+                                        // Arrow Icon
+                                        Icon(
+                                          Icons.arrow_forward_ios,
+                                          size: 12,
+                                          color: Colors.grey.shade400,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Batal'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    return result;
   }
 
   /// Show custom search dialog for product selection (used in order line)
@@ -894,7 +1204,9 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
     }
   }
 
-  Future<void> _submitOrder() async {
+  Future<void> _saveDraft() async {
+    // Rename from _submitOrder, sekarang hanya save draft (tidak navigate away)
+
     // POIN 2: Validasi form, customer, dan product lines
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -958,7 +1270,7 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
     setState(() => _isLoading = true);
 
     try {
-      logger.i('📦 [SUBMIT] Creating sales order...');
+      logger.i('📦 [SAVE_DRAFT] Creating sales order (draft)...');
 
       // POIN 3: Extract customer data
       final customerName = _selectedCustomer!['name'] ?? '';
@@ -967,18 +1279,6 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
       final customerStreet2 = _selectedCustomer!['street2'] ?? '';
 
       // Extract location info from customer
-      // API returns location fields as [id, name] arrays, e.g. [623, "Jawa Timur"]
-      // Extract name (index 1) for POST API
-
-      // Debug: Log raw location data
-      logger.d(
-          '   Raw state_id: ${_selectedCustomer!['state_id']} (type: ${_selectedCustomer!['state_id']?.runtimeType})');
-      logger.d(
-          '   Raw city_id: ${_selectedCustomer!['city_id']} (type: ${_selectedCustomer!['city_id']?.runtimeType})');
-      logger.d(
-          '   Raw district_id: ${_selectedCustomer!['district_id']} (type: ${_selectedCustomer!['district_id']?.runtimeType})');
-
-      // Safe extraction with try-catch for each field
       String customerState = '';
       String customerCity = '';
       String customerDistrict = '';
@@ -1012,7 +1312,7 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
       logger.i('   District: $customerDistrict');
       logger.i('   Products: ${_orderLines.length}');
 
-      // POIN 4: Call API dengan warehouse_id=1, kurir_id=null, awb=null
+      // POIN 4: Call API - always save as DRAFT
       final result = await _salesService.createSaleOrder(
         partnerName: customerName,
         partnerPhone: customerPhone,
@@ -1021,10 +1321,10 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
         partnerDistrict: customerDistrict,
         partnerCity: customerCity,
         partnerState: customerState,
-        dateOrder: _formatDateForOdoo(DateTime.now()), // Auto: today
-        warehouseId: 1, // POIN 4: Set to 1
-        kurirId: null, // POIN 4: Set to null
-        awb: null, // POIN 4: Set to null
+        dateOrder: _formatDateForOdoo(DateTime.now()),
+        warehouseId: 1,
+        kurirId: null,
+        awb: null,
         notes:
             _notesController.text.isEmpty ? null : _notesController.text.trim(),
         state: 'draft', // Always draft when created
@@ -1043,20 +1343,120 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
       setState(() => _isLoading = false);
 
       if (result['Success'] == true) {
-        logger.i('✅ [SUBMIT] Sales order created successfully');
+        logger.i('✅ [SAVE_DRAFT] Sales order created successfully');
+        logger.i('   Full result: $result');
+        logger.i('   Result type: ${result.runtimeType}');
+        logger.i('   Data key exists: ${result.containsKey('Data')}');
+        logger.i('   Response Data: ${result['Data']}');
+        logger.i('   Response Data type: ${result['Data']?.runtimeType}');
+
+        // Extract order ID and name from response
+        final orderData = result['Data'];
+
+        // Safety check for orderData type
+        if (orderData == null) {
+          throw Exception('Response Data is null');
+        }
+
+        logger.i('   Order Data type: ${orderData.runtimeType}');
+        logger.i('   Order Data: $orderData');
+
+        try {
+          // Extract ID - handle both int and String
+          final dynamic rawId = orderData['id'];
+          if (rawId is int) {
+            _createdOrderId = rawId;
+          } else if (rawId is String) {
+            _createdOrderId = int.tryParse(rawId) ?? 0;
+          } else {
+            logger.e('   Unexpected ID type: ${rawId.runtimeType}');
+            _createdOrderId = 0;
+          }
+
+          _createdOrderName =
+              orderData['name']?.toString() ?? 'SO-$_createdOrderId';
+
+          logger.i('   Created Order ID: $_createdOrderId');
+          logger.i('   Created Order Name: $_createdOrderName');
+        } catch (e, stackTrace) {
+          logger.e('   Error extracting order data: $e');
+          logger.e('   Stack trace: $stackTrace');
+
+          // Fallback: try to extract from different response format
+          if (orderData is Map) {
+            logger.i('   Trying alternative extraction...');
+            _createdOrderId = 0;
+            _createdOrderName = 'SO-Unknown';
+          } else {
+            throw Exception(
+                'Invalid order data format: ${orderData.runtimeType}');
+          }
+        }
+
+        setState(() {
+          _isOrderSaved = true; // Track that order is saved
+        });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Transaksi berhasil disimpan'),
+          SnackBar(
+            content: Text('✅ Transaksi tersimpan: $_createdOrderName'),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 1),
           ),
         );
 
-        // Return to previous page with refresh flag
-        Navigator.pop(context, true);
+        // Navigate to detail page
+        if (mounted && _createdOrderId != null) {
+          // Wait a bit for snackbar
+          await Future.delayed(const Duration(milliseconds: 300));
+
+          if (mounted) {
+            // Create SalesOrder entity for detail page
+            final salesOrder = SalesOrder(
+              id: _createdOrderId!,
+              name: _createdOrderName ?? 'SO-$_createdOrderId',
+              partnerId: _selectedCustomer!['id'],
+              partnerName: _selectedCustomer!['name'],
+              dateOrder: DateTime.now().toIso8601String(),
+              amountTotal: _calculateTotal(),
+              state: 'draft', // Draft state
+              warehouseId: 1,
+              warehouseName: 'Warehouse',
+              kurirId: null,
+              kurirName: null,
+              awb: null,
+              orderCount: _orderLines.length,
+              orderLines: _orderLines
+                  .map((line) => OrderLine(
+                        productId: [line['product_id'], line['product_name']],
+                        productName: line['product_name'],
+                        productUomQty: line['product_uom_qty'],
+                        analyticDistribution: line['analytic_distribution'],
+                        priceUnit: line['price_unit'],
+                        priceSubtotal:
+                            line['product_uom_qty'] * line['price_unit'],
+                      ))
+                  .toList(),
+            );
+
+            // Navigate to detail (replace current page)
+            final result = await Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => SalesOrderDetailPage(order: salesOrder),
+              ),
+            );
+
+            // If returned from detail, go back to list
+            if (mounted && result != null) {
+              Navigator.pop(context, true);
+            }
+          }
+        }
+
+        // DO NOT show confirm button here - will be shown in detail page
       } else {
-        logger.e('❌ [SUBMIT] Failed: ${result['Message']}');
+        logger.e('❌ [SAVE_DRAFT] Failed: ${result['Message']}');
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1068,7 +1468,72 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
       }
     } catch (e, stackTrace) {
       setState(() => _isLoading = false);
-      logger.e('❌ [SUBMIT] Unexpected error', error: e, stackTrace: stackTrace);
+      logger.e('❌ [SAVE_DRAFT] Unexpected error',
+          error: e, stackTrace: stackTrace);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Error: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmOrder() async {
+    if (_createdOrderId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Order ID tidak ditemukan'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isConfirming = true);
+
+    try {
+      logger.i('✅ [CONFIRM] Confirming order #$_createdOrderId...');
+
+      final result =
+          await _salesService.confirmOrder(orderId: _createdOrderId!);
+
+      if (!mounted) return;
+
+      setState(() => _isConfirming = false);
+
+      if (result['Success'] == true) {
+        logger.i('✅ [CONFIRM] Order confirmed successfully');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Order $_createdOrderName dikonfirmasi'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // NOW navigate back with refresh flag
+        Navigator.pop(context, true);
+      } else {
+        logger.e('❌ [CONFIRM] Failed: ${result['Message']}');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Gagal konfirmasi: ${result['Message']}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      setState(() => _isConfirming = false);
+      logger.e('❌ [CONFIRM] Unexpected error',
+          error: e, stackTrace: stackTrace);
 
       if (!mounted) return;
 
@@ -1139,31 +1604,107 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
 
             const SizedBox(height: 10),
 
-            // Submit Button
-            ElevatedButton(
-              onPressed: _isLoading ? null : _submitOrder,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                backgroundColor: const Color(0xFF0A64AF),
+            // Submit Button - Changes based on state
+            if (!_isOrderSaved) ...[
+              // Before save: Show "Simpan Transaksi" button
+              ElevatedButton(
+                onPressed: _isLoading ? null : _saveDraft,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: const Color(0xFF0A64AF),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text(
+                        'Simpan Transaksi',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text(
-                      'Simpan Transaksi',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
+            ] else ...[
+              // After save: Show order info and "Konfirmasi Order" button
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green.shade200, width: 2),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.check_circle,
+                            color: Colors.green.shade700, size: 24),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Draft Tersimpan',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.green.shade700,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _createdOrderName ?? '-',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.green.shade900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-            ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _isConfirming ? null : _confirmOrder,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: Colors.green.shade700,
+                        minimumSize: const Size(double.infinity, 48),
+                      ),
+                      child: _isConfirming
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'Konfirmasi Order',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             const SizedBox(height: 10),
           ],
@@ -1258,6 +1799,8 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
                                               'product_name': '',
                                               'product_uom_qty': 1.0,
                                               'analytic_distribution': false,
+                                              'analytic_account_id': null,
+                                              'analytic_account_name': '',
                                               'price_unit': 0.0,
                                             });
                                           });
@@ -1582,27 +2125,101 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
           // Show product details if selected
           if (line['product_id'] != null) ...[
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.brightness == Brightness.dark
-                    ? Colors.grey[800]
-                    : Colors.green.shade50,
-                borderRadius: BorderRadius.circular(8),
+
+            // Price Input (Editable)
+            TextFormField(
+              key: ValueKey('price_${line['product_id']}'),
+              initialValue: _formatCurrency(line['price_unit']),
+              decoration: const InputDecoration(
+                labelText: 'Harga Satuan (Rp) *',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.payments),
+                hintText: 'Contoh: 50.000',
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.payments, size: 16, color: Colors.green.shade700),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Harga: Rp ${_formatCurrency(line['price_unit'])}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.green.shade700,
-                    ),
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                _ThousandsSeparatorInputFormatter(),
+              ],
+              onChanged: (value) {
+                // Remove dots and parse to double
+                final cleanValue = value.replaceAll('.', '');
+                final price = double.tryParse(cleanValue) ?? 0.0;
+                _updateOrderLine(index, 'price_unit', price);
+              },
+            ),
+
+            const SizedBox(height: 12),
+
+            // Analytic Account Selection with Search Dialog
+            InkWell(
+              onTap: _isLoadingAnalytics ||
+                      _analyticAccounts.isEmpty ||
+                      _isOrderSaved
+                  ? null
+                  : () async {
+                      final result = await _showAnalyticAccountSearchDialog();
+                      if (result != null) {
+                        setState(() {
+                          _orderLines[index]['analytic_account_id'] =
+                              result['id'];
+                          _orderLines[index]['analytic_account_name'] =
+                              result['name'];
+                          // Format as required by API
+                          _orderLines[index]['analytic_distribution'] =
+                              result['name'];
+                        });
+                      }
+                    },
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: 'Analytic Account',
+                  border: const OutlineInputBorder(),
+                  prefixIcon: _isLoadingAnalytics
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: Padding(
+                            padding: EdgeInsets.all(12.0),
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : const Icon(Icons.analytics_outlined),
+                  suffixIcon: line['analytic_account_id'] != null
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: _isOrderSaved
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        _orderLines[index]
+                                            ['analytic_account_id'] = null;
+                                        _orderLines[index]
+                                            ['analytic_account_name'] = '';
+                                        _orderLines[index]
+                                            ['analytic_distribution'] = false;
+                                      });
+                                    },
+                            ),
+                            const Icon(Icons.search, size: 20),
+                          ],
+                        )
+                      : const Icon(Icons.search),
+                ),
+                child: Text(
+                  line['analytic_account_id'] != null
+                      ? line['analytic_account_name'] ?? ''
+                      : (_isLoadingAnalytics
+                          ? 'Memuat...'
+                          : 'Tap untuk cari (opsional)'),
+                  style: TextStyle(
+                    color: line['analytic_account_id'] != null
+                        ? Theme.of(context).textTheme.bodyLarge?.color
+                        : Colors.grey,
                   ),
-                ],
+                ),
               ),
             ),
           ],

@@ -1,27 +1,5 @@
 import 'order_line.dart';
 
-/// SalesOrder Entity - Domain Layer
-///
-/// Represents Odoo sales order data structure
-/// Based on API: GET /get_sale_order
-///
-/// API Response Example:
-/// {
-///   "id": 4223,
-///   "name": "S00031",
-///   "partner_id": 32763,
-///   "partner_name": "0piandi (6283833303500)",
-///   "date_order": "2026-07-22",
-///   "amount_total": 85000.0,
-///   "warehouse_id": 1,
-///   "warehouse_name": "SURABAYA",
-///   "kurir_id": 24,
-///   "kurir_name": "IDX",
-///   "awb": "JD009833",
-///   "state": "draft",
-///   "order_count": 1,
-///   "order_lines": [...]
-/// }
 class SalesOrder {
   final int id;
   final String name;
@@ -73,7 +51,7 @@ class SalesOrder {
     // DEBUG: Print all available fields
     print('📋 [SALES_ORDER] JSON keys: ${json.keys.toList()}');
     print('📋 [SALES_ORDER] Full JSON: $json');
-    
+
     // Parse order lines from 'order_lines' field
     final orderLinesJson = json['order_lines'] as List<dynamic>? ??
         json['order_line'] as List<dynamic>? ??

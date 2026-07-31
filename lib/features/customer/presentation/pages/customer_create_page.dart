@@ -24,8 +24,10 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _streetController = TextEditingController();
+  final _street2Controller = TextEditingController();
   final _districtController = TextEditingController();
-  final _cityIdController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _stateController = TextEditingController();
   final _zipController = TextEditingController();
 
   bool _isSubmitting = false;
@@ -49,8 +51,10 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
     _nameController.dispose();
     _phoneController.dispose();
     _streetController.dispose();
+    _street2Controller.dispose();
     _districtController.dispose();
-    _cityIdController.dispose();
+    _cityController.dispose();
+    _stateController.dispose();
     _zipController.dispose();
     super.dispose();
   }
@@ -134,18 +138,19 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
       final stateId = _cityToStateMap[selected.cityId];
       final stateName = stateId != null ? _stateMap[stateId] ?? '' : '';
 
-      // Build display text: District, City, State
-      final displayParts = [selected.name];
-      if (cityName.isNotEmpty) displayParts.add(cityName);
-      if (stateName.isNotEmpty) displayParts.add(stateName);
-      final displayText = displayParts.join(', ');
-
       setState(() {
         _selectedDistrictId = selected.id;
         _selectedCityId = selected.cityId;
         _selectedStateId = stateId;
         _districtController.text = selected.name;
-        _cityIdController.text = displayText;
+
+        // Update city and state fields
+        if (cityName.isNotEmpty) {
+          _cityController.text = cityName;
+        }
+        if (stateName.isNotEmpty) {
+          _stateController.text = stateName;
+        }
       });
     }
   }
@@ -164,11 +169,14 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
         if (formattedPhone.isNotEmpty) 'phone': formattedPhone,
         if (_streetController.text.trim().isNotEmpty)
           'street': _streetController.text.trim(),
+        if (_street2Controller.text.trim().isNotEmpty)
+          'street2': _street2Controller.text.trim(),
         if (_selectedDistrictId != null) 'district_id': _selectedDistrictId,
         if (_selectedCityId != null) 'city_id': _selectedCityId,
         if (_selectedStateId != null) 'state_id': _selectedStateId,
         if (_zipController.text.trim().isNotEmpty)
           'zip': _zipController.text.trim(),
+        'country_id': 100, // Indonesia
       };
 
       await context.read<CustomerProvider>().createCustomer(data);
@@ -271,7 +279,7 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 15),
 
             // Name Field (Required)
             _buildSectionLabel('Nama Customer *'),
@@ -313,7 +321,7 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
               textInputAction: TextInputAction.next,
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 15),
 
             // Phone Field
             _buildSectionLabel('Nomor Telepon'),
@@ -324,6 +332,11 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
               decoration: InputDecoration(
                 hintText: 'Contoh: 8123456789',
                 prefixText: '+62 ',
+                prefixStyle: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
                 prefixIcon:
                     Icon(Icons.phone_outlined, color: Colors.green, size: 20),
                 filled: true,
@@ -348,7 +361,7 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
               textInputAction: TextInputAction.next,
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 15),
 
             // Street Field
             _buildSectionLabel('Alamat'),
@@ -382,7 +395,41 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
               textInputAction: TextInputAction.next,
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 15),
+
+            // Street2 Field
+            _buildSectionLabel('Alamat Lanjutan'),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _street2Controller,
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: 'Alamat tambahan (opsional)',
+                prefixIcon:
+                    Icon(Icons.home_outlined, color: Colors.orange, size: 20),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppTheme.brandBlue),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+              ),
+              textInputAction: TextInputAction.next,
+            ),
+
+            const SizedBox(height: 15),
 
             // District Field with Search Button
             _buildSectionLabel('District'),
@@ -420,46 +467,46 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
                 ),
                 const SizedBox(width: 8),
                 SizedBox(
-                  height: 50,
-                  child: ElevatedButton.icon(
+                  height: 48,
+                  width: 48,
+                  child: ElevatedButton(
                     onPressed: _districtLoading || _allDistricts.isEmpty
                         ? null
                         : _selectDistrict,
-                    icon: _districtLoading
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      disabledBackgroundColor: Colors.grey[400],
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _districtLoading
                         ? const SizedBox(
-                            width: 16,
-                            height: 16,
+                            width: 20,
+                            height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor:
                                   AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : const Icon(Icons.search, size: 16),
-                    label: Text(_districtLoading ? 'Loading...' : 'Search'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      disabledBackgroundColor: Colors.grey[400],
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+                        : const Icon(Icons.search, size: 20),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 15),
 
-            // City ID Field (auto-filled from district)
-            _buildSectionLabel('Lokasi (Auto-filled)'),
+            // City Field (auto-filled from district)
+            _buildSectionLabel('Kota/Kabupaten (Auto-filled)'),
             const SizedBox(height: 8),
             TextField(
-              controller: _cityIdController,
+              controller: _cityController,
               readOnly: true,
               decoration: InputDecoration(
-                hintText: 'Distrik, Kota, Provinsi akan muncul otomatis',
+                hintText: 'Kota akan muncul otomatis setelah memilih distrik',
                 prefixIcon: Icon(Icons.location_city_outlined,
                     color: Colors.purple, size: 20),
                 filled: true,
@@ -479,7 +526,37 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 15),
+
+            // State Field (auto-filled from district)
+            _buildSectionLabel('Provinsi (Auto-filled)'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _stateController,
+              readOnly: true,
+              decoration: InputDecoration(
+                hintText:
+                    'Provinsi akan muncul otomatis setelah memilih distrik',
+                prefixIcon:
+                    Icon(Icons.map_outlined, color: Colors.indigo, size: 20),
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 15),
 
             // ZIP Field
             _buildSectionLabel('Kode Pos'),

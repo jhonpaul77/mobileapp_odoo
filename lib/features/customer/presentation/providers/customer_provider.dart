@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../services/config_service.dart';
 import '../../../../services/secure_storage_service.dart';
+import '../../data/repositories/customer_repository_impl.dart';
 import '../../domain/entities/customer.dart';
 import '../../domain/usecases/create_customer_usecase.dart';
 import '../../domain/usecases/get_customers_usecase.dart';
@@ -179,6 +180,67 @@ class CustomerProvider extends ChangeNotifier {
       return newCustomer;
     } catch (e, stackTrace) {
       print('❌ [CUSTOMER_PROVIDER] Create error: $e');
+      print('   Stack trace: $stackTrace');
+      rethrow;
+    }
+  }
+
+  /// Update existing customer
+  Future<Customer> updateCustomer(Map<String, dynamic> data) async {
+    try {
+      print('🔄 [CUSTOMER_PROVIDER] Updating customer...');
+
+      // Get database from config.json
+      final config = await _configService.load();
+      final database = config['database'] as String?;
+
+      // Get API key from SecureStorage
+      final apiKey = await _storage.getAccessToken();
+
+      // Validate
+      if (database == null || database.isEmpty) {
+        throw Exception(
+            'Pengaturan database belum diatur. Silakan logout dan atur pengaturan server.');
+      }
+
+      if (apiKey == null || apiKey.isEmpty) {
+        throw Exception('No API key found. Please login first.');
+      }
+
+      // Customer ID is required
+      final customerId = data['id'] as int?;
+      if (customerId == null) {
+        throw Exception('Customer ID is required for update');
+      }
+
+      // Use repository directly
+      final repository = CustomerRepositoryImpl();
+      final updatedCustomer = await repository.editCustomer(
+        id: customerId,
+        db: database,
+        apiKey: apiKey,
+        data: data,
+      );
+
+      // Update in local list
+      final index =
+          _customers.indexWhere((customer) => customer.id == customerId);
+      if (index != -1) {
+        _customers[index] = updatedCustomer;
+        if (_searchQuery.isEmpty) {
+          _filteredCustomers = _customers;
+        } else {
+          // Re-apply search filter
+          searchCustomers(_searchQuery);
+        }
+      }
+
+      print('✅ [CUSTOMER_PROVIDER] Customer updated: ${updatedCustomer.name}');
+      notifyListeners();
+
+      return updatedCustomer;
+    } catch (e, stackTrace) {
+      print('❌ [CUSTOMER_PROVIDER] Update error: $e');
       print('   Stack trace: $stackTrace');
       rethrow;
     }

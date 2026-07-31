@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:logger/logger.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../config/theme.dart';
@@ -28,10 +28,6 @@ class SalesOrderDetailPage extends StatefulWidget {
 class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
   final _currencyFormat =
       NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-  final _salesService = SalesService();
-  final logger = Logger();
-
-  late SalesOrder _currentOrder;
 
   String _formatDate(String dateStr) {
     try {
@@ -45,7 +41,6 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
   @override
   void initState() {
     super.initState();
-    _currentOrder = widget.order;
     // No need to load names anymore - API provides them directly
   }
 
@@ -69,7 +64,7 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
 
   /// Send WhatsApp order confirmation message
   Future<void> _sendWhatsAppReminder() async {
-    final order = _currentOrder;
+    final order = widget.order;
 
     // Get customer phone from order
     String? customerPhone;
@@ -259,7 +254,7 @@ TERIMA KASIH''';
 
   /// Send WhatsApp shipment tracking message (for Sale/Confirm status)
   Future<void> _sendWhatsAppShipment() async {
-    final order = _currentOrder;
+    final order = widget.order;
 
     // Get customer phone from order
     String? customerPhone;
@@ -472,12 +467,12 @@ TERIMA KASIH''';
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const Divider(),
-                Text('No. SO: ${_currentOrder.name}',
+                Text('No. SO: ${widget.order.name}',
                     style: const TextStyle(fontSize: 12)),
-                Text('Tanggal: ${_formatDate(_currentOrder.dateOrder)}',
+                Text('Tanggal: ${_formatDate(widget.order.dateOrder)}',
                     style: const TextStyle(fontSize: 12)),
                 const SizedBox(height: 8),
-                Text('Customer: ${_getCustomerName(_currentOrder.customerId)}',
+                Text('Customer: ${_getCustomerName(widget.order.customerId)}',
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 12)),
                 const SizedBox(height: 8),
@@ -485,7 +480,7 @@ TERIMA KASIH''';
                     style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 const Divider(),
-                ..._currentOrder.orderLines.map((line) {
+                ...widget.order.orderLines.map((line) {
                   final subtotal = line.productUomQty * line.priceUnit;
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -515,7 +510,7 @@ TERIMA KASIH''';
                     const Text('TOTAL:',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 12)),
-                    Text(_currencyFormat.format(_currentOrder.amountTotal),
+                    Text(_currencyFormat.format(widget.order.amountTotal),
                         style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
@@ -544,63 +539,124 @@ TERIMA KASIH''';
   Future<void> _openEditPage() async {
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => SalesOrderEditPage(order: _currentOrder),
+        builder: (_) => SalesOrderEditPage(order: widget.order),
       ),
     );
 
-    if (result == true && mounted) {
-      // Refresh order data from API
-      try {
-        final refreshedOrder = await _salesService.getSaleOrderById(_currentOrder.id);
-        
-        if (refreshedOrder['Success'] == true) {
-          final orderData = refreshedOrder['Data'] as Map<String, dynamic>;
-          final updatedOrder = SalesOrder.fromJson(orderData);
-          
-          setState(() {
-            _currentOrder = updatedOrder;
-          });
-          
-          logger.i('✅ Order refreshed successfully');
-          
-          // Show success message
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.white),
-                    SizedBox(width: 12),
-                    Text('✅ Data telah diperbarui'),
-                  ],
-                ),
-                backgroundColor: Colors.green,
-                behavior: SnackBarBehavior.floating,
-                duration: Duration(seconds: 2),
-              ),
-            );
-          }
-        }
-      } catch (e) {
-        logger.e('❌ Error refreshing order: $e');
+    if (result == true) {
+      // Update is successful - return to previous page to trigger refresh
+      if (mounted) {
+        Navigator.of(context).pop(true); // Return success to parent
       }
+    }
+  }
+
+  Future<void> _confirmOrder() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Konfirmasi Transaksi'),
+          content: Text(
+            'Apakah Anda yakin ingin mengkonfirmasi transaksi ${widget.order.name}?\n\n'
+            'Status akan berubah dari Draft menjadi Confirmed dan transaksi tidak dapat diedit lagi.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                minimumSize: const Size(0, 32),
+              ),
+              icon:
+                  const Icon(Icons.check_circle, color: Colors.white, size: 16),
+              label: const Text('Konfirmasi',
+                  style: TextStyle(color: Colors.white, fontSize: 13)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    // Show loading
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('⏳ Mengkonfirmasi transaksi...'),
+        duration: Duration(seconds: 30),
+      ),
+    );
+
+    try {
+      // Call confirm API
+      final salesService = SalesService();
+      final result = await salesService.confirmOrder(orderId: widget.order.id);
+
+      if (!mounted) return;
+
+      // Hide loading snackbar
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      if (result['Success'] == true) {
+        // Success
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('✅ Transaksi ${widget.order.name} berhasil dikonfirmasi'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // Return to list with refresh flag
+        Navigator.of(context).pop(true);
+      } else {
+        // Failed
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Gagal konfirmasi: ${result['Message']}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Error: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final order = _currentOrder;
+    final order = widget.order;
     final isEditable = order.state.toLowerCase() == 'draft' ||
         order.state.toLowerCase() == 'sent';
-    final isCancel = order.state.toLowerCase() == 'cancel';
-    final isConfirm = order.state.toLowerCase() == 'sale' ||
-        order.state.toLowerCase() == 'done';
+    // final isCancel = order.state.toLowerCase() == 'cancel';
+    // final isConfirm = order.state.toLowerCase() == 'sale' ||
+    order.state.toLowerCase() == 'done';
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Transaction Detail',
+        title: const Text('Detail',
             style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -611,58 +667,33 @@ TERIMA KASIH''';
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 2),
             child: IconButton(
               icon: const Icon(Icons.print_rounded, color: Colors.white),
               onPressed: _printTransaction,
               tooltip: 'Print',
             ),
           ),
-          if (isCancel)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: TextButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Fitur ubah status akan segera hadir'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
-                child: const Text(
-                  'Buka',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
-          if (isConfirm)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: TextButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Fitur cancel transaksi akan segera hadir'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
           if (isEditable)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: 0),
               child: TextButton(
                 onPressed: _openEditPage,
                 child: const Text(
                   'Edit',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          // Confirm button - AFTER Edit button, same UI/UX as Edit
+          if (isEditable) // isEditable = draft or sent
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: TextButton(
+                onPressed: _confirmOrder,
+                child: const Text(
+                  'Confirm',
                   style: TextStyle(
                       color: Colors.white, fontWeight: FontWeight.w600),
                 ),
@@ -736,8 +767,8 @@ TERIMA KASIH''';
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.message,
+                        child: const FaIcon(
+                          FontAwesomeIcons.whatsapp,
                           color: Colors.white,
                           size: 16,
                         ),
@@ -768,8 +799,8 @@ TERIMA KASIH''';
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.message,
+                        child: const FaIcon(
+                          FontAwesomeIcons.whatsapp,
                           color: Colors.white,
                           size: 16,
                         ),
@@ -895,52 +926,6 @@ TERIMA KASIH''';
                     },
                   ]),
                   const SizedBox(height: 12),
-                  if ((order.partnerStreet != null && order.partnerStreet!.isNotEmpty) ||
-                      (order.partnerStreet2 != null && order.partnerStreet2!.isNotEmpty))
-                    _buildInfoGrid([
-                      {
-                        'label': 'Alamat',
-                        'value': [
-                          if (order.partnerStreet != null &&
-                              order.partnerStreet!.isNotEmpty)
-                            order.partnerStreet,
-                          if (order.partnerStreet2 != null &&
-                              order.partnerStreet2!.isNotEmpty)
-                            order.partnerStreet2,
-                        ].join(', '),
-                      },
-                    ]),
-                  if ((order.partnerStreet != null && order.partnerStreet!.isNotEmpty) ||
-                      (order.partnerStreet2 != null && order.partnerStreet2!.isNotEmpty))
-                    const SizedBox(height: 12),
-                  if ((order.partnerDistrict != null &&
-                          order.partnerDistrict!.isNotEmpty) ||
-                      (order.partnerCity != null && order.partnerCity!.isNotEmpty) ||
-                      (order.partnerState != null && order.partnerState!.isNotEmpty))
-                    _buildInfoGrid([
-                      {
-                        'label': 'Kecamatan',
-                        'value': order.partnerDistrict ?? '-',
-                      },
-                      {
-                        'label': 'Kota',
-                        'value': order.partnerCity ?? '-',
-                      },
-                    ]),
-                  if ((order.partnerDistrict != null &&
-                          order.partnerDistrict!.isNotEmpty) ||
-                      (order.partnerCity != null && order.partnerCity!.isNotEmpty) ||
-                      (order.partnerState != null && order.partnerState!.isNotEmpty))
-                    const SizedBox(height: 12),
-                  if (order.partnerState != null && order.partnerState!.isNotEmpty)
-                    _buildInfoGrid([
-                      {
-                        'label': 'Provinsi',
-                        'value': order.partnerState ?? '-',
-                      },
-                    ]),
-                  if (order.partnerState != null && order.partnerState!.isNotEmpty)
-                    const SizedBox(height: 12),
                   _buildInfoGrid([
                     {
                       'label': 'Warehouse',
@@ -952,15 +937,6 @@ TERIMA KASIH''';
                     },
                   ]),
                   const SizedBox(height: 12),
-                  if (order.notes != null && order.notes!.isNotEmpty)
-                    _buildInfoGrid([
-                      {
-                        'label': 'Catatan',
-                        'value': order.notes ?? '-',
-                      },
-                    ]),
-                  if (order.notes != null && order.notes!.isNotEmpty)
-                    const SizedBox(height: 12),
                   _buildInfoGrid([
                     {
                       'label': 'AWB',
