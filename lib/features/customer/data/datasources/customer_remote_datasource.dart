@@ -232,14 +232,25 @@ class CustomerRemoteDataSource {
         responseData = jsonDecode(responseData);
       }
 
-      // Response wrapped in Success/Message/Data
+      // Response wrapped in Success/Message/Data format
       if (responseData is Map<String, dynamic>) {
-        if (responseData['Success'] == true) {
-          final customerData = responseData['Data'] as Map<String, dynamic>;
-          return CustomerModel.fromJson(customerData);
+        // Check if response has Success field (new format)
+        if (responseData.containsKey('Success')) {
+          if (responseData['Success'] == true) {
+            final customerData = responseData['Data'] as Map<String, dynamic>;
+            return CustomerModel.fromJson(customerData);
+          } else {
+            throw Exception(
+                responseData['Message'] ?? 'Failed to update customer');
+          }
         } else {
-          throw Exception(
-              responseData['Message'] ?? 'Failed to update customer');
+          // Direct response format (flat object with id, name, etc)
+          // Assume success if we got a response with id
+          if (responseData['id'] != null) {
+            return CustomerModel.fromJson(responseData);
+          } else {
+            throw Exception('Invalid customer response format');
+          }
         }
       } else {
         throw Exception(

@@ -301,7 +301,7 @@ class _IntroPageState extends State<IntroPage>
     return Column(
       children: [
         Text(
-          'Next Sales Pro+',
+          'Next PSA',
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,

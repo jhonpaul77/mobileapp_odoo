@@ -1265,6 +1265,30 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
         );
         return;
       }
+
+      // Cek analytic account mandatory
+      if (line['analytic_distribution'] == null || 
+          line['analytic_distribution'] == false || 
+          (line['analytic_distribution'] is String && line['analytic_distribution'].isEmpty)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('⚠️ Analytic Account produk ${i + 1} harus dipilih'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Cek price harus > 0
+      if (line['price_unit'] == null || line['price_unit'] <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('⚠️ Harga produk ${i + 1} harus lebih dari 0'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
     }
 
     setState(() => _isLoading = true);
