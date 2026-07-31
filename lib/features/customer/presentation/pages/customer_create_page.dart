@@ -23,6 +23,7 @@ class CustomerCreatePage extends StatefulWidget {
 class _CustomerCreatePageState extends State<CustomerCreatePage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _streetController = TextEditingController();
   final _street2Controller = TextEditingController();
@@ -50,6 +51,7 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
   @override
   void dispose() {
     _nameController.dispose();
+    _emailController.dispose();
     _phoneController.dispose();
     _streetController.dispose();
     _street2Controller.dispose();
@@ -235,6 +237,8 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
 
       final data = {
         'name': _nameController.text.trim(),
+        if (_emailController.text.trim().isNotEmpty)
+          'email': _emailController.text.trim(),
         if (formattedPhone.isNotEmpty) 'phone': formattedPhone,
         if (_streetController.text.trim().isNotEmpty)
           'street': _streetController.text.trim(),

@@ -187,6 +187,15 @@ class CustomerRemoteDataSource {
       if (responseData is Map<String, dynamic>) {
         print('   [CUSTOMER_DS] Response is Map');
         
+        // API usually returns minimal data (just id + name)
+        // Merge with input data to get complete customer info
+        final completeData = {
+          ...data, // Start with all input data
+          ...responseData, // Override with API response (id, name)
+        };
+        
+        print('   [CUSTOMER_DS] Complete data: $completeData');
+        
         // Check if response has Success field
         if (responseData.containsKey('Success')) {
           if (responseData['Success'] == true) {
@@ -198,15 +207,10 @@ class CustomerRemoteDataSource {
                 responseData['Message'] ?? 'Failed to create customer');
           }
         }
-        // If no Success field, assume the response IS the customer data directly
-        else if (responseData.containsKey('id')) {
-          print('✅ [CUSTOMER_DS] Direct customer response (has id)');
-          return CustomerModel.fromJson(responseData);
-        }
-        // Try to parse as customer anyway
+        // If no Success field, use merged data
         else {
-          print('✅ [CUSTOMER_DS] Trying to parse as CustomerModel');
-          return CustomerModel.fromJson(responseData);
+          print('✅ [CUSTOMER_DS] Using merged data (input + API response)');
+          return CustomerModel.fromJson(completeData);
         }
       } else {
         throw Exception(
