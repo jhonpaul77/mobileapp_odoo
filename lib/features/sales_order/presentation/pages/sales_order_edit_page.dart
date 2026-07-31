@@ -655,10 +655,6 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       if (result['Success'] == true) {
         logger.i('✅ Sales order updated successfully');
 
-        setState(() {
-          _orderSavedSuccessfully = true;
-        });
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Row(
@@ -673,7 +669,9 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           ),
         );
 
-        // Don't close page - allow user to continue editing
+        // Close page with return true to refresh list/detail
+        if (!mounted) return;
+        Navigator.of(context).pop(true);
       } else {
         logger.e('❌ Failed to update sales order: ${result['Message']}');
 

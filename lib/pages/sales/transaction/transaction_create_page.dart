@@ -1500,7 +1500,7 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
       logger.i('✅ [CONFIRM] Confirming order #$_createdOrderId...');
 
       final result =
-          await _salesService.confirmOrder(orderId: _createdOrderId!);
+          await _salesService.confirmOrder(id: _createdOrderId!);
 
       if (!mounted) return;
 

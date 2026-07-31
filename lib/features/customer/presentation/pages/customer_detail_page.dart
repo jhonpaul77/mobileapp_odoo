@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -381,7 +380,7 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                     const SizedBox(width: 10),
                     // WhatsApp Button
                     _buildSmallIconButton(
-                      icon: FontAwesomeIcons.whatsapp,
+                      icon: Icons.phone,
                       color: const Color(0xFF25D366),
                       tooltip: 'WhatsApp',
                       onTap: () => _openWhatsApp(context, customer.phone!),
