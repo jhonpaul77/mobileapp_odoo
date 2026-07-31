@@ -498,6 +498,41 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       return;
     }
 
+    // Validate line items: Analytic, Harga must be filled for all items
+    for (int i = 0; i < _orderLines.length; i++) {
+      final controller = _lineControllers[i];
+      final analyticAccount = controller['analyticAccount']!.text.trim();
+      final priceText = controller['price']!.text.trim();
+
+      if (analyticAccount.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '❌ Item ${i + 1}: Analytic Account harus diisi',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (priceText.isEmpty || priceText == '0') {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '❌ Item ${i + 1}: Harga harus diisi dan tidak boleh 0',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
     setState(() => _isLoading = true);
 
     try {
