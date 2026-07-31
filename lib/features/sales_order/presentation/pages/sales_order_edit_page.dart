@@ -370,30 +370,6 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     super.dispose();
   }
 
-  void _syncLineItem(int index) {
-    final controllers = _lineControllers[index];
-    final line = _orderLines[index];
-
-    // Update qty
-    final newQty =
-        double.tryParse(controllers['qty']!.text.replaceAll('.', '')) ??
-            line.productUomQty;
-
-    // Update price - remove separator first
-    final priceText =
-        controllers['price']!.text.replaceAll('Rp ', '').replaceAll('.', '');
-    final newPrice = double.tryParse(priceText) ?? line.priceUnit;
-
-    _orderLines[index] = OrderLine(
-      productId: line.productId,
-      productName: line.productName, // Preserve product name
-      productUomQty: newQty,
-      analyticDistribution: line.analyticDistribution,
-      priceUnit: newPrice,
-      priceSubtotal: newQty * newPrice,
-    );
-  }
-
   String _formatPrice(double value) {
     final formatted = value.toStringAsFixed(0).replaceAllMapped(
           RegExp(r'\B(?=(\d{3})+(?!\d))'),
@@ -443,11 +419,6 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       return;
     }
 
-    // Sync all line items before saving
-    for (int i = 0; i < _orderLines.length; i++) {
-      _syncLineItem(i);
-    }
-
     setState(() => _isLoading = true);
 
     try {
@@ -457,16 +428,34 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       logger.i('Order ID: ${order.id}');
       logger.i('Customer ID: $_selectedCustomerId');
       logger.i('Order lines: ${_orderLines.length}');
-      // Prepare order lines for API
-      final apiOrderLines = _orderLines.map((line) {
+
+      // Prepare order lines for API - read qty/price from controllers (user edits)
+      final apiOrderLines = _orderLines.asMap().entries.map((entry) {
+        final index = entry.key;
+        final line = entry.value;
+        final controller = _lineControllers[index];
+
         // Get analytic account from controller
-        final controller = _lineControllers[_orderLines.indexOf(line)];
         final analyticAccount = controller['analyticAccount']!.text.trim();
+
+        // Parse qty from controller (or use original if not edited)
+        String qtyText = controller['qty']!.text.trim();
+        qtyText = qtyText.replaceAll('.', '');  // Remove thousands separator
+        qtyText = qtyText.replaceAll(',', '.');  // Handle comma decimal
+        final qty = double.tryParse(qtyText) ?? line.productUomQty;
+
+        // Parse price from controller (or use original if not edited)
+        String priceText = controller['price']!.text.trim();
+        priceText = priceText.replaceAll('Rp ', '').replaceAll('.', '');
+        priceText = priceText.replaceAll(',', '.');
+        final price = double.tryParse(priceText) ?? line.priceUnit;
+
+        logger.i('Line $index: qty=$qtyText→$qty, price=$priceText→$price');
 
         return {
           'product_id': line.productId,
-          'product_uom_qty': line.productUomQty,
-          'price_unit': line.priceUnit,
+          'product_uom_qty': qty,
+          'price_unit': price,
           'analytic_distribution': analyticAccount.isNotEmpty ? analyticAccount : false,
         };
       }).toList();
@@ -556,8 +545,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           ),
         );
 
-        // Return success flag to refresh parent page
-        Navigator.pop(context, true);
+        // Don't close page - allow user to continue editing
       } else {
         logger.e('❌ Failed to update sales order: ${result['Message']}');
 
@@ -636,6 +624,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     String? prefixText,
     int maxLines = 1,
     bool isPrice = false,
+    bool isQty = false,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -661,7 +650,13 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                     FilteringTextInputFormatter.digitsOnly,
                     _ThousandsSeparatorInputFormatter(),
                   ]
-                : null,
+                : isQty
+                    ? [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'[0-9.]'),
+                        ),
+                      ]
+                    : null,
             style: const TextStyle(fontSize: 13, color: Colors.black87),
             decoration: InputDecoration(
               prefixText: prefixText,
@@ -884,6 +879,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                     'Qty',
                     controllers['qty']!,
                     keyboardType: TextInputType.number,
+                    isQty: true,
                   ),
                 ),
                 const SizedBox(width: 8),
