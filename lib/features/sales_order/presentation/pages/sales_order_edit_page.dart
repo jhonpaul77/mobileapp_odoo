@@ -383,10 +383,14 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           ),
         );
 
-        // Reset saved flag after confirmation
-        setState(() {
-          _orderSavedSuccessfully = false;
-        });
+        // Close page and return success to parent
+        if (mounted) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              Navigator.pop(context, true);
+            }
+          });
+        }
       } else {
         logger.e('❌ Failed to confirm sales order: ${result['Message']}');
 
