@@ -504,7 +504,10 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       final analyticAccount = controller['analyticAccount']!.text.trim();
       final priceText = controller['price']!.text.trim();
 
+      logger.i('Item $i validation: analytic="$analyticAccount", price="$priceText"');
+
       if (analyticAccount.isEmpty) {
+        logger.e('Item $i: Analytic Account kosong!');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -518,7 +521,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         return;
       }
 
-      if (priceText.isEmpty || priceText == '0') {
+      if (priceText.isEmpty || priceText == '0' || priceText == 'Rp 0') {
+        logger.e('Item $i: Harga kosong atau 0! priceText="$priceText"');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -532,6 +536,8 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         return;
       }
     }
+
+    logger.i('✅ All line items validation passed!');
 
     setState(() => _isLoading = true);
 
