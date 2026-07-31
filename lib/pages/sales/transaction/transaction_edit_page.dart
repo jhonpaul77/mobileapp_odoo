@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/models/location_picker.dart';
 import 'package:pintarx/features/customer/data/datasources/customer_remote_datasource.dart';
 import 'package:pintarx/features/customer/domain/entities/customer.dart';
 import 'package:pintarx/features/customer/presentation/pages/customer_search_modal.dart';
 import 'package:pintarx/features/product/data/datasources/product_remote_datasource.dart';
 import 'package:pintarx/features/product/data/models/product_model.dart';
+import 'package:pintarx/models/location_picker.dart';
 import 'package:pintarx/services/config_service.dart';
 import 'package:pintarx/services/secure_storage_service.dart';
 
@@ -30,11 +30,13 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
   late final TextEditingController _fullAddressController;
   late final List<Map<String, dynamic>> _items;
   late final List<Map<String, TextEditingController>> _itemControllers;
-  
+
   late List<Customer> _allCustomers = [];
   late List<ProductModel> _allProducts = [];
-  int? _selectedCustomerId;
-  bool _loadingData = false;
+  // ignore: unused_field
+  int? _selectedCustomerId; // Used in _selectCustomer() line 255
+  // ignore: unused_field
+  bool _loadingData = false; // Used in _loadData() lines 82, 125
 
   @override
   void initState() {
@@ -72,7 +74,7 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
             text: (item['price'] as double?)?.toStringAsFixed(0) ?? ''),
       };
     }).toList();
-    
+
     // Load customers and products from API
     _loadData();
   }
@@ -93,7 +95,8 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
       // Load customers
       try {
         final customerDatasource = CustomerRemoteDataSource();
-        final customers = await customerDatasource.getCustomers(db: db, apiKey: apiKey);
+        final customers =
+            await customerDatasource.getCustomers(db: db, apiKey: apiKey);
         print('✅ Loaded ${customers.length} customers');
         if (mounted) {
           setState(() {
@@ -107,7 +110,8 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
       // Load products
       try {
         final productDatasource = ProductRemoteDataSource();
-        final products = await productDatasource.getProducts(db: db, apiKey: apiKey);
+        final products =
+            await productDatasource.getProducts(db: db, apiKey: apiKey);
         print('✅ Loaded ${products.length} products');
         if (mounted) {
           setState(() {
@@ -266,7 +270,8 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
     if (selected != null) {
       setState(() {
         _itemControllers[index]['product']!.text = selected.name;
-        _itemControllers[index]['price']!.text = selected.listPrice.toStringAsFixed(0);
+        _itemControllers[index]['price']!.text =
+            selected.listPrice.toStringAsFixed(0);
       });
     }
   }
@@ -524,19 +529,22 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
                       child: TextField(
                         controller: controllers['product']!,
                         readOnly: true,
-                        style: const TextStyle(fontSize: 12, color: Colors.black87),
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.black87),
                         decoration: InputDecoration(
                           filled: true,
                           fillColor: Colors.grey[50],
-                          contentPadding:
-                              const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(6),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                            borderSide:
+                                BorderSide(color: Colors.grey[300]!, width: 1),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(6),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                            borderSide:
+                                BorderSide(color: Colors.grey[300]!, width: 1),
                           ),
                         ),
                       ),
@@ -545,7 +553,9 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
                     SizedBox(
                       height: 36,
                       child: ElevatedButton.icon(
-                        onPressed: _allProducts.isEmpty ? null : () => _selectProductForItem(index),
+                        onPressed: _allProducts.isEmpty
+                            ? null
+                            : () => _selectProductForItem(index),
                         icon: const Icon(Icons.search, size: 16),
                         label: const Text('Cari'),
                         style: ElevatedButton.styleFrom(
@@ -658,19 +668,22 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
                                 child: TextField(
                                   controller: _customerController,
                                   readOnly: true,
-                                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.black87),
                                   decoration: InputDecoration(
                                     filled: true,
                                     fillColor: Colors.grey[50],
-                                    contentPadding:
-                                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 8),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(6),
-                                      borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                      borderSide: BorderSide(
+                                          color: Colors.grey[300]!, width: 1),
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(6),
-                                      borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                                      borderSide: BorderSide(
+                                          color: Colors.grey[300]!, width: 1),
                                     ),
                                   ),
                                 ),
@@ -679,13 +692,16 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
                               SizedBox(
                                 height: 36,
                                 child: ElevatedButton.icon(
-                                  onPressed: _allCustomers.isEmpty ? null : _selectCustomer,
+                                  onPressed: _allCustomers.isEmpty
+                                      ? null
+                                      : _selectCustomer,
                                   icon: const Icon(Icons.search, size: 16),
                                   label: const Text('Cari'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppTheme.primaryColor,
                                     disabledBackgroundColor: Colors.grey[400],
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12),
                                   ),
                                 ),
                               ),

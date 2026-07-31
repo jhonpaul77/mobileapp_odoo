@@ -314,22 +314,21 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Edit Customer',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-          ),
+          style: theme.appBarTheme.titleTextStyle,
         ),
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon:
+              Icon(Icons.arrow_back, color: theme.appBarTheme.iconTheme?.color),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -373,19 +372,28 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
             const SizedBox(height: 8),
             TextFormField(
               controller: _nameController,
+              style: TextStyle(color: theme.textTheme.bodyLarge?.color),
               decoration: InputDecoration(
                 hintText: 'Contoh: PT Maju Jaya',
                 prefixIcon: Icon(Icons.person_outline,
                     color: AppTheme.brandBlue, size: 20),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: theme.cardTheme.color,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -421,14 +429,20 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
                 prefixIcon:
                     Icon(Icons.email_outlined, color: Colors.blue, size: 20),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: theme.cardTheme.color,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey.shade300),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey.shade300),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -460,26 +474,33 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
             const SizedBox(height: 8),
             TextFormField(
               controller: _phoneController,
+              style: TextStyle(color: theme.textTheme.bodyLarge?.color),
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
                 hintText: 'Contoh: 8123456789',
                 prefixText: '+62 ',
-                prefixStyle: const TextStyle(
-                  color: Colors.black87,
+                prefixStyle: TextStyle(
+                  color: theme.textTheme.bodyLarge?.color,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
                 prefixIcon:
                     Icon(Icons.phone_outlined, color: Colors.green, size: 20),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: theme.cardTheme.color,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey.shade300),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey.shade300),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -506,14 +527,20 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
                 prefixIcon:
                     Icon(Icons.home_outlined, color: Colors.orange, size: 20),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: theme.cardTheme.color,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey.shade300),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey.shade300),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -540,14 +567,20 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
                 prefixIcon: Icon(Icons.home_work_outlined,
                     color: Colors.deepOrange, size: 20),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: theme.cardTheme.color,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey.shade300),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey.shade300),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -572,19 +605,26 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
                   child: TextField(
                     controller: _districtController,
                     readOnly: true,
+                    style: TextStyle(color: theme.textTheme.bodyLarge?.color),
                     decoration: InputDecoration(
                       hintText: 'Pilih District',
                       prefixIcon: Icon(Icons.location_on_outlined,
                           color: Colors.red, size: 20),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: theme.cardTheme.color,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide(
+                            color: theme.brightness == Brightness.dark
+                                ? Colors.grey[700]!
+                                : Colors.grey.shade300),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide(
+                            color: theme.brightness == Brightness.dark
+                                ? Colors.grey[700]!
+                                : Colors.grey.shade300),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -637,19 +677,28 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
             TextField(
               controller: _cityController,
               readOnly: true,
+              style: TextStyle(color: theme.textTheme.bodyLarge?.color),
               decoration: InputDecoration(
                 hintText: 'Kota akan muncul otomatis setelah memilih distrik',
                 prefixIcon: Icon(Icons.location_city_outlined,
                     color: Colors.purple, size: 20),
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: theme.brightness == Brightness.dark
+                    ? theme.cardTheme.color?.withValues(alpha: 0.5)
+                    : Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey.shade300),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey.shade300),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -666,20 +715,29 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
             TextField(
               controller: _stateController,
               readOnly: true,
+              style: TextStyle(color: theme.textTheme.bodyLarge?.color),
               decoration: InputDecoration(
                 hintText:
                     'Provinsi akan muncul otomatis setelah memilih distrik',
                 prefixIcon:
                     Icon(Icons.map_outlined, color: Colors.indigo, size: 20),
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: theme.brightness == Brightness.dark
+                    ? theme.cardTheme.color?.withValues(alpha: 0.5)
+                    : Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey.shade300),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey.shade300),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -701,14 +759,20 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
                 prefixIcon: Icon(Icons.markunread_mailbox_outlined,
                     color: Colors.teal, size: 20),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: theme.cardTheme.color,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey.shade300),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : Colors.grey.shade300),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -779,12 +843,13 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
   }
 
   Widget _buildSectionLabel(String label) {
+    final theme = Theme.of(context);
     return Text(
       label,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w600,
-        color: AppTheme.textPrimary,
+        color: theme.textTheme.titleMedium?.color,
       ),
     );
   }

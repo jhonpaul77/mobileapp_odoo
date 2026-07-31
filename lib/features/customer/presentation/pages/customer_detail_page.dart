@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -14,6 +15,7 @@ import '../../../sales_order/presentation/providers/sales_order_provider.dart';
 import '../../domain/entities/customer.dart';
 import '../providers/customer_provider.dart';
 import 'customer_edit_page.dart';
+import 'customer_transaction_history_page.dart';
 
 /// Helper class to hold customer details with resolved names
 class CustomerDetails {
@@ -127,15 +129,18 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return FutureBuilder<CustomerDetails>(
       future: _customerDetailsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
             appBar: AppBar(
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: theme.appBarTheme.backgroundColor,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(Icons.arrow_back,
+                    color: theme.appBarTheme.iconTheme?.color),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
@@ -153,22 +158,26 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
   }
 
   Widget _buildDetailPage(CustomerDetails details) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           // Sticky Header with Avatar
           SliverAppBar(
             expandedHeight: 200,
             pinned: true,
-            backgroundColor: AppTheme.primaryColor,
+            backgroundColor: theme.appBarTheme.backgroundColor,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: Icon(Icons.arrow_back,
+                  color: theme.appBarTheme.iconTheme?.color),
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.edit, color: Colors.white),
+                icon:
+                    Icon(Icons.edit, color: theme.appBarTheme.iconTheme?.color),
                 onPressed: () async {
                   final result = await Navigator.push(
                     context,
@@ -187,7 +196,8 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.more_vert, color: Colors.white),
+                icon: Icon(Icons.more_vert,
+                    color: theme.appBarTheme.iconTheme?.color),
                 onPressed: () {
                   _showMoreOptions(context);
                 },
@@ -310,6 +320,8 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
 
   /// Build section header
   Widget _buildSectionHeader(String title, IconData icon) {
+    final theme = Theme.of(context);
+
     return Row(
       children: [
         Container(
@@ -327,10 +339,10 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
         const SizedBox(width: 10),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: Colors.black87,
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
       ],
@@ -339,6 +351,7 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
 
   /// Build contact information section with integrated action buttons
   Widget _buildContactSection() {
+    final theme = Theme.of(context);
     final customer = widget.customer;
     final hasPhone = customer.phone != null && customer.phone!.isNotEmpty;
     final hasEmail = customer.email != null && customer.email!.isNotEmpty;
@@ -346,9 +359,13 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? Colors.grey[700]!
+              : Colors.grey[200]!,
+        ),
       ),
       child: Column(
         children: [
@@ -380,7 +397,7 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                     const SizedBox(width: 10),
                     // WhatsApp Button
                     _buildSmallIconButton(
-                      icon: Icons.phone,
+                      icon: FontAwesomeIcons.whatsapp,
                       color: const Color(0xFF25D366),
                       tooltip: 'WhatsApp',
                       onTap: () => _openWhatsApp(context, customer.phone!),
@@ -470,6 +487,7 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
 
   /// Build address information section
   Widget _buildAddressSection(CustomerDetails details) {
+    final theme = Theme.of(context);
     final customer = details.customer;
     final hasAddress =
         (customer.street != null && customer.street!.isNotEmpty) ||
@@ -483,9 +501,13 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? Colors.grey[700]!
+              : Colors.grey[200]!,
+        ),
       ),
       child: hasAddress
           ? Column(
@@ -580,13 +602,18 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
 
   /// Build additional information section
   Widget _buildAdditionalInfo(CustomerDetails details) {
+    final theme = Theme.of(context);
     final customer = details.customer;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? Colors.grey[700]!
+              : Colors.grey[200]!,
+        ),
       ),
       child: Column(
         children: [
@@ -610,6 +637,8 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
     required String value,
     VoidCallback? onCopy,
   }) {
+    final theme = Theme.of(context);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -637,16 +666,16 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                 label,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: theme.textTheme.bodySmall?.color,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
-                  color: Colors.black87,
+                  color: theme.textTheme.bodyLarge?.color,
                   fontWeight: FontWeight.w600,
                   height: 1.4,
                 ),
@@ -661,7 +690,7 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
             icon: Icon(
               Icons.copy_rounded,
               size: 18,
-              color: Colors.grey[400],
+              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
             ),
             onPressed: onCopy,
             padding: EdgeInsets.zero,
@@ -673,18 +702,24 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
 
   /// Build empty state message
   Widget _buildEmptyState(String message) {
+    final theme = Theme.of(context);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Icon(Icons.info_outline, size: 48, color: Colors.grey[300]),
+            Icon(
+              Icons.info_outline,
+              size: 48,
+              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.3),
+            ),
             const SizedBox(height: 12),
             Text(
               message,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[500],
+                color: theme.textTheme.bodySmall?.color,
               ),
             ),
           ],
@@ -693,8 +728,10 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
     );
   }
 
-  /// Build sales history section with accordion
+  /// Build sales history section with summary (show only 5 recent)
   Widget _buildSalesHistory() {
+    final theme = Theme.of(context);
+
     return FutureBuilder<Map<String, dynamic>>(
       future: _loadSalesHistory(),
       builder: (context, snapshot) {
@@ -702,9 +739,13 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
           return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(
+                color: theme.brightness == Brightness.dark
+                    ? Colors.grey[700]!
+                    : Colors.grey[200]!,
+              ),
             ),
             child: const Center(
               child: CircularProgressIndicator(),
@@ -716,9 +757,13 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
           return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(
+                color: theme.brightness == Brightness.dark
+                    ? Colors.grey[700]!
+                    : Colors.grey[200]!,
+              ),
             ),
             child: _buildEmptyState('Gagal memuat riwayat penjualan'),
           );
@@ -729,9 +774,13 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
           return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(
+                color: theme.brightness == Brightness.dark
+                    ? Colors.grey[700]!
+                    : Colors.grey[200]!,
+              ),
             ),
             child: _buildEmptyState('Tidak ada riwayat penjualan'),
           );
@@ -742,23 +791,30 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
           return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(
+                color: theme.brightness == Brightness.dark
+                    ? Colors.grey[700]!
+                    : Colors.grey[200]!,
+              ),
             ),
             child: _buildEmptyState('Belum ada transaksi penjualan'),
           );
         }
 
-        return _SalesHistoryAccordion(
-          orders: orders,
-          customerId: widget.customer.id,
-          onRefreshNeeded: () {
-            // Reload the customer details when order is updated
-            setState(() {
-              _customerDetailsFuture = _loadCustomerDetails();
-            });
-          },
+        // Convert to SalesOrder entities
+        final allTransactions =
+            orders.map((json) => SalesOrder.fromJson(json)).toList();
+
+        // Take only 5 most recent
+        final recentTransactions = allTransactions.take(5).toList();
+        final hasMore = allTransactions.length > 5;
+
+        return _buildTransactionHistorySummary(
+          allTransactions: allTransactions,
+          recentTransactions: recentTransactions,
+          hasMore: hasMore,
         );
       },
     );
@@ -850,8 +906,224 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
     }
   }
 
+  /// Build transaction history summary widget
+  Widget _buildTransactionHistorySummary({
+    required List<SalesOrder> allTransactions,
+    required List<SalesOrder> recentTransactions,
+    required bool hasMore,
+  }) {
+    final theme = Theme.of(context);
+    final currencyFormat =
+        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+
+    // Calculate stats
+    final totalRevenue = allTransactions.fold(
+      0.0,
+      (sum, tx) =>
+          sum + (tx.state.toLowerCase() != 'cancel' ? tx.amountTotal : 0.0),
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? Colors.grey[700]!
+              : Colors.grey[200]!,
+        ),
+      ),
+      child: Column(
+        children: [
+          // Header with Stats
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.05),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Column(
+                  children: [
+                    Text(
+                      'Total Transaksi',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.textTheme.bodySmall?.color,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${allTransactions.length}x',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: theme.dividerColor,
+                ),
+                Column(
+                  children: [
+                    Text(
+                      'Total Belanja',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.textTheme.bodySmall?.color,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      currencyFormat.format(totalRevenue),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Recent Transactions (Max 5)
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(12),
+            itemCount: recentTransactions.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final tx = recentTransactions[index];
+              return ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                leading: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Color(tx.stateColor).withValues(alpha: 0.2),
+                  child: Text(
+                    tx.name.substring(tx.name.length - 2),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(tx.stateColor),
+                    ),
+                  ),
+                ),
+                title: Text(
+                  tx.name,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: theme.textTheme.bodyLarge?.color,
+                  ),
+                ),
+                subtitle: Row(
+                  children: [
+                    Text(
+                      tx.dateOrderFormatted,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.textTheme.bodySmall?.color,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Color(tx.stateColor).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        tx.stateLabel,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Color(tx.stateColor),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                trailing: Text(
+                  currencyFormat.format(tx.amountTotal),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SalesOrderDetailPage(order: tx),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+
+          // "View All" Button (if more than 5)
+          if (hasMore)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CustomerTransactionHistoryPage(
+                        customerId: widget.customer.id,
+                        customerName: widget.customer.name,
+                        transactions: allTransactions,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.history, size: 16),
+                label: Text('Lihat Semua (${allTransactions.length})'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   /// Show more options bottom sheet
   void _showMoreOptions(BuildContext context) {
+    final theme = Theme.of(context);
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -866,20 +1138,20 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: theme.dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading:
-                  const Icon(Icons.share_rounded, color: AppTheme.primaryColor),
-              title: const Text('Bagikan Customer'),
-              onTap: () {
-                Navigator.pop(context);
-                _shareCustomer(context);
-              },
-            ),
+            // const SizedBox(height: 20),
+            // ListTile(
+            //   leading:
+            //       const Icon(Icons.share_rounded, color: AppTheme.primaryColor),
+            //   title: const Text('Bagikan Customer'),
+            //   onTap: () {
+            //     Navigator.pop(context);
+            //     _shareCustomer(context);
+            //   },
+            // ),
             ListTile(
               leading:
                   const Icon(Icons.favorite_border_rounded, color: Colors.red),
@@ -892,15 +1164,15 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                 );
               },
             ),
-            ListTile(
-              leading:
-                  const Icon(Icons.delete_outline_rounded, color: Colors.red),
-              title: const Text('Hapus Customer'),
-              onTap: () {
-                Navigator.pop(context);
-                _confirmDelete(context);
-              },
-            ),
+            // ListTile(
+            //   leading:
+            //       const Icon(Icons.delete_outline_rounded, color: Colors.red),
+            //   title: const Text('Hapus Customer'),
+            //   onTap: () {
+            //     Navigator.pop(context);
+            //     _confirmDelete(context);
+            //   },
+            // ),
           ],
         ),
       ),
@@ -1135,86 +1407,6 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
       }
     }
   }
-
-  /// Share customer
-  void _shareCustomer(BuildContext context) async {
-    final customer = widget.customer;
-
-    // Format customer information
-    final StringBuffer shareText = StringBuffer();
-    shareText.writeln('📇 Customer Information');
-    shareText.writeln('━━━━━━━━━━━━━━━━━━━━');
-    shareText.writeln('👤 Name: ${customer.name}');
-    // shareText.writeln('🆔 ID: ${customer.id}');
-
-    if (customer.phone != null && customer.phone!.isNotEmpty) {
-      shareText.writeln('📞 Phone: ${customer.phone}');
-    }
-
-    if (customer.email != null && customer.email!.isNotEmpty) {
-      shareText.writeln('📧 Email: ${customer.email}');
-    }
-
-    if (customer.fullAddress.isNotEmpty) {
-      shareText.writeln('📍 Address: ${customer.fullAddress}');
-    }
-
-    shareText.writeln('━━━━━━━━━━━━━━━━━━━━');
-    shareText.writeln('\nShared from Mobile App Odoo');
-
-    // Copy to clipboard as alternative to share
-    await Clipboard.setData(ClipboardData(text: shareText.toString()));
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Text(
-                    'Informasi customer tersalin ke clipboard!\nAnda bisa paste di aplikasi lain.'),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
-          action: SnackBarAction(
-            label: 'OK',
-            textColor: Colors.white,
-            onPressed: () {},
-          ),
-        ),
-      );
-    }
-  }
-
-  /// Confirm delete
-  void _confirmDelete(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hapus Customer'),
-        content: Text('Yakin ingin menghapus ${widget.customer.name}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Sales History Accordion Widget
@@ -1281,6 +1473,8 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     // Calculate totals
     final totalOrders = widget.orders.length;
     final totalAmount = widget.orders.fold<double>(
@@ -1291,9 +1485,13 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? Colors.grey[700]!
+              : Colors.grey[200]!,
+        ),
       ),
       child: Column(
         children: [
@@ -1317,7 +1515,7 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                         'Total Transaksi',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: theme.textTheme.bodySmall?.color,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1336,7 +1534,7 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                 Container(
                   height: 40,
                   width: 1,
-                  color: Colors.grey[300],
+                  color: theme.dividerColor,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -1347,7 +1545,7 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                         'Total Nilai',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: theme.textTheme.bodySmall?.color,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1375,7 +1573,7 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
             itemCount: widget.orders.length,
             separatorBuilder: (context, index) => Divider(
               height: 1,
-              color: Colors.grey[200],
+              color: theme.dividerColor,
             ),
             itemBuilder: (context, index) {
               final order = widget.orders[index];
@@ -1411,10 +1609,10 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                                   children: [
                                     Text(
                                       order['name'] as String,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w700,
-                                        color: Colors.black87,
+                                        color: theme.textTheme.bodyLarge?.color,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -1423,7 +1621,7 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                                           order['date_order'] as String),
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.grey[600],
+                                        color: theme.textTheme.bodySmall?.color,
                                       ),
                                     ),
                                   ],
@@ -1433,7 +1631,8 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                                 isExpanded
                                     ? Icons.keyboard_arrow_up_rounded
                                     : Icons.keyboard_arrow_down_rounded,
-                                color: Colors.grey[400],
+                                color: theme.iconTheme.color
+                                    ?.withValues(alpha: 0.5),
                               ),
                             ],
                           ),
@@ -1481,7 +1680,9 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.grey[50],
+                                color: theme.brightness == Brightness.dark
+                                    ? Colors.grey[850]
+                                    : Colors.grey[50],
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Column(
@@ -1491,12 +1692,13 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      const Text(
+                                      Text(
                                         'Order Items',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
+                                          color:
+                                              theme.textTheme.bodyMedium?.color,
                                         ),
                                       ),
                                       Container(
@@ -1556,9 +1758,11 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                                               children: [
                                                 Text(
                                                   productName,
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.w600,
+                                                    color: theme.textTheme
+                                                        .bodyMedium?.color,
                                                   ),
                                                 ),
                                                 const SizedBox(height: 2),
@@ -1566,7 +1770,8 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                                                   'Qty: ${qty.toInt()} × ${_currencyFormat.format(price)}',
                                                   style: TextStyle(
                                                     fontSize: 10,
-                                                    color: Colors.grey[600],
+                                                    color: theme.textTheme
+                                                        .bodySmall?.color,
                                                   ),
                                                 ),
                                               ],
@@ -1574,10 +1779,11 @@ class _SalesHistoryAccordionState extends State<_SalesHistoryAccordion> {
                                           ),
                                           Text(
                                             _currencyFormat.format(subtotal),
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
-                                              color: Colors.black87,
+                                              color: theme
+                                                  .textTheme.bodyLarge?.color,
                                             ),
                                           ),
                                         ],
