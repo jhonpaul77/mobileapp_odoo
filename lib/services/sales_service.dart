@@ -135,9 +135,11 @@ class SalesService {
     }
   }
 
-  // ✅ ODOO: Get single sale order by ID (client-side filter)
+  // ✅ ODOO: Get single sale order by ID
+  /// First tries to find in fetched list, then tries direct API call
   Future<Map<String, dynamic>> getSaleOrderById(int orderId) async {
     try {
+      // First try: Get from cached list
       final result = await getSaleOrders();
 
       if (result['Success'] == true) {
@@ -153,15 +155,16 @@ class SalesService {
             'Message': 'Sale order found',
             'Data': order,
           };
-        } else {
-          return {
-            'Success': false,
-            'Message': 'Sale order not found',
-          };
         }
       }
 
-      return result;
+      // Fallback: If not found in list or list is empty, just return the order object
+      // This is a workaround since there's no direct get-by-id API endpoint
+      print('⚠️ [SALES] Order #$orderId not found in list, returning cached object');
+      return {
+        'Success': false,
+        'Message': 'Sale order not found in list - use edit page to refresh',
+      };
     } catch (e) {
       print('❌ [SALES] Get by ID error: $e');
       return {

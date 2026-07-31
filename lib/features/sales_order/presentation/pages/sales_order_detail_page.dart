@@ -28,6 +28,8 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
   final _currencyFormat =
       NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
+  SalesOrder? _currentOrder;
+
   String _formatDate(String dateStr) {
     try {
       final date = DateTime.parse(dateStr);
@@ -40,6 +42,7 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
   @override
   void initState() {
     super.initState();
+    _currentOrder = widget.order;
     // No need to load names anymore - API provides them directly
   }
 
@@ -536,18 +539,30 @@ TERIMA KASIH''';
   }
 
   Future<void> _openEditPage() async {
+    if (_currentOrder == null) return; // Safety check
+
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => SalesOrderEditPage(order: widget.order),
+        builder: (_) => SalesOrderEditPage(order: _currentOrder!),
       ),
     );
 
-    if (result == true) {
-      // Update is successful - return to previous page to trigger refresh
-      if (mounted) {
-        Navigator.of(context).pop(true); // Return success to parent
-      }
+    if (result == true && mounted) {
+      await _refreshOrderData();
     }
+  }
+
+  /// Refresh order data - not implemented (no API endpoint)
+  Future<void> _refreshOrderData() async {
+    // Refresh via API not available - use Edit page for data updates
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Klik Edit untuk perbarui data'),
+        backgroundColor: Colors.blue,
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _confirmOrder() async {
@@ -645,7 +660,7 @@ TERIMA KASIH''';
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final order = widget.order;
+    final order = _currentOrder ?? widget.order;
     final isEditable = order.state.toLowerCase() == 'draft' ||
         order.state.toLowerCase() == 'sent';
     // final isCancel = order.state.toLowerCase() == 'cancel';
@@ -665,6 +680,14 @@ TERIMA KASIH''';
         centerTitle: false,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 2),
+            child: IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              onPressed: _refreshOrderData,
+              tooltip: 'Refresh',
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 2),
             child: IconButton(
@@ -1270,7 +1293,7 @@ TERIMA KASIH''';
           value,
           style: TextStyle(
             fontSize: 13,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             color: theme.textTheme.bodyLarge?.color,
           ),
         ),

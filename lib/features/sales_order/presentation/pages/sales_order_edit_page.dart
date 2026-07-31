@@ -147,7 +147,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       return {
         'product': TextEditingController(text: line.productNameDisplay),
         'analyticAccount': TextEditingController(text: analyticAccount),
-        'qty': TextEditingController(text: line.productUomQty.toString()),
+        'qty': TextEditingController(text: _formatQty(line.productUomQty)),
         'price': TextEditingController(text: _formatPrice(line.priceUnit)),
       };
     }).toList();
@@ -324,15 +324,20 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     if (selected != null) {
       // Get city name from map or by looking it up
       String cityName = _cityMap[selected.cityId] ?? '';
+      
+      // Get state ID from city, then get state name
+      int? stateId = _cityToStateMap[selected.cityId];
+      String stateName = stateId != null ? (_stateMap[stateId] ?? '') : '';
 
       setState(() {
         // _selectedDistrictId = selected.id; // Removed: variable not used elsewhere
         _selectedCityId = selected.cityId;
         _districtController.text = selected.name;
         _cityController.text = cityName;
+        _stateController.text = stateName;
       });
 
-      logger.i('Selected district: ${selected.name}, city: $cityName');
+      logger.i('Selected district: ${selected.name}, city: $cityName, state: $stateName');
     }
   }
 
@@ -451,6 +456,15 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       }
     }
     super.dispose();
+  }
+
+  String _formatQty(double value) {
+    // Format qty to show as integer if it's whole number (e.g., 2.0 -> "2")
+    // but keep decimal if it has fractional part (e.g., 2.5 -> "2.5")
+    if (value == value.toInt()) {
+      return value.toInt().toString();
+    }
+    return value.toString();
   }
 
   String _formatPrice(double value) {
