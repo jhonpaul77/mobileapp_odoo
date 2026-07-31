@@ -1,5 +1,5 @@
 // File: lib/models/product_category/product_category_response.dart
-import 'package:pintarx/models/product/product_category/product_category.dart';
+import 'package:nextpsa/models/product/product_category/product_category.dart';
 
 class ProductCategoryResponse {
   final bool success;
@@ -41,3 +41,4 @@ class ProductCategoryResponse {
     );
   }
 }
+

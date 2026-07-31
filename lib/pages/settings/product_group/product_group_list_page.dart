@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:pintarx/models/product/product_group/product_group.dart';
-import 'package:pintarx/services/product_group_service.dart';
-import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/services/status_bar_service.dart';
+import 'package:nextpsa/models/product/product_group/product_group.dart';
+import 'package:nextpsa/services/product_group_service.dart';
+import 'package:nextpsa/config/theme.dart';
+import 'package:nextpsa/services/status_bar_service.dart';
 import 'product_group_detail_page.dart';
 import 'product_group_form_page.dart';
 
@@ -415,3 +415,4 @@ class _ProductGroupListPageState extends State<ProductGroupListPage> {
     );
   }
 }
+

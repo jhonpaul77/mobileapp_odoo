@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pintarx/config/theme.dart';
+import 'package:nextpsa/config/theme.dart';
 
 class SectionHeader extends StatelessWidget {
   final String title;
@@ -79,3 +79,4 @@ class SectionHeader extends StatelessWidget {
     );
   }
 }
+

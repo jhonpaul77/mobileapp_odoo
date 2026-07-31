@@ -1,4 +1,4 @@
-import 'package:pintarx/models/organization/organization.dart';
+import 'package:nextpsa/models/organization/organization.dart';
 
 class OrganizationResponse {
   final bool success;
@@ -43,3 +43,4 @@ class OrganizationResponse {
     );
   }
 }
+

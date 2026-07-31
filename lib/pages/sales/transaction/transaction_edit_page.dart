@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/features/customer/data/datasources/customer_remote_datasource.dart';
-import 'package:pintarx/features/customer/domain/entities/customer.dart';
-import 'package:pintarx/features/customer/presentation/pages/customer_search_modal.dart';
-import 'package:pintarx/features/product/data/datasources/product_remote_datasource.dart';
-import 'package:pintarx/features/product/data/models/product_model.dart';
-import 'package:pintarx/models/location_picker.dart';
-import 'package:pintarx/services/config_service.dart';
-import 'package:pintarx/services/secure_storage_service.dart';
+import 'package:nextpsa/config/theme.dart';
+import 'package:nextpsa/features/customer/data/datasources/customer_remote_datasource.dart';
+import 'package:nextpsa/features/customer/domain/entities/customer.dart';
+import 'package:nextpsa/features/customer/presentation/pages/customer_search_modal.dart';
+import 'package:nextpsa/features/product/data/datasources/product_remote_datasource.dart';
+import 'package:nextpsa/features/product/data/models/product_model.dart';
+import 'package:nextpsa/models/location_picker.dart';
+import 'package:nextpsa/services/config_service.dart';
+import 'package:nextpsa/services/secure_storage_service.dart';
 
 import 'location_picker_page.dart';
 
@@ -946,3 +946,4 @@ class _TransactionEditPageState extends State<TransactionEditPage> {
     );
   }
 }
+

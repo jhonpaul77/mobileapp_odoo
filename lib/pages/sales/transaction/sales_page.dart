@@ -1,8 +1,8 @@
 // pages/sales/sales_page.dart
 import 'package:flutter/material.dart';
-import 'package:pintarx/models/sales/sales.dart';
-import 'package:pintarx/services/sales_service.dart';
-import 'package:pintarx/widgets/common/app_header.dart';
+import 'package:nextpsa/models/sales/sales.dart';
+import 'package:nextpsa/services/sales_service.dart';
+import 'package:nextpsa/widgets/common/app_header.dart';
 
 class SalesPage extends StatefulWidget {
   const SalesPage({super.key});
@@ -343,3 +343,4 @@ class _SalesPageState extends State<SalesPage> {
     );
   }
 }
+

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pintarx/config/theme.dart';
+import 'package:nextpsa/config/theme.dart';
 
 class BottomNavItem {
   final IconData icon;
@@ -121,3 +121,4 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
+

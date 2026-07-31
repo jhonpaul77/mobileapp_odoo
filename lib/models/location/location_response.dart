@@ -1,4 +1,4 @@
-import 'package:pintarx/models/location/location.dart';
+import 'package:nextpsa/models/location/location.dart';
 
 class LocationResponse {
   final bool success;
@@ -43,3 +43,4 @@ class LocationResponse {
     );
   }
 }
+

@@ -1,7 +1,7 @@
 // lib/pages/home/widgets/kpi_cards.dart
 
 import 'package:flutter/material.dart';
-import 'package:pintarx/config/theme.dart';
+import 'package:nextpsa/config/theme.dart';
 import '../utils/formatters.dart';
 import '../data/dummy_data.dart';
 
@@ -151,3 +151,4 @@ class KPICards extends StatelessWidget {
     );
   }
 }
+

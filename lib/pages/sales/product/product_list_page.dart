@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pintarx/config/theme.dart';
+import 'package:nextpsa/config/theme.dart';
 
 class ProductListPage extends StatefulWidget {
   const ProductListPage({super.key});
@@ -269,3 +269,4 @@ class _ProductListPageState extends State<ProductListPage> {
     );
   }
 }
+

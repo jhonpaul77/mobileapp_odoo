@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:pintarx/models/organization/organization.dart';
-import 'package:pintarx/services/organization_service.dart';
-import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/services/status_bar_service.dart';
+import 'package:nextpsa/models/organization/organization.dart';
+import 'package:nextpsa/services/organization_service.dart';
+import 'package:nextpsa/config/theme.dart';
+import 'package:nextpsa/services/status_bar_service.dart';
 import 'organization_form_page.dart';
 
 class OrganizationDetailPage extends StatefulWidget {
@@ -894,3 +894,4 @@ class _OrganizationDetailPageState extends State<OrganizationDetailPage> {
     );
   }
 }
+

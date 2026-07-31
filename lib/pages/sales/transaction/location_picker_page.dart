@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/models/location_picker.dart';
+import 'package:nextpsa/config/theme.dart';
+import 'package:nextpsa/models/location_picker.dart';
 
 class LocationPickerPage extends StatefulWidget {
   final String? initialProvince;
@@ -227,3 +227,4 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
     );
   }
 }
+

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:pintarx/features/customer/presentation/providers/customer_provider.dart';
-import 'package:pintarx/pages/home/widgets/dashboard_stats_card.dart';
-import 'package:pintarx/services/status_bar_service.dart';
+import 'package:nextpsa/features/customer/presentation/providers/customer_provider.dart';
+import 'package:nextpsa/pages/home/widgets/dashboard_stats_card.dart';
+import 'package:nextpsa/services/status_bar_service.dart';
 import 'package:provider/provider.dart';
 
 /// Home Dashboard Page
@@ -114,3 +114,4 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
     );
   }
 }
+

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/dummy_data.dart';
-import 'package:pintarx/pages/sales/penjualan_page.dart';
+import 'package:nextpsa/pages/sales/penjualan_page.dart';
 
 class MenuUtama extends StatelessWidget {
   const MenuUtama({super.key});
@@ -107,3 +107,4 @@ class MenuUtama extends StatelessWidget {
     );
   }
 }
+

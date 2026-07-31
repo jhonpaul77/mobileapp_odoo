@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pintarx/config/theme.dart';
-// import 'package:pintarx/pages/sales/transaction/transaction_edit_page.dart'; // Archived - use SalesOrderEditPage instead
+import 'package:nextpsa/config/theme.dart';
+// import 'package:nextpsa/pages/sales/transaction/transaction_edit_page.dart'; // Archived - use SalesOrderEditPage instead
 import 'package:url_launcher/url_launcher.dart';
 
 class TransactionDetailPage extends StatefulWidget {
@@ -895,3 +895,4 @@ Terima kasih atas pesanan Anda! 🙏
     );
   }
 }
+

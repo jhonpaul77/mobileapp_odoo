@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:pintarx/models/product/product_category/product_category.dart';
-import 'package:pintarx/services/product_category_service.dart';
-import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/services/status_bar_service.dart';
+import 'package:nextpsa/models/product/product_category/product_category.dart';
+import 'package:nextpsa/services/product_category_service.dart';
+import 'package:nextpsa/config/theme.dart';
+import 'package:nextpsa/services/status_bar_service.dart';
 
 class ProductCategoryFormPage extends StatefulWidget {
   final ProductCategory? category;
@@ -534,3 +534,4 @@ class _ProductCategoryFormPageState extends State<ProductCategoryFormPage> {
     );
   }
 }
+

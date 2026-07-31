@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/models/auth/user.dart';
-import 'package:pintarx/pages/auth/login_page.dart';
-import 'package:pintarx/services/auth_service.dart';
-import 'package:pintarx/services/config_service.dart';
+import 'package:nextpsa/config/theme.dart';
+import 'package:nextpsa/models/auth/user.dart';
+import 'package:nextpsa/pages/auth/login_page.dart';
+import 'package:nextpsa/services/auth_service.dart';
+import 'package:nextpsa/services/config_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -514,3 +514,4 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 }
+

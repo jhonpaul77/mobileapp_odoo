@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/features/analytic/presentation/providers/analytic_provider.dart';
-import 'package:pintarx/features/customer/presentation/providers/customer_provider.dart';
-import 'package:pintarx/features/product/presentation/providers/product_provider.dart';
-import 'package:pintarx/features/sales_order/presentation/providers/sales_order_provider.dart';
-import 'package:pintarx/pages/auth/intro_page.dart';
-import 'package:pintarx/providers/connectivity_provider.dart';
-import 'package:pintarx/providers/theme_provider.dart';
-import 'package:pintarx/services/api_service.dart';
-import 'package:pintarx/services/auth_service.dart';
+import 'package:nextpsa/config/theme.dart';
+import 'package:nextpsa/features/analytic/presentation/providers/analytic_provider.dart';
+import 'package:nextpsa/features/customer/presentation/providers/customer_provider.dart';
+import 'package:nextpsa/features/product/presentation/providers/product_provider.dart';
+import 'package:nextpsa/features/sales_order/presentation/providers/sales_order_provider.dart';
+import 'package:nextpsa/pages/auth/intro_page.dart';
+import 'package:nextpsa/providers/connectivity_provider.dart';
+import 'package:nextpsa/providers/theme_provider.dart';
+import 'package:nextpsa/services/api_service.dart';
+import 'package:nextpsa/services/auth_service.dart';
 import 'package:provider/provider.dart';
 // import 'package:intl/date_symbol_data_local.dart'; // Tambahkan ini
 
@@ -81,3 +81,4 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     );
   }
 }
+

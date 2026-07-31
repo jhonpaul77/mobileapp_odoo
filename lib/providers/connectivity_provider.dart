@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:pintarx/services/connectivity_service.dart';
+import 'package:nextpsa/services/connectivity_service.dart';
 import 'dart:async';
 
 /// ConnectivityProvider - Track app-wide internet connectivity status
@@ -41,3 +41,4 @@ class ConnectivityProvider extends ChangeNotifier {
     super.dispose();
   }
 }
+

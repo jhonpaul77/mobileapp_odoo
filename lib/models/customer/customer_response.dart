@@ -1,4 +1,4 @@
-import 'package:pintarx/models/customer/customer.dart';
+import 'package:nextpsa/models/customer/customer.dart';
 
 class CustomerResponse {
   final bool success;
@@ -43,3 +43,4 @@ class CustomerResponse {
     );
   }
 }
+

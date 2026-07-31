@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:pintarx/providers/connectivity_provider.dart';
+import 'package:nextpsa/providers/connectivity_provider.dart';
 
 /// ConnectivityIndicator - WiFi status indicator for AppBar
 ///
@@ -37,3 +37,4 @@ class ConnectivityIndicator extends StatelessWidget {
     );
   }
 }
+

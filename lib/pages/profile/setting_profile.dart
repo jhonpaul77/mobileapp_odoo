@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/pages/auth/login_page.dart';
-import 'package:pintarx/pages/profile/profile_page.dart';
-import 'package:pintarx/providers/theme_provider.dart';
-import 'package:pintarx/services/auth_service.dart';
-import 'package:pintarx/services/config_service.dart';
+import 'package:nextpsa/config/theme.dart';
+import 'package:nextpsa/pages/auth/login_page.dart';
+import 'package:nextpsa/pages/profile/profile_page.dart';
+import 'package:nextpsa/providers/theme_provider.dart';
+import 'package:nextpsa/services/auth_service.dart';
+import 'package:nextpsa/services/config_service.dart';
 import 'package:provider/provider.dart';
 
 class SettingProfile extends StatefulWidget {
@@ -490,3 +490,4 @@ class _SettingProfileState extends State<SettingProfile> {
     );
   }
 }
+

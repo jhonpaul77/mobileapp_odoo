@@ -1,7 +1,7 @@
 // lib/pages/home/utils/constants.dart
 
 import 'package:flutter/material.dart';
-import 'package:pintarx/config/theme.dart';
+import 'package:nextpsa/config/theme.dart';
 
 class AppConstants {
   // Border Radius
@@ -36,3 +36,4 @@ class AppColors {
   static const Color productionColor = Color(0xFF00BCD4); // Cyan
   static const Color expenseColor = Color(0xFFE57373); // Red
 }
+

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:pintarx/models/product/product_group/product_group.dart';
-import 'package:pintarx/services/product_group_service.dart';
-import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/services/status_bar_service.dart';
+import 'package:nextpsa/models/product/product_group/product_group.dart';
+import 'package:nextpsa/services/product_group_service.dart';
+import 'package:nextpsa/config/theme.dart';
+import 'package:nextpsa/services/status_bar_service.dart';
 
 class ProductGroupFormPage extends StatefulWidget {
   final ProductGroup? group; // Null = Create, Not Null = Update
@@ -572,3 +572,4 @@ class _ProductGroupFormPageState extends State<ProductGroupFormPage> {
     );
   }
 }
+

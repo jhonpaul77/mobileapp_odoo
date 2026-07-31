@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:pintarx/models/customer/customer.dart';
-import 'package:pintarx/services/customer_service.dart';
-import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/services/status_bar_service.dart';
+import 'package:nextpsa/models/customer/customer.dart';
+import 'package:nextpsa/services/customer_service.dart';
+import 'package:nextpsa/config/theme.dart';
+import 'package:nextpsa/services/status_bar_service.dart';
 
 class CustomerFormPage extends StatefulWidget {
   final Customer? customer; // Null = Create, Not Null = Update
@@ -756,3 +756,4 @@ class _CustomerFormPageState extends State<CustomerFormPage> {
     );
   }
 }
+

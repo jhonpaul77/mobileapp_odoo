@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:pintarx/models/location/location.dart';
-import 'package:pintarx/services/location_service.dart';
-import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/services/status_bar_service.dart';
+import 'package:nextpsa/models/location/location.dart';
+import 'package:nextpsa/services/location_service.dart';
+import 'package:nextpsa/config/theme.dart';
+import 'package:nextpsa/services/status_bar_service.dart';
 import 'location_form_page.dart';
 
 class LocationDetailPage extends StatefulWidget {
@@ -651,3 +651,4 @@ class _LocationDetailPageState extends State<LocationDetailPage> {
     );
   }
 }
+

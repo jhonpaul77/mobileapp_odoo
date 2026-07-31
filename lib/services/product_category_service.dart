@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:pintarx/models/product/product_category/product_category_response.dart';
+import 'package:nextpsa/models/product/product_category/product_category_response.dart';
 import 'api_service.dart';
 import '../config/api_config.dart';
 
@@ -204,3 +204,4 @@ class ProductCategoryService {
     }
   }
 }
+

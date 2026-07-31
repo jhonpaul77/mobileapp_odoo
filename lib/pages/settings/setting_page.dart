@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:pintarx/config/theme.dart';
+import 'package:nextpsa/config/theme.dart';
 // import semua page yang diperlukan
-import 'package:pintarx/pages/settings/location/location_list_page.dart';
-// import 'package:pintarx/pages/master/product_measurement_page.dart';
-import 'package:pintarx/pages/settings/organization/organization_list_page.dart';
-import 'package:pintarx/pages/settings/product_category/product_category_list_page.dart';
-import 'package:pintarx/pages/settings/product_group/product_group_list_page.dart';
-// import 'package:pintarx/pages/master/role_page.dart';
-// import 'package:pintarx/pages/master/user_page.dart';
+import 'package:nextpsa/pages/settings/location/location_list_page.dart';
+// import 'package:nextpsa/pages/master/product_measurement_page.dart';
+import 'package:nextpsa/pages/settings/organization/organization_list_page.dart';
+import 'package:nextpsa/pages/settings/product_category/product_category_list_page.dart';
+import 'package:nextpsa/pages/settings/product_group/product_group_list_page.dart';
+// import 'package:nextpsa/pages/master/role_page.dart';
+// import 'package:nextpsa/pages/master/user_page.dart';
 
 class SettingPage extends StatelessWidget {
   const SettingPage({super.key});
@@ -233,3 +233,4 @@ class SettingPage extends StatelessWidget {
     );
   }
 }
+

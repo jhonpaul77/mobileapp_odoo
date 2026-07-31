@@ -2,12 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:pintarx/config/theme.dart';
-import 'package:pintarx/pages/home/home_dashboard_page.dart';
-import 'package:pintarx/pages/profile/setting_profile.dart';
-import 'package:pintarx/pages/sales/penjualan_page.dart';
-import 'package:pintarx/services/status_bar_service.dart';
-import 'package:pintarx/widgets/common/app_bottom_nav.dart';
+import 'package:nextpsa/config/theme.dart';
+import 'package:nextpsa/pages/home/home_dashboard_page.dart';
+import 'package:nextpsa/pages/profile/setting_profile.dart';
+import 'package:nextpsa/pages/sales/penjualan_page.dart';
+import 'package:nextpsa/services/status_bar_service.dart';
+import 'package:nextpsa/widgets/common/app_bottom_nav.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -80,3 +80,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+

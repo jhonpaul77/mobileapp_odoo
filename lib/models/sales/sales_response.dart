@@ -1,4 +1,4 @@
-import 'package:pintarx/models/sales/sales.dart';
+import 'package:nextpsa/models/sales/sales.dart';
 
 class SalesResponse {
   final bool success;
@@ -57,3 +57,4 @@ class SalesResponse {
     );
   }
 }
+

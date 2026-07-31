@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:pintarx/models/customer/customer_response.dart';
+import 'package:nextpsa/models/customer/customer_response.dart';
 
 import '../config/api_config.dart';
 import 'api_service.dart';
@@ -405,3 +405,4 @@ class CustomerService {
     }
   }
 }
+
