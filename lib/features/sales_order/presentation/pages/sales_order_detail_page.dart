@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -598,7 +599,7 @@ TERIMA KASIH''';
     try {
       // Call confirm API
       final salesService = SalesService();
-      final result = await salesService.confirmOrder(id: widget.order.id);
+      final result = await salesService.confirmOrder(orderId: widget.order.id);
 
       if (!mounted) return;
 
@@ -766,8 +767,8 @@ TERIMA KASIH''';
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.phone,
+                        child: const FaIcon(
+                          FontAwesomeIcons.whatsapp,
                           color: Colors.white,
                           size: 16,
                         ),
@@ -798,8 +799,8 @@ TERIMA KASIH''';
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.phone,
+                        child: const FaIcon(
+                          FontAwesomeIcons.whatsapp,
                           color: Colors.white,
                           size: 16,
                         ),
@@ -913,7 +914,7 @@ TERIMA KASIH''';
                   ),
                   const SizedBox(height: 16),
 
-                  // Grid Info - Customer
+                  // Grid Info
                   _buildInfoGrid([
                     {
                       'label': 'Customer',
@@ -924,24 +925,6 @@ TERIMA KASIH''';
                       'value': order.partnerId.toString(),
                     },
                   ]),
-                  const SizedBox(height: 12),
-                  
-                  // Address Information (above Warehouse)
-                  if (order.partnerStreet != null || order.partnerDistrict != null || order.partnerCity != null || order.partnerState != null)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (order.partnerStreet != null)
-                          _buildInfoRow('Alamat', order.partnerStreet!),
-                        if (order.partnerDistrict != null)
-                          _buildInfoRow('Kecamatan', order.partnerDistrict!),
-                        if (order.partnerCity != null)
-                          _buildInfoRow('Kota', order.partnerCity!),
-                        if (order.partnerState != null)
-                          _buildInfoRow('Provinsi', order.partnerState!),
-                      ],
-                    ),
-                  
                   const SizedBox(height: 12),
                   _buildInfoGrid([
                     {
@@ -960,16 +943,6 @@ TERIMA KASIH''';
                       'value': _formatFieldValue(order.awb),
                     },
                   ]),
-                  const SizedBox(height: 12),
-                  
-                  // Notes
-                  if (order.notes != null && order.notes!.isNotEmpty)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildInfoRow('Catatan', order.notes!),
-                      ],
-                    ),
                 ],
               ),
             ),
@@ -1249,6 +1222,7 @@ TERIMA KASIH''';
       }).toList(),
     );
   }
+<<<<<<< HEAD
 
   /// Build a single info row (label + value)
   Widget _buildInfoRow(String label, String value) {
@@ -1278,4 +1252,6 @@ TERIMA KASIH''';
       ],
     );
   }
+=======
+>>>>>>> 0a14271b0d1710faeafa5ebbc1c0e83eb52e83d5
 }

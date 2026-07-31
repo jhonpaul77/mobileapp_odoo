@@ -23,7 +23,8 @@ class AnalyticRemoteDataSource {
   }) async {
     // Return cache if available
     if (_analyticsCache != null) {
-      print('📦 [ANALYTIC_DATASOURCE] Using cached analytics (${_analyticsCache!.length} items)');
+      print(
+          '📦 [ANALYTIC_DATASOURCE] Using cached analytics (${_analyticsCache!.length} items)');
       return _analyticsCache!;
     }
 
@@ -40,7 +41,8 @@ class AnalyticRemoteDataSource {
         ),
       );
 
-      print('   [ANALYTIC_DATASOURCE] Response type: ${response.data.runtimeType}');
+      print(
+          '   [ANALYTIC_DATASOURCE] Response type: ${response.data.runtimeType}');
       print('   [ANALYTIC_DATASOURCE] Response status: ${response.statusCode}');
 
       dynamic data = response.data;
@@ -50,7 +52,8 @@ class AnalyticRemoteDataSource {
         print('   [ANALYTIC_DATASOURCE] Response is String, parsing JSON...');
         try {
           data = jsonDecode(data);
-          print('   [ANALYTIC_DATASOURCE] JSON parsed. Type: ${data.runtimeType}');
+          print(
+              '   [ANALYTIC_DATASOURCE] JSON parsed. Type: ${data.runtimeType}');
         } catch (e) {
           print('   [ANALYTIC_DATASOURCE] JSON parse failed: $e');
           throw Exception('Failed to parse analytics response: $e');
@@ -59,14 +62,12 @@ class AnalyticRemoteDataSource {
 
       // Handle direct array response
       if (data is List) {
-        final analytics = (data as List)
-            .map((json) {
-              if (json is Map<String, dynamic>) {
-                return Analytic.fromJson(json);
-              }
-              throw Exception('Invalid item format: ${json.runtimeType}');
-            })
-            .toList();
+        final analytics = data.map((json) {
+          if (json is Map<String, dynamic>) {
+            return Analytic.fromJson(json);
+          }
+          throw Exception('Invalid item format: ${json.runtimeType}');
+        }).toList();
 
         // Cache the result
         _analyticsCache = analytics;
@@ -76,20 +77,24 @@ class AnalyticRemoteDataSource {
       }
       // Handle wrapped response
       else if (data is Map<String, dynamic>) {
-        final mapData = data as Map<String, dynamic>;
-        
-        if (mapData.containsKey('Success') && mapData['Success'] == true && mapData['Data'] is List) {
+        final mapData = data;
+
+        if (mapData.containsKey('Success') &&
+            mapData['Success'] == true &&
+            mapData['Data'] is List) {
           final analytics = (mapData['Data'] as List)
               .map((json) => Analytic.fromJson(json as Map<String, dynamic>))
               .toList();
-          
+
           _analyticsCache = analytics;
-          print('✅ [ANALYTIC_DATASOURCE] Fetched ${analytics.length} analytics from wrapped response');
+          print(
+              '✅ [ANALYTIC_DATASOURCE] Fetched ${analytics.length} analytics from wrapped response');
           return analytics;
         }
       }
 
-      throw Exception('Invalid response format for analytics: ${data.runtimeType}');
+      throw Exception(
+          'Invalid response format for analytics: ${data.runtimeType}');
     } catch (e, stackTrace) {
       print('❌ [ANALYTIC_DATASOURCE] Error: $e');
       print('   Stack: $stackTrace');

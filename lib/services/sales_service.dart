@@ -357,7 +357,6 @@ class SalesService {
   ///   "warehouse_id": 1,
   ///   "kurir_id": 20,
   ///   "awb": "ABC123456",
-  ///   "notes": "Order notes",
   ///   "state": "confirm",
   ///   "order_lines": [...]
   /// }
@@ -377,8 +376,8 @@ class SalesService {
     required int warehouseId,
     int? kurirId,
     String? awb,
-    String? notes,
     String? state,
+    String? notes, // NEW: Notes parameter
     required List<Map<String, dynamic>> orderLines,
   }) async {
     try {
@@ -406,8 +405,8 @@ class SalesService {
         'warehouse_id': warehouseId,
         'kurir_id': kurirId ?? false,
         'awb': awb ?? false,
-        'notes': notes ?? '',
         'state': state ?? 'draft',
+        'notes': notes ?? false, // NEW: Include notes in request
         'order_lines': orderLines,
       };
 
@@ -486,12 +485,12 @@ class SalesService {
   /// **Notes**:
   /// - Changes order state from `draft` to `confirm`
   /// - Only works on orders with `draft` state
-  Future<Map<String, dynamic>> confirmOrder({required int id}) async {
+  Future<Map<String, dynamic>> confirmOrder({required int orderId}) async {
     try {
-      print('✅ [SALES] Confirming sale order #$id...');
+      print('✅ [SALES] Confirming sale order #$orderId...');
 
       final requestBody = {
-        'id': id,
+        'id': orderId,
       };
 
       print('📝 [SALES] Request body: $requestBody');
