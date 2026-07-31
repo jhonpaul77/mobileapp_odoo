@@ -541,19 +541,21 @@ TERIMA KASIH''';
   }
 
   Future<void> _openEditPage() async {
-    final result = await Navigator.of(context).push<bool>(
+    final result = await Navigator.of(context).push<SalesOrder?>(
       MaterialPageRoute(
         builder: (_) => SalesOrderEditPage(order: widget.order),
       ),
     );
 
-    if (result == true) {
-      // Update is successful - just confirm the page is updated
-      logger.i('✅ Sales order updated successfully');
+    if (result != null) {
+      // Update is successful - use the updated order returned from edit page
+      logger.i('✅ Sales order updated, refreshing display...');
       
       if (mounted) {
-        // Simply show success message - the detail page already has the current order
-        // The order was already updated on the server, so the detail view reflects those changes
+        setState(() {
+          _currentOrder = result;
+        });
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Row(

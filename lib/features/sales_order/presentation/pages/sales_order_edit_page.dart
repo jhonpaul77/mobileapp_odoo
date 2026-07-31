@@ -724,12 +724,82 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           ),
         );
 
-        // Wait a moment then pop with true to signal successful update
+        // Wait a moment then pop with updated order data
         if (!mounted) return;
         
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
-            Navigator.of(context).pop(true);
+            // Build updated order from current UI state
+            final updatedOrderLines = _orderLines.asMap().entries.map((entry) {
+              final index = entry.key;
+              final line = entry.value;
+              final controller = _lineControllers[index];
+
+              // Parse qty and price from controllers
+              String qtyText = controller['qty']!.text.trim();
+              qtyText = qtyText.replaceAll('.', '');
+              qtyText = qtyText.replaceAll(',', '.');
+              final qty = double.tryParse(qtyText) ?? line.productUomQty;
+
+              String priceText = controller['price']!.text.trim();
+              priceText = priceText.replaceAll('Rp ', '').replaceAll('.', '');
+              priceText = priceText.replaceAll(',', '.');
+              final price = double.tryParse(priceText) ?? line.priceUnit;
+
+              return OrderLine(
+                productId: line.productId,
+                productName: line.productName,
+                productUomQty: qty,
+                analyticDistribution: line.analyticDistribution,
+                priceUnit: price,
+                priceSubtotal: qty * price,
+              );
+            }).toList();
+
+            // Calculate new amounts
+            final newAmountTotal = updatedOrderLines.fold(
+              0.0,
+              (sum, line) => sum + (line.productUomQty * line.priceUnit),
+            );
+
+            // Create updated sales order by copying and updating only changed fields
+            final updatedOrder = SalesOrder(
+              id: widget.order.id,
+              name: widget.order.name,
+              partnerId: _selectedCustomerId ?? widget.order.partnerId,
+              partnerName: widget.order.partnerName,
+              partnerPhone: widget.order.partnerPhone,
+              partnerStreet: _addressController.text.isNotEmpty
+                  ? _addressController.text
+                  : widget.order.partnerStreet,
+              partnerStreet2: widget.order.partnerStreet2,
+              partnerDistrict: _districtController.text.isNotEmpty
+                  ? _districtController.text
+                  : widget.order.partnerDistrict,
+              partnerCity: _cityController.text.isNotEmpty
+                  ? _cityController.text
+                  : widget.order.partnerCity,
+              partnerState: _stateController.text.isNotEmpty
+                  ? _stateController.text
+                  : widget.order.partnerState,
+              dateOrder: widget.order.dateOrder,
+              state: widget.order.state,
+              warehouseId: widget.order.warehouseId,
+              warehouseName: widget.order.warehouseName,
+              kurirId: widget.order.kurirId,
+              kurirName: widget.order.kurirName,
+              awb: _awbController.text.isNotEmpty
+                  ? _awbController.text
+                  : widget.order.awb,
+              notes: _notesController.text.isNotEmpty
+                  ? _notesController.text
+                  : widget.order.notes,
+              orderCount: widget.order.orderCount,
+              orderLines: updatedOrderLines,
+              amountTotal: newAmountTotal,
+            );
+
+            Navigator.of(context).pop(updatedOrder);
           }
         });
       } else {
