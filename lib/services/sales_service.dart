@@ -406,4 +406,76 @@ class SalesService {
       };
     }
   }
+
+  // ✅ ODOO: Confirm sale order
+  ///
+  /// **Endpoint**: `/confirm_order`
+  /// **Method**: `PUT`
+  /// **Headers**:
+  /// ```
+  /// db: demotest
+  /// api-key: {api_key}
+  /// Content-Type: application/json
+  /// ```
+  ///
+  /// **Request Body**:
+  /// ```json
+  /// {
+  ///   "id": 4223
+  /// }
+  /// ```
+  ///
+  /// **Response**: Success/Error message with confirmed order data
+  Future<Map<String, dynamic>> confirmOrder({
+    required int id,
+  }) async {
+    try {
+      print('📝 [SALES] Confirming sale order #$id...');
+
+      // Build request body
+      final requestBody = {
+        'id': id,
+      };
+
+      print('📝 [SALES] Request body: $requestBody');
+
+      final response = await _api.put(
+        ApiConfig.confirmOrder,
+        data: requestBody,
+      );
+
+      print('📝 [SALES] Response status: ${response.statusCode}');
+      print('📝 [SALES] Response data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        return {
+          'Success': true,
+          'Message': 'Sale order confirmed successfully',
+          'Data': response.data,
+        };
+      } else {
+        return {
+          'Success': false,
+          'Message': 'Failed to confirm sale order',
+          'Data': response.data,
+        };
+      }
+    } on DioException catch (e) {
+      print('❌ [SALES] Confirm error: ${e.message}');
+      print('❌ [SALES] Response: ${e.response?.data}');
+
+      return {
+        'Success': false,
+        'Message': e.response?.data['Message'] ??
+            e.response?.data['message'] ??
+            'Failed to confirm sale order: ${e.message}',
+      };
+    } catch (e) {
+      print('❌ [SALES] Unexpected error: $e');
+      return {
+        'Success': false,
+        'Message': 'Unexpected error: $e',
+      };
+    }
+  }
 }

@@ -80,6 +80,8 @@ class ApiConfig {
       '/create_sale_order'; // POST - Create sales order
   static const String editSaleOrder =
       '/edit_sale_order'; // POST - Edit sales order
+  static const String confirmOrder =
+      '/confirm_order'; // PUT - Confirm sales order
 
   // ✅ LOCATION ENDPOINTS - ODOO
   static const String getState = '/get_state'; // GET - Get all states/provinces
