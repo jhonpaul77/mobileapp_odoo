@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../config/theme.dart';
 import '../../../../services/config_service.dart';
 import '../../../../services/secure_storage_service.dart';
+import '../../../../services/local_database/location_local_database.dart';
 import '../../../location/data/datasources/location_remote_datasource.dart';
 import '../../../location/domain/entities/district.dart';
 import '../../../sales_order/presentation/pages/district_search_modal.dart';
@@ -63,59 +64,113 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
     try {
       setState(() => _districtLoading = true);
 
-      final configService = ConfigService();
-      final storage = SecureStorageService();
+      // ⭐ PRIORITAS 1: Ambil dari lokal database (CEPAT!)
+      final locationDb = LocationLocalDatabase();
+      
+      print('📡 [CREATE CUSTOMER] Loading locations from LOCAL database...');
 
-      final config = await configService.load();
-      final db = config['database'] as String?;
-      final apiKey = await storage.getAccessToken();
+      // Load all from local database
+      final districts = await locationDb.getAllDistricts();
+      final cities = await locationDb.getAllCities();
+      final states = await locationDb.getAllStates();
 
-      if (db == null || apiKey == null) return;
-
-      final locationDatasource = LocationRemoteDataSource();
-
-      // Load all districts
-      final districts = await locationDatasource.getAllDistricts(
-        db: db,
-        apiKey: apiKey,
-      );
-
-      // Load all cities
-      final cities = await locationDatasource.getCities(
-        db: db,
-        apiKey: apiKey,
-      );
-
-      // Build city name map
+      // Build maps
       final cityMap = <int, String>{};
       final cityToStateMap = <int, int>{};
       for (final city in cities) {
         cityMap[city.id] = city.name;
-        cityToStateMap[city.id] = city.stateId;
+        if (city.stateId != null) {
+          cityToStateMap[city.id] = city.stateId!;
+        }
       }
 
-      // Load all states
-      final states = await locationDatasource.getStates(
-        db: db,
-        apiKey: apiKey,
-      );
-
-      // Build state name map
       final stateMap = <int, String>{};
       for (final state in states) {
         stateMap[state.id] = state.name;
       }
 
+      // Convert to District entities for compatibility with modal
+      final districtEntities = districts.map((d) => District(
+        id: d.id,
+        name: d.name,
+        code: '', // Not available in local model
+        cityId: d.cityId ?? 0,
+      )).toList();
+
       if (mounted) {
         setState(() {
-          _allDistricts = districts;
+          _allDistricts = districtEntities;
           _cityMap = cityMap;
           _stateMap = stateMap;
           _cityToStateMap = cityToStateMap;
         });
+
+        print('✅ [CREATE CUSTOMER] Loaded ${_allDistricts.length} districts from LOCAL');
       }
     } catch (e) {
-      print('❌ Error loading districts: $e');
+      print('⚠️ [CREATE CUSTOMER] Error loading from local DB: $e');
+      print('   Fallback to API...');
+      
+      // ⭐ PRIORITAS 2: Jika lokal gagal, ambil dari API
+      try {
+        final configService = ConfigService();
+        final storage = SecureStorageService();
+
+        final config = await configService.load();
+        final db = config['database'] as String?;
+        final apiKey = await storage.getAccessToken();
+
+        if (db == null || apiKey == null) {
+          print('❌ [CREATE CUSTOMER] No config/apiKey');
+          return;
+        }
+
+        final locationDatasource = LocationRemoteDataSource();
+
+        // Load all from API
+        final districts = await locationDatasource.getAllDistricts(
+          db: db,
+          apiKey: apiKey,
+        );
+
+        final cities = await locationDatasource.getCities(
+          db: db,
+          apiKey: apiKey,
+        );
+
+        final states = await locationDatasource.getStates(
+          db: db,
+          apiKey: apiKey,
+        );
+
+        // Build maps
+        final cityMap = <int, String>{};
+        final cityToStateMap = <int, int>{};
+        for (final city in cities) {
+          cityMap[city.id] = city.name;
+          if (city.stateId != null) {
+            cityToStateMap[city.id] = city.stateId;
+          }
+        }
+
+        final stateMap = <int, String>{};
+        for (final state in states) {
+          stateMap[state.id] = state.name;
+        }
+
+        if (mounted) {
+          setState(() {
+            _allDistricts = districts;
+            _cityMap = cityMap;
+            _stateMap = stateMap;
+            _cityToStateMap = cityToStateMap;
+          });
+
+          print('✅ [CREATE CUSTOMER] Loaded ${_allDistricts.length} districts from API');
+        }
+      } catch (apiError) {
+        print('❌ [CREATE CUSTOMER] Error loading from API: $apiError');
+      }
     } finally {
       if (mounted) setState(() => _districtLoading = false);
     }
@@ -162,7 +217,21 @@ class _CustomerCreatePageState extends State<CustomerCreatePage> {
 
     try {
       final phoneNumber = _phoneController.text.trim();
-      final formattedPhone = phoneNumber.isNotEmpty ? '+62$phoneNumber' : '';
+      String formattedPhone = '';
+
+      if (phoneNumber.isNotEmpty) {
+        // Remove all non-digit characters
+        final cleanPhone = phoneNumber.replaceAll(RegExp(r'\D'), '');
+
+        // Add +62 prefix if not already present
+        if (cleanPhone.startsWith('62')) {
+          formattedPhone = '+$cleanPhone';
+        } else if (cleanPhone.startsWith('0')) {
+          formattedPhone = '+62${cleanPhone.substring(1)}';
+        } else {
+          formattedPhone = '+62$cleanPhone';
+        }
+      }
 
       final data = {
         'name': _nameController.text.trim(),

@@ -17,6 +17,11 @@ class TokenInterceptor extends Interceptor {
   @override
   void onRequest(
       RequestOptions options, RequestInterceptorHandler handler) async {
+    // Skip auth interceptor if flagged
+    if (options.extra['skipAuthInterceptor'] == true) {
+      return handler.next(options);
+    }
+
     if (_isAuthEndpoint(options.path)) return handler.next(options);
 
     var token = options.headers['Authorization']

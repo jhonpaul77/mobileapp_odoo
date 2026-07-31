@@ -19,24 +19,35 @@ class CustomerRepository {
   ///
   /// API Spec:
   /// - Endpoint: GET /get_customer
-  /// - Headers: db, api-key
+  /// - Headers: db, api-key, limit (optional - default no limit)
   /// - Response: Direct array (NOT wrapped)
   Future<List<Customer>> getCustomers({
     required String db,
     required String apiKey,
+    int? limit,
   }) async {
     try {
       print('🔄 [CUSTOMER_REPO] Fetching customers...');
       print('   [CUSTOMER_REPO] Database: $db');
       print('   [CUSTOMER_REPO] API Key: ${apiKey.substring(0, 8)}...');
+      if (limit != null) {
+        print('   [CUSTOMER_REPO] Limit: $limit');
+      }
+
+      final headers = {
+        'db': db,
+        'api-key': apiKey,
+      };
+      
+      // Add limit header if provided
+      if (limit != null) {
+        headers['limit'] = limit.toString();
+      }
 
       final response = await _apiService.dio.get(
         '/get_customer',
         options: Options(
-          headers: {
-            'db': db,
-            'api-key': apiKey,
-          },
+          headers: headers,
         ),
       );
 

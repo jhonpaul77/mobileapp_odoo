@@ -7,12 +7,13 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../config/theme.dart';
 import '../../../../services/config_service.dart';
 import '../../../../services/secure_storage_service.dart';
+import '../../../../services/local_database/customer_local_database.dart';
+import '../../../../services/local_database/location_local_database.dart';
 import '../../../location/data/datasources/location_remote_datasource.dart';
 import '../../../sales_order/domain/entities/sales_order.dart';
 import '../../../sales_order/presentation/pages/sales_order_detail_page.dart';
 import '../../../sales_order/presentation/providers/sales_order_provider.dart';
 import '../../domain/entities/customer.dart';
-import '../providers/customer_provider.dart';
 import 'customer_edit_page.dart';
 import 'customer_transaction_history_page.dart';
 
@@ -48,6 +49,7 @@ class CustomerDetailPage extends StatefulWidget {
 
 class _CustomerDetailPageState extends State<CustomerDetailPage> {
   late Future<CustomerDetails> _customerDetailsFuture;
+  int _refreshCounter = 0; // Counter untuk force rebuild
 
   @override
   void initState() {
@@ -74,44 +76,83 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
       final db = config['database'] as String?;
       final apiKey = await storage.getAccessToken();
 
-      if (db == null || apiKey == null) {
-        return CustomerDetails(customer: widget.customer);
-      }
+      // ⭐ PRIORITAS 1: Ambil dari lokal dulu (cepat!)
+      final localDb = CustomerLocalDatabase();
+      final localCustomer = await localDb.getCustomerById(widget.customer.id);
+      
+      final customerToUse = localCustomer?.toEntity() ?? widget.customer;
+      print('✅ [DETAIL_PAGE] Using ${localCustomer != null ? 'LOCAL' : 'PASSED'} customer data');
 
-      // Get fresh customer data from provider
-      final provider = context.read<CustomerProvider>();
-      final freshCustomer = provider.getCustomerById(widget.customer.id);
-      final customerToUse = freshCustomer ?? widget.customer;
-
-      final locationDatasource = LocationRemoteDataSource();
-
-      // Load location names
+      // ⭐ PRIORITAS 2: Ambil location names dari lokal database
       String? districtName;
       String? cityName;
       String? stateName;
 
+      final locationDb = LocationLocalDatabase();
+
       if (customerToUse.districtId != null) {
-        districtName = await locationDatasource.getDistrictName(
-          districtId: customerToUse.districtId!,
-          db: db,
-          apiKey: apiKey,
-        );
+        try {
+          final district = await locationDb.getDistrictById(customerToUse.districtId!);
+          districtName = district?.name;
+          print('✅ [DETAIL_PAGE] District from LOCAL: $districtName');
+        } catch (e) {
+          print('⚠️ [DETAIL_PAGE] Could not get district from local: $e');
+        }
       }
 
       if (customerToUse.cityId != null) {
-        cityName = await locationDatasource.getCityName(
-          cityId: customerToUse.cityId!,
-          db: db,
-          apiKey: apiKey,
-        );
+        try {
+          final city = await locationDb.getCityById(customerToUse.cityId!);
+          cityName = city?.name;
+          print('✅ [DETAIL_PAGE] City from LOCAL: $cityName');
+        } catch (e) {
+          print('⚠️ [DETAIL_PAGE] Could not get city from local: $e');
+        }
       }
 
       if (customerToUse.stateId != null) {
-        stateName = await locationDatasource.getStateName(
-          stateId: customerToUse.stateId!,
-          db: db,
-          apiKey: apiKey,
-        );
+        try {
+          final state = await locationDb.getStateById(customerToUse.stateId!);
+          stateName = state?.name;
+          print('✅ [DETAIL_PAGE] State from LOCAL: $stateName');
+        } catch (e) {
+          print('⚠️ [DETAIL_PAGE] Could not get state from local: $e');
+        }
+      }
+
+      // ⭐ PRIORITAS 3: Jika lokal tidak ada, ambil dari API
+      if ((districtName == null && customerToUse.districtId != null) ||
+          (cityName == null && customerToUse.cityId != null) ||
+          (stateName == null && customerToUse.stateId != null)) {
+        
+        if (db != null && apiKey != null) {
+          print('📡 [DETAIL_PAGE] Fetching missing location names from API...');
+          final locationDatasource = LocationRemoteDataSource();
+
+          if (districtName == null && customerToUse.districtId != null) {
+            districtName = await locationDatasource.getDistrictName(
+              districtId: customerToUse.districtId!,
+              db: db,
+              apiKey: apiKey,
+            );
+          }
+
+          if (cityName == null && customerToUse.cityId != null) {
+            cityName = await locationDatasource.getCityName(
+              cityId: customerToUse.cityId!,
+              db: db,
+              apiKey: apiKey,
+            );
+          }
+
+          if (stateName == null && customerToUse.stateId != null) {
+            stateName = await locationDatasource.getStateName(
+              stateId: customerToUse.stateId!,
+              db: db,
+              apiKey: apiKey,
+            );
+          }
+        }
       }
 
       return CustomerDetails(
@@ -131,6 +172,8 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
     final theme = Theme.of(context);
 
     return FutureBuilder<CustomerDetails>(
+      // Use _refreshCounter in key to force rebuilds when setState is called
+      key: ValueKey(_refreshCounter),
       future: _customerDetailsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -178,6 +221,7 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                 icon:
                     Icon(Icons.edit, color: theme.appBarTheme.iconTheme?.color),
                 onPressed: () async {
+                  print('🔄 [DETAIL_PAGE] Opening edit page...');
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -186,11 +230,23 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                     ),
                   );
 
+                  print('✅ [DETAIL_PAGE] Returned from edit. Result: $result, Type: ${result.runtimeType}');
                   // Reload customer details if edit was successful
-                  if (result == true && mounted) {
-                    setState(() {
-                      _customerDetailsFuture = _loadCustomerDetails();
-                    });
+                  if (result is Customer) {
+                    print('✅ [DETAIL_PAGE] Result is Customer, refreshing detail page...');
+                    if (mounted) {
+                      print('✅ [DETAIL_PAGE] Widget is mounted, calling setState...');
+                      // Force rebuild by creating a new future
+                      setState(() {
+                        _refreshCounter++; // Change the key to force rebuild
+                        print('✅ [DETAIL_PAGE] _refreshCounter: $_refreshCounter');
+                        _customerDetailsFuture = _loadCustomerDetails();
+                      });
+                    } else {
+                      print('❌ [DETAIL_PAGE] Widget not mounted!');
+                    }
+                  } else {
+                    print('❌ [DETAIL_PAGE] Result is not Customer type! Type: ${result.runtimeType}');
                   }
                 },
               ),
@@ -238,9 +294,9 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                           ),
                           child: Center(
                             child: Text(
-                              _parseCustomerName(widget.customer.name)
+                              _parseCustomerName(details.customer.name)
                                       .isNotEmpty
-                                  ? _parseCustomerName(widget.customer.name)[0]
+                                  ? _parseCustomerName(details.customer.name)[0]
                                       .toUpperCase()
                                   : '?',
                               style: const TextStyle(
@@ -257,7 +313,7 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
-                          _parseCustomerName(widget.customer.name),
+                          _parseCustomerName(details.customer.name),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -286,7 +342,7 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                   _buildSectionHeader(
                       'Informasi Kontak', Icons.contacts_rounded),
                   const SizedBox(height: 12),
-                  _buildContactSection(),
+                  _buildContactSection(details),
                   const SizedBox(height: 20),
 
                   // Address Information Section
@@ -349,9 +405,9 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
   }
 
   /// Build contact information section with integrated action buttons
-  Widget _buildContactSection() {
+  Widget _buildContactSection(CustomerDetails details) {
     final theme = Theme.of(context);
-    final customer = widget.customer;
+    final customer = details.customer;
     final hasPhone = customer.phone != null && customer.phone!.isNotEmpty;
     final hasEmail = customer.email != null && customer.email!.isNotEmpty;
 

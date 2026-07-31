@@ -3,14 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pintarx/config/theme.dart';
+import 'package:pintarx/pages/home/home_dashboard_page.dart';
 import 'package:pintarx/pages/profile/setting_profile.dart';
 import 'package:pintarx/pages/sales/penjualan_page.dart';
 import 'package:pintarx/services/status_bar_service.dart';
 import 'package:pintarx/widgets/common/app_bottom_nav.dart';
-// import 'widgets/penjualan_terbaru.dart';
-// import 'widgets/stok_peringatan.dart';
-// import 'widgets/progress_produksi.dart';
-// import 'widgets/pengeluaran_terkini.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,8 +19,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
-  // Bottom Navigation Items
+  // Bottom Navigation Items - 3 menu: Dashboard, Penjualan, Profile
   final List<BottomNavItem> _navItems = const [
+    BottomNavItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
     BottomNavItem(icon: Icons.shopping_bag_rounded, label: 'Penjualan'),
     BottomNavItem(icon: Icons.person_rounded, label: 'Profile'),
   ];
@@ -32,7 +30,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
-    // Set status bar untuk HomePage (background biru, icon putih)
+    // Set status bar untuk HomePage
     WidgetsBinding.instance.addPostFrameCallback((_) {
       StatusBarService.setDarkStatusBar();
     });
@@ -41,8 +39,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      const PenjualanPage(), // Index 0 - Penjualan
-      const SettingProfile(), // Index 1 - Profile
+      const HomeDashboardPage(), // Index 0 - Dashboard
+      const PenjualanPage(),     // Index 1 - Penjualan
+      const SettingProfile(),    // Index 2 - Profile
     ];
 
     final currentIndex = _selectedIndex.clamp(0, pages.length - 1);

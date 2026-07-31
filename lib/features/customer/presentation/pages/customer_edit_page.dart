@@ -4,10 +4,13 @@ import 'package:provider/provider.dart';
 import '../../../../config/theme.dart';
 import '../../../../services/config_service.dart';
 import '../../../../services/secure_storage_service.dart';
+import '../../../../services/local_database/customer_local_database.dart';
+import '../../../../services/local_database/location_local_database.dart';
 import '../../../location/data/datasources/location_remote_datasource.dart';
 import '../../../location/domain/entities/district.dart';
 import '../../../sales_order/presentation/pages/district_search_modal.dart';
 import '../../domain/entities/customer.dart';
+import '../../data/models/customer_local_model.dart';
 import '../providers/customer_provider.dart';
 
 /// Customer Edit Page
@@ -102,69 +105,131 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
     try {
       setState(() => _districtLoading = true);
 
-      final configService = ConfigService();
-      final storage = SecureStorageService();
+      // ⭐ PRIORITAS 1: Ambil dari lokal database (CEPAT!)
+      final locationDb = LocationLocalDatabase();
+      
+      print('📡 [EDIT CUSTOMER] Loading locations from LOCAL database...');
 
-      final config = await configService.load();
-      final db = config['database'] as String?;
-      final apiKey = await storage.getAccessToken();
+      // Load all from local database
+      final districts = await locationDb.getAllDistricts();
+      final cities = await locationDb.getAllCities();
+      final states = await locationDb.getAllStates();
 
-      if (db == null || apiKey == null) return;
-
-      final locationDatasource = LocationRemoteDataSource();
-
-      // Load all districts
-      final districts = await locationDatasource.getAllDistricts(
-        db: db,
-        apiKey: apiKey,
-      );
-
-      // Build district name map
+      // Build maps
       final districtMap = <int, String>{};
       for (final district in districts) {
         districtMap[district.id] = district.name;
       }
 
-      // Load all cities
-      final cities = await locationDatasource.getCities(
-        db: db,
-        apiKey: apiKey,
-      );
-
-      // Build city name map
       final cityMap = <int, String>{};
       final cityToStateMap = <int, int>{};
       for (final city in cities) {
         cityMap[city.id] = city.name;
-        cityToStateMap[city.id] = city.stateId;
+        if (city.stateId != null) {
+          cityToStateMap[city.id] = city.stateId!;
+        }
       }
 
-      // Load all states
-      final states = await locationDatasource.getStates(
-        db: db,
-        apiKey: apiKey,
-      );
-
-      // Build state name map
       final stateMap = <int, String>{};
       for (final state in states) {
         stateMap[state.id] = state.name;
       }
 
+      // Convert to District entities for compatibility with modal
+      final districtEntities = districts.map((d) => District(
+        id: d.id,
+        name: d.name,
+        code: '', // Not available in local model
+        cityId: d.cityId ?? 0,
+      )).toList();
+
       if (mounted) {
         setState(() {
-          _allDistricts = districts;
+          _allDistricts = districtEntities;
           _districtMap = districtMap;
           _cityMap = cityMap;
           _stateMap = stateMap;
           _cityToStateMap = cityToStateMap;
         });
 
+        print('✅ [EDIT CUSTOMER] Loaded ${_allDistricts.length} districts from LOCAL');
+
         // Set initial district display if customer has district
         _updateDistrictDisplay();
       }
     } catch (e) {
-      print('❌ Error loading districts: $e');
+      print('⚠️ [EDIT CUSTOMER] Error loading from local DB: $e');
+      print('   Fallback to API...');
+      
+      // ⭐ PRIORITAS 2: Jika lokal gagal, ambil dari API
+      try {
+        final configService = ConfigService();
+        final storage = SecureStorageService();
+
+        final config = await configService.load();
+        final db = config['database'] as String?;
+        final apiKey = await storage.getAccessToken();
+
+        if (db == null || apiKey == null) {
+          print('❌ [EDIT CUSTOMER] No config/apiKey');
+          return;
+        }
+
+        final locationDatasource = LocationRemoteDataSource();
+
+        // Load all from API
+        final districts = await locationDatasource.getAllDistricts(
+          db: db,
+          apiKey: apiKey,
+        );
+
+        final cities = await locationDatasource.getCities(
+          db: db,
+          apiKey: apiKey,
+        );
+
+        final states = await locationDatasource.getStates(
+          db: db,
+          apiKey: apiKey,
+        );
+
+        // Build maps
+        final districtMap = <int, String>{};
+        for (final district in districts) {
+          districtMap[district.id] = district.name;
+        }
+
+        final cityMap = <int, String>{};
+        final cityToStateMap = <int, int>{};
+        for (final city in cities) {
+          cityMap[city.id] = city.name;
+          if (city.stateId != null) {
+            cityToStateMap[city.id] = city.stateId;
+          }
+        }
+
+        final stateMap = <int, String>{};
+        for (final state in states) {
+          stateMap[state.id] = state.name;
+        }
+
+        if (mounted) {
+          setState(() {
+            _allDistricts = districts;
+            _districtMap = districtMap;
+            _cityMap = cityMap;
+            _stateMap = stateMap;
+            _cityToStateMap = cityToStateMap;
+          });
+
+          print('✅ [EDIT CUSTOMER] Loaded ${_allDistricts.length} districts from API');
+
+          // Set initial district display if customer has district
+          _updateDistrictDisplay();
+        }
+      } catch (apiError) {
+        print('❌ [EDIT CUSTOMER] Error loading from API: $apiError');
+      }
     } finally {
       if (mounted) setState(() => _districtLoading = false);
     }
@@ -246,7 +311,7 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
         }
       }
 
-      final data = {
+      final data = <String, dynamic>{
         'id': widget.customer.id, // Required for edit
         'name': _nameController.text.trim(),
         if (_emailController.text.trim().isNotEmpty)
@@ -266,16 +331,20 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
 
       print('📝 [EDIT CUSTOMER] Request data: $data');
 
-      await context.read<CustomerProvider>().updateCustomer(data);
+      // Try to update - will throw error jika gagal POST
+      final updatedCustomer = await context.read<CustomerProvider>().updateCustomer(data);
 
       if (mounted) {
+        // Berhasil! Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
-              children: const [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Customer berhasil diupdate'),
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text('Customer berhasil diupdate & tersinkronisasi'),
+                ),
               ],
             ),
             backgroundColor: AppTheme.successColor,
@@ -284,28 +353,178 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
               borderRadius: BorderRadius.circular(12),
             ),
             margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
           ),
         );
-        Navigator.pop(context, true); // Return true = success
+        
+        // Wait a moment before navigating back to ensure data is saved
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        if (mounted) {
+          print('📤 [EDIT CUSTOMER] Returning to detail page with: $updatedCustomer');
+          Navigator.pop(context, updatedCustomer);
+        }
+      }
+    } catch (e) {
+      setState(() => _isSubmitting = false);
+      if (mounted) {
+        // API POST gagal, tanyakan apakah user mau simpan lokal saja
+        String errorMsg = e.toString();
+        if (errorMsg.startsWith('Exception: ')) {
+          errorMsg = errorMsg.substring(11);
+        }
+
+        print('❌ [EDIT CUSTOMER] Error: $errorMsg');
+
+        // Capture data untuk dialog
+        final phoneNumber = _phoneController.text.trim();
+        String formattedPhone = '';
+        if (phoneNumber.isNotEmpty) {
+          final cleanPhone = phoneNumber.replaceAll(RegExp(r'\D'), '');
+          if (cleanPhone.startsWith('62')) {
+            formattedPhone = '+$cleanPhone';
+          } else if (cleanPhone.startsWith('0')) {
+            formattedPhone = '+62${cleanPhone.substring(1)}';
+          } else {
+            formattedPhone = '+62$cleanPhone';
+          }
+        }
+
+        final dialogData = <String, dynamic>{
+          'id': widget.customer.id,
+          'name': _nameController.text.trim(),
+          if (_emailController.text.trim().isNotEmpty)
+            'email': _emailController.text.trim(),
+          if (formattedPhone.isNotEmpty) 'phone': formattedPhone,
+          if (_streetController.text.trim().isNotEmpty)
+            'street': _streetController.text.trim(),
+          if (_street2Controller.text.trim().isNotEmpty)
+            'street2': _street2Controller.text.trim(),
+          if (_selectedDistrictId != null) 'district_id': _selectedDistrictId,
+          if (_selectedCityId != null) 'city_id': _selectedCityId,
+          if (_selectedStateId != null) 'state_id': _selectedStateId,
+          if (_zipController.text.trim().isNotEmpty)
+            'zip': _zipController.text.trim(),
+          'country_id': 100,
+        };
+
+        // Show error dialog dengan pilihan
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.red),
+                SizedBox(width: 8),
+                Text('Update Gagal'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Error: $errorMsg',
+                  style: const TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Apakah Anda ingin simpan perubahan secara lokal? Data akan di-sync otomatis ketika internet tersedia.',
+                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  // Re-submit tanpa POST (langsung lokal)
+                  _submitOfflineOnly(dialogData);
+                },
+                child: const Text(
+                  'Simpan Lokal',
+                  style: TextStyle(color: Colors.orange),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
+
+  /// Submit offline - simpan langsung ke lokal dengan status UPDATED
+  Future<void> _submitOfflineOnly(Map<String, dynamic> data) async {
+    try {
+      setState(() => _isSubmitting = true);
+
+      // Convert strings to ints
+      final updatedCustomer = Customer(
+        id: data['id'] as int,
+        name: data['name'] ?? '',
+        email: data['email'],
+        phone: data['phone'],
+        userId: data['user_id'] != null ? int.tryParse(data['user_id'].toString()) : null,
+        street: data['street'],
+        street2: data['street2'],
+        districtId: data['district_id'] != null ? int.tryParse(data['district_id'].toString()) : null,
+        cityId: data['city_id'] != null ? int.tryParse(data['city_id'].toString()) : null,
+        stateId: data['state_id'] != null ? int.tryParse(data['state_id'].toString()) : null,
+        zip: data['zip'],
+        countryId: data['country_id'] != null ? int.tryParse(data['country_id'].toString()) : null,
+      );
+
+      // Save ke lokal dengan status UPDATED
+      final localDb = CustomerLocalDatabase();
+      final localModel = CustomerLocalModel.fromEntity(
+        updatedCustomer,
+        syncStatus: SyncStatus.UPDATED,
+      );
+      await localDb.insertOrReplace(localModel);
+      print('✅ [EDIT CUSTOMER] Tersimpan lokal (UPDATED) - akan di-sync nanti');
+
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.cloud_off_rounded, color: Colors.white),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text('Customer disimpan lokal (pending sinkronisasi)'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        
+        // Wait a moment before navigating back
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        if (mounted) {
+          print('📤 [EDIT CUSTOMER OFFLINE] Returning to detail page with: $updatedCustomer');
+          Navigator.pop(context, updatedCustomer);
+        }
       }
     } catch (e) {
       setState(() => _isSubmitting = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(child: Text('Error: $e')),
-              ],
-            ),
+            content: Text('Error menyimpan lokal: $e'),
             backgroundColor: AppTheme.errorColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: const EdgeInsets.all(16),
           ),
         );
       }

@@ -5,6 +5,7 @@ import 'package:pintarx/features/customer/presentation/providers/customer_provid
 import 'package:pintarx/features/product/presentation/providers/product_provider.dart';
 import 'package:pintarx/features/sales_order/presentation/providers/sales_order_provider.dart';
 import 'package:pintarx/pages/auth/intro_page.dart';
+import 'package:pintarx/providers/connectivity_provider.dart';
 import 'package:pintarx/providers/theme_provider.dart';
 import 'package:pintarx/services/api_service.dart';
 import 'package:pintarx/services/auth_service.dart';
@@ -58,6 +59,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => CustomerProvider()),

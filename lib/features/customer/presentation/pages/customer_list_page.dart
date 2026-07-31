@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../config/theme.dart';
+import '../../../../services/local_database/customer_local_database.dart';
 import '../providers/customer_provider.dart';
 import '../widgets/customer_card.dart';
 import '../widgets/customer_search_bar.dart';
@@ -22,9 +23,12 @@ class _CustomerListPageState extends State<CustomerListPage> {
   @override
   void initState() {
     super.initState();
-    // Fetch customers on page load
+    // Fetch customers on page load (from local DB)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CustomerProvider>().fetchCustomers();
+      final provider = context.read<CustomerProvider>();
+      provider.fetchCustomers();
+      provider.loadSyncStats();
+      provider.loadLocationStats();
     });
   }
 
@@ -57,6 +61,20 @@ class _CustomerListPageState extends State<CustomerListPage> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: Column(
               children: [
+                // Pending updates indicator (if there are pending updates)
+                FutureBuilder<Map<String, int>>(
+                  future: _loadPendingStats(provider),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      final pendingCount = snapshot.data?['updated'] ?? 0;
+                      if (pendingCount > 0) {
+                        return _buildPendingIndicator(pendingCount, provider);
+                      }
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+
                 // Search Bar
                 const CustomerSearchBar(),
                 const SizedBox(height: 14),
@@ -86,6 +104,65 @@ class _CustomerListPageState extends State<CustomerListPage> {
         },
         backgroundColor: AppTheme.primaryColor,
         child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  /// Load pending update statistics
+  Future<Map<String, int>> _loadPendingStats(CustomerProvider provider) async {
+    try {
+      final localDb = CustomerLocalDatabase();
+      return await localDb.getSyncStatusCounts();
+    } catch (e) {
+      print('⚠️ Error loading pending stats: $e');
+      return {'updated': 0};
+    }
+  }
+
+  /// Build pending updates indicator
+  Widget _buildPendingIndicator(int pendingCount, CustomerProvider provider) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.orange.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.cloud_off_rounded,
+            size: 20,
+            color: Colors.orange,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '⏳ $pendingCount Pending Update${pendingCount > 1 ? 's' : ''}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.orange,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Tap Sync in Dashboard to upload changes',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -225,15 +302,24 @@ class _CustomerListPageState extends State<CustomerListPage> {
               itemBuilder: (context, index) {
                 final customer = provider.customers[index];
 
-                return CustomerCard(
-                  customer: customer,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            CustomerDetailPage(customer: customer),
-                      ),
+                // Build customer card with sync status
+                return FutureBuilder<String>(
+                  future: provider.getCustomerSyncStatus(customer.id),
+                  builder: (context, snapshot) {
+                    final syncStatus = snapshot.data ?? 'SYNCED';
+
+                    return CustomerCard(
+                      customer: customer,
+                      syncStatus: syncStatus,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                CustomerDetailPage(customer: customer),
+                          ),
+                        );
+                      },
                     );
                   },
                 );

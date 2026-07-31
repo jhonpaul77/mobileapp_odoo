@@ -6,14 +6,17 @@ import '../../domain/entities/customer.dart';
 /// Customer Card Widget
 ///
 /// Displays customer information in a card format.
+/// Optionally shows pending sync indicator if syncStatus is UPDATED.
 class CustomerCard extends StatelessWidget {
   final Customer customer;
   final VoidCallback? onTap;
+  final String syncStatus; // 'SYNCED', 'UPDATED', 'NEW', 'DELETED'
 
   const CustomerCard({
     super.key,
     required this.customer,
     this.onTap,
+    this.syncStatus = 'SYNCED',
   });
 
   /// Build address line combining street, district, city, state
@@ -87,16 +90,58 @@ class CustomerCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Customer Name
-                    Text(
-                      customer.name,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    // Customer Name with Pending Indicator
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            customer.name,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: theme.textTheme.bodyLarge?.color,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        // Pending Update Badge
+                        if (syncStatus == 'UPDATED')
+                          Container(
+                            margin: const EdgeInsets.only(left: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withValues(alpha: 0.2),
+                              border: Border.all(
+                                color: Colors.orange,
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.cloud_upload_outlined,
+                                  size: 10,
+                                  color: Colors.orange,
+                                ),
+                                SizedBox(width: 2),
+                                Text(
+                                  'Pending',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    color: Colors.orange,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 4),
 

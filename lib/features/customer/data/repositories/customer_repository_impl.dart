@@ -15,9 +15,15 @@ class CustomerRepositoryImpl {
   ///
   /// Returns `List<Customer>` (Entity) for use in presentation layer.
   /// Handles errors and converts Models to Entities.
+  /// 
+  /// Parameters:
+  /// - limit: Optional limit on number of customers to fetch (default: no limit)
+  /// - onProgressUpdate: Optional callback called after each page with (pageNum, totalFetched)
   Future<List<Customer>> getCustomers({
     required String db,
     required String apiKey,
+    int? limit,
+    Function(int pageNum, int totalFetched)? onProgressUpdate,
   }) async {
     try {
       print('🔄 [CUSTOMER_REPO] Getting customers...');
@@ -25,6 +31,8 @@ class CustomerRepositoryImpl {
       final customerModels = await _remoteDataSource.getCustomers(
         db: db,
         apiKey: apiKey,
+        limit: limit,
+        onProgressUpdate: onProgressUpdate,
       );
 
       print(
