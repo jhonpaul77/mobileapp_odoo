@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../config/theme.dart';
 import '../../../../services/sales_service.dart';
+import '../../../../services/secure_storage_service.dart';
 import '../../domain/entities/order_line.dart';
 import '../../domain/entities/sales_order.dart';
 import 'sales_order_edit_page.dart';
@@ -1232,10 +1233,127 @@ TERIMA KASIH''';
               ),
             ),
             const SizedBox(height: 24),
+            
+            // DEBUG INFO - Log section at bottom
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _buildDebugInfoCard(theme),
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
     );
+  }
+  
+  Widget _buildDebugInfoCard(ThemeData theme) {
+    return FutureBuilder<Map<String, String>>(
+      future: _getDebugInfo(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+
+        final info = snapshot.data!;
+        final apiKey = info['apiKey'] ?? 'N/A';
+        final username = info['username'] ?? 'N/A';
+
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.primaryColor.withValues(alpha: 0.1),
+            border: Border.all(
+              color: theme.primaryColor.withValues(alpha: 0.3),
+              width: 1,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.info_outlined,
+                    size: 14,
+                    color: theme.primaryColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Log Info',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: theme.primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              
+              // Username
+              Text(
+                'User: $username',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontFamily: 'Courier',
+                  color: theme.textTheme.bodySmall?.color,
+                ),
+              ),
+              const SizedBox(height: 6),
+              
+              // API Key
+              Text(
+                'API Key:',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: theme.textTheme.bodySmall?.color,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: theme.brightness == Brightness.dark 
+                      ? Colors.black26 
+                      : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: SelectableText(
+                  apiKey,
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontFamily: 'Courier',
+                    color: theme.textTheme.bodyLarge?.color,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<Map<String, String>> _getDebugInfo() async {
+    try {
+      final storage = SecureStorageService();
+      final apiKey = await storage.getAccessToken() ?? 'Not set';
+      final userData = await storage.getUserData();
+      final username = userData?['username'] ?? 'Unknown';
+
+      return {
+        'apiKey': apiKey,
+        'username': username.toString(),
+      };
+    } catch (e) {
+      return {
+        'apiKey': 'Error: $e',
+        'username': 'Error loading',
+      };
+    }
   }
 
   Widget _buildInfoGrid(List<Map<String, String>> items) {

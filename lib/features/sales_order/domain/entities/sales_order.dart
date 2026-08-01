@@ -272,7 +272,7 @@ class SalesOrder {
     }
   }
 
-  /// Format date for display
+  /// Format date for display (with time)
   String get dateOrderFormatted {
     final date = dateOrderParsed;
     if (date == null) return dateOrder;
@@ -280,7 +280,9 @@ class SalesOrder {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
     final year = date.year;
-    return '$day/$month/$year';
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$day/$month/$year $hour:$minute';
   }
 
   /// Convert to JSON

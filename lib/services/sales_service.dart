@@ -219,6 +219,7 @@ class SalesService {
   ///   "kurir_id": 20,
   ///   "awb": "ABC123456",
   ///   "notes": "Order notes",
+  ///   "user_id": 2,
   ///   "state": "confirm",
   ///   "order_lines": [
   ///     {
@@ -261,6 +262,13 @@ class SalesService {
         };
       }
 
+      // Format date_order: if it's just "YYYY-MM-DD", add time "00:00:00"
+      String formattedDateOrder = dateOrder;
+      if (!dateOrder.contains(' ')) {
+        // Date only, append 00:00:00
+        formattedDateOrder = '$dateOrder 00:00:00';
+      }
+
       // Build request body
       final requestBody = {
         'partner_name': partnerName,
@@ -270,11 +278,12 @@ class SalesService {
         'partner_district': partnerDistrict,
         'partner_city': partnerCity,
         'partner_state': partnerState,
-        'date_order': dateOrder,
+        'date_order': formattedDateOrder,
         if (warehouseId != null) 'warehouse_id': warehouseId,
         'kurir_id': kurirId ?? false,
         'awb': awb ?? false,
         'notes': notes ?? '',
+        // Backend will identify user from api-key in headers - don't pass user_id
         'state': state,
         'order_lines': orderLines,
       };
@@ -289,6 +298,12 @@ class SalesService {
       print('📝 [SALES] Response status: ${response.statusCode}');
       print('📝 [SALES] Response data: ${response.data}');
       print('📝 [SALES] Response data type: ${response.data.runtimeType}');
+      
+      // ✅ LOG REQUEST HEADERS untuk debug user & API key
+      print('🔐 [SALES] REQUEST HEADERS:');
+      print('   Authorization: ${_api.options.headers['Authorization']?.toString().substring(0, 20) ?? 'NOT SET'}...');
+      print('   api-key: ${_api.options.headers['api-key']?.toString().substring(0, 20) ?? 'NOT SET'}...');
+      print('   db: ${_api.options.headers['db'] ?? 'NOT SET'}');
 
       if (response.statusCode == 200) {
         // Parse response - bisa berupa String JSON atau Map
@@ -304,6 +319,16 @@ class SalesService {
             parsedData = {'message': response.data};
           }
         }
+        
+        print('═════════════════════════════════════════════════════════════');
+        print('✅ [CREATE_SALE_ORDER] SUCCESS');
+        print('═════════════════════════════════════════════════════════════');
+        print('📊 Response:');
+        print('   Status: ${response.statusCode}');
+        print('   Order ID: ${parsedData['id']}');
+        print('   Order Name: ${parsedData['name']}');
+        print('   Timestamp: ${DateTime.now().toIso8601String()}');
+        print('═════════════════════════════════════════════════════════════');
 
         return {
           'Success': true,
@@ -380,7 +405,7 @@ class SalesService {
     int? kurirId,
     String? awb,
     String? state,
-    String? notes, // NEW: Notes parameter
+    String? notes,
     required List<Map<String, dynamic>> orderLines,
   }) async {
     try {
@@ -396,6 +421,13 @@ class SalesService {
         };
       }
 
+      // Format date_order: if it's just "YYYY-MM-DD", add time "00:00:00"
+      String formattedDateOrder = dateOrder;
+      if (!dateOrder.contains(' ')) {
+        // Date only, append 00:00:00
+        formattedDateOrder = '$dateOrder 00:00:00';
+      }
+
       // Build request body
       final requestBody = {
         'id': id,
@@ -404,12 +436,13 @@ class SalesService {
         'partner_district': partnerDistrict,
         'partner_city': partnerCity,
         'partner_state': partnerState,
-        'date_order': dateOrder,
+        'date_order': formattedDateOrder,
         'warehouse_id': warehouseId,
         'kurir_id': kurirId ?? false,
         'awb': awb ?? false,
         'state': state ?? 'draft',
-        'notes': notes ?? false, // NEW: Include notes in request
+        'notes': notes ?? false,
+        // Backend will identify user from api-key in headers - don't pass user_id
         'order_lines': orderLines,
       };
 

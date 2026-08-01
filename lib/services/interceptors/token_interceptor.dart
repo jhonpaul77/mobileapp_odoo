@@ -24,6 +24,7 @@ class TokenInterceptor extends Interceptor {
 
     if (_isAuthEndpoint(options.path)) return handler.next(options);
 
+    // Set Authorization token (Bearer token)
     var token = options.headers['Authorization']
         ?.toString()
         .replaceFirst('Bearer ', '');
@@ -31,6 +32,8 @@ class TokenInterceptor extends Interceptor {
 
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
+      // Also set api-key header (same as access token)
+      options.headers['api-key'] = token;
     }
 
     return handler.next(options);

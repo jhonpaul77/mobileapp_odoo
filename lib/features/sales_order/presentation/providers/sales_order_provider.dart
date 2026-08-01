@@ -65,6 +65,15 @@ class SalesOrderProvider extends ChangeNotifier {
         apiKey: apiKey,
       );
 
+      // Sort by date descending (terbaru paling atas)
+      fetchedOrders.sort((a, b) {
+        final dateA = a.dateOrderParsed;
+        final dateB = b.dateOrderParsed;
+        
+        if (dateA == null || dateB == null) return 0;
+        return dateB.compareTo(dateA); // Descending: terbaru paling atas
+      });
+
       _orders = fetchedOrders;
       _filteredOrders = fetchedOrders;
       _isLoading = false;

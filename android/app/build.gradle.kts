@@ -3,21 +3,25 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Load signing configuration from key.properties
-val keystoreFile = rootProject.file("key.properties")
-val keyProperties = Properties()
-if (keystoreFile.exists()) {
-    keyProperties.load(keystoreFile.inputStream())
+// Membaca konfigurasi signing dari android/key.properties
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.inputStream().use { inputStream ->
+        keystoreProperties.load(inputStream)
+    }
 }
 
 android {
     namespace = "id.pintarbisnis.pintarx"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+
+    // Pakai NDK yang sudah tersedia di D:\Android\ndk
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -25,51 +29,61 @@ android {
     }
 
     defaultConfig {
-        // Application ID
-        applicationId = "id.pintarbisnis.pintarx"
-        
-        // SDK Versions
+        applicationId = "salespro.nextnusantara.com"
+
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        
-        // Version Info (update these for each release)
+
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-    // Signing Configuration for Release
     signingConfigs {
         create("release") {
-            keyAlias = keyProperties.getProperty("keyAlias", "upload")
-            keyPassword = keyProperties.getProperty("keyPassword", "")
-            storeFile = if (keyProperties.containsKey("storeFile")) {
-                file(keyProperties.getProperty("storeFile"))
-            } else {
-                null
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+            storePassword = keystoreProperties.getProperty("storePassword")
+
+            val keystorePath =
+                keystoreProperties.getProperty("storeFile")
+
+            if (!keystorePath.isNullOrBlank()) {
+                storeFile = rootProject.file(keystorePath)
             }
-            storePassword = keyProperties.getProperty("storePassword", "")
         }
     }
 
     buildTypes {
-        release {
+        getByName("debug") {
+            // Debug mode - no minification (lebih cepat build)
             isMinifyEnabled = false
             isShrinkResources = false
-            // Sign release build with configured signing config
-            signingConfig = signingConfigs.getByName("release")
         }
-        
-        debug {
+
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+
+            // Release mode - enable minification & shrinking untuk Play Store
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
+
+    // Menyamakan target Kotlin dengan Java 11.
 }
 
-// Override Kotlin compilation tasks to use Java 11
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>()
+    .configureEach {
+        compilerOptions {
+            jvmTarget.set(
+                org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+            )
+        }
     }
-}
 
 flutter {
     source = "../.."
@@ -78,4 +92,3 @@ flutter {
 dependencies {
     implementation("androidx.fragment:fragment:1.5.7")
 }
-

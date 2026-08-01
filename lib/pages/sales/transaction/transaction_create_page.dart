@@ -14,6 +14,7 @@ import '../../../services/api_service.dart';
 import '../../../services/config_service.dart';
 import '../../../services/sales_service.dart';
 import '../../../services/secure_storage_service.dart';
+import '../../../services/secure_storage_service.dart';
 
 /// Create Sales Order Page
 ///
@@ -971,8 +972,14 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
   }
 
   String _formatDateForOdoo(DateTime date) {
-    // Format: YYYY-MM-DD (Odoo format)
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    // Format: YYYY-MM-DD HH:MM:SS (Odoo format with time)
+    final year = date.year;
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    final second = date.second.toString().padLeft(2, '0');
+    return '$year-$month-$day $hour:$minute:$second';
   }
 
   String _formatCurrency(double amount) {
@@ -1336,6 +1343,14 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
       logger.i('   District: $customerDistrict');
       logger.i('   Products: ${_orderLines.length}');
 
+      // Get current user & API key for logging
+      final storage = SecureStorageService();
+      final currentUser = await storage.getUserData();
+      final currentApiKey = await storage.getAccessToken();
+      
+      logger.i('🔐 [SAVE_DRAFT] Current User: ${currentUser?['username']}');
+      logger.i('🔐 [SAVE_DRAFT] API Key: ${currentApiKey?.substring(0, 12)}...');
+
       // POIN 4: Call API - always save as DRAFT
       final result = await _salesService.createSaleOrder(
         partnerName: customerName,
@@ -1367,7 +1382,28 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
       setState(() => _isLoading = false);
 
       if (result['Success'] == true) {
-        logger.i('✅ [SAVE_DRAFT] Sales order created successfully');
+        // ✅ Get current user info for comprehensive logging
+        final storage = SecureStorageService();
+        final currentUser = await storage.getUserData();
+        final currentApiKey = await storage.getAccessToken();
+        final currentDb = await ConfigService().getDatabase();
+        final currentUrl = await ConfigService().getUrl();
+        
+        final username = currentUser?['username'] ?? 'Unknown';
+        final apiKeyShort = currentApiKey?.substring(0, 12) ?? 'NOT SET';
+        
+        logger.i('═════════════════════════════════════════════════════════════');
+        logger.i('✅ [CREATE_SO_SUCCESS] Sales Order Created Successfully');
+        logger.i('═════════════════════════════════════════════════════════════');
+        logger.i('');
+        logger.i('📋 REQUEST INFO:');
+        logger.i('   User: $username');
+        logger.i('   API Key: $apiKeyShort...');
+        logger.i('   Database: $currentDb');
+        logger.i('   Server URL: $currentUrl');
+        logger.i('   Timestamp: ${DateTime.now().toIso8601String()}');
+        logger.i('');
+        logger.i('📊 RESPONSE DATA:');
         logger.i('   Full result: $result');
         logger.i('   Result type: ${result.runtimeType}');
         logger.i('   Data key exists: ${result.containsKey('Data')}');
@@ -1382,6 +1418,8 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
           throw Exception('Response Data is null');
         }
 
+        logger.i('');
+        logger.i('📦 ORDER DATA:');
         logger.i('   Order Data type: ${orderData.runtimeType}');
         logger.i('   Order Data: $orderData');
 
@@ -1400,8 +1438,16 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
           _createdOrderName =
               orderData['name']?.toString() ?? 'SO-$_createdOrderId';
 
-          logger.i('   Created Order ID: $_createdOrderId');
-          logger.i('   Created Order Name: $_createdOrderName');
+          logger.i('   Order ID: $_createdOrderId');
+          logger.i('   Order Name: $_createdOrderName');
+          logger.i('');
+          logger.i('✅ SUCCESS SUMMARY:');
+          logger.i('   ├─ Sales Order: $_createdOrderName');
+          logger.i('   ├─ Order ID: $_createdOrderId');
+          logger.i('   ├─ Created By: $username');
+          logger.i('   ├─ Database: $currentDb');
+          logger.i('   └─ Time: ${DateTime.now().toIso8601String()}');
+          logger.i('═════════════════════════════════════════════════════════════');
         } catch (e, stackTrace) {
           logger.e('   Error extracting order data: $e');
           logger.e('   Stack trace: $stackTrace');
@@ -1431,6 +1477,10 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
 
         // Navigate to detail page
         if (mounted && _createdOrderId != null) {
+          // Extract date_order dari response backend
+          final dateOrderFromBackend = orderData['date_order']?.toString() ?? 
+              DateTime.now().toIso8601String();
+
           // Wait a bit for snackbar
           await Future.delayed(const Duration(milliseconds: 300));
 
@@ -1441,7 +1491,7 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
               name: _createdOrderName ?? 'SO-$_createdOrderId',
               partnerId: _selectedCustomer!['id'],
               partnerName: _selectedCustomer!['name'],
-              dateOrder: DateTime.now().toIso8601String(),
+              dateOrder: dateOrderFromBackend,
               amountTotal: _calculateTotal(),
               state: 'draft', // Draft state
               warehouseId: 1,
