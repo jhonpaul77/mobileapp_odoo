@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../config/theme.dart';
@@ -200,6 +201,14 @@ TERIMA KASIH''';
       }
 
       if (launched) {
+        // ✅ Increment counter untuk Message
+        final orderId = widget.order.id;
+        final prefs = await SharedPreferences.getInstance();
+        final key = 'wa_count_${orderId}_message';
+        final currentCount = prefs.getInt(key) ?? 0;
+        await prefs.setInt(key, currentCount + 1);
+        print('✅ Message counter: +1 (total: ${currentCount + 1})');
+        
         // Show success message
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -260,8 +269,6 @@ TERIMA KASIH''';
   /// Send WhatsApp shipment tracking message (for Sale/Confirm status)
   Future<void> _sendWhatsAppShipment() async {
     final order = widget.order;
-
-    // Get customer phone from order
     String? customerPhone;
     if (order.customerName.contains('(') && order.customerName.contains(')')) {
       // Extract phone from format "Name (phone)"
@@ -398,6 +405,14 @@ TERIMA KASIH''';
       }
 
       if (launched) {
+        // ✅ Increment counter untuk Send WA
+        final orderId = widget.order.id;
+        final prefs = await SharedPreferences.getInstance();
+        final key = 'wa_count_${orderId}_send';
+        final currentCount = prefs.getInt(key) ?? 0;
+        await prefs.setInt(key, currentCount + 1);
+        print('✅ Send WA counter: +1 (total: ${currentCount + 1})');
+        
         // Show success message
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -791,10 +806,24 @@ TERIMA KASIH''';
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.phone,
-                          color: Colors.white,
-                          size: 16,
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.message,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'Message',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -823,10 +852,24 @@ TERIMA KASIH''';
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.phone,
-                          color: Colors.white,
-                          size: 16,
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.send,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'Send WA',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -992,7 +1035,7 @@ TERIMA KASIH''';
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildInfoRow('Catatan', order.notes!),
+                        _buildCopyableInfoRow('Catatan', order.notes!),
                       ],
                     ),
                 ],
@@ -1414,6 +1457,87 @@ TERIMA KASIH''';
             fontSize: 13,
             fontWeight: FontWeight.w400,
             color: theme.textTheme.bodyLarge?.color,
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  /// Build copyable info row with copy button (untuk notes/catatan)
+  Widget _buildCopyableInfoRow(String label, String value) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: theme.textTheme.bodySmall?.color,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          decoration: BoxDecoration(
+            color: theme.brightness == Brightness.dark
+                ? Colors.grey[800]
+                : Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: theme.textTheme.bodyLarge?.color,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  // Copy to clipboard
+                  Clipboard.setData(ClipboardData(text: value));
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Row(
+                        children: [
+                          Icon(Icons.check_circle,
+                              color: Colors.white, size: 18),
+                          SizedBox(width: 8),
+                          Text('Catatan disalin ke clipboard'),
+                        ],
+                      ),
+                      backgroundColor: Colors.green,
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    Icons.content_copy,
+                    size: 16,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 8),

@@ -4,6 +4,11 @@
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
 
+# ✅ Keep Google Play Core classes (untuk split installs)
+-keep class com.google.android.play.core.** { *; }
+-keep interface com.google.android.play.core.** { *; }
+-keep class io.flutter.embedding.engine.deferredcomponents.** { *; }
+
 # Keep Dart/Flutter classes yang diperlukan
 -keep class com.google.dart.** { *; }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../config/theme.dart';
 import '../providers/sales_order_provider.dart';
@@ -345,7 +346,7 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Header: SO Number + Status Badge
+                          // Header: SO Number + Status Badge + WA Count Badge
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -362,6 +363,7 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
                                 ),
                               ),
                               const SizedBox(width: 8),
+                              // Status Badge
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 10,
@@ -385,6 +387,100 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
                                   ),
                                 ),
                               ),
+                              const SizedBox(width: 8),
+                              // WA Message Count Badge (untuk Message - Open status)
+                              if (order.state.toLowerCase() == 'draft' ||
+                                  order.state.toLowerCase() == 'sent') ...[
+                                FutureBuilder<int>(
+                                  future: _getWAMessageCount(order.id, 'message'),
+                                  builder: (context, snapshot) {
+                                    final count = snapshot.data ?? 0;
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF25D366)
+                                            .withValues(alpha: 0.15),
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: const Color(0xFF25D366)
+                                              .withValues(alpha: 0.5),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.message,
+                                            size: 12,
+                                            color: const Color(0xFF25D366),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '$count',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                              color: const Color(0xFF25D366),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                              // WA Message Count Badge (untuk Send WA - Sale/Confirm status)
+                              if (order.state.toLowerCase() == 'sale' ||
+                                  order.state.toLowerCase() == 'confirm') ...[
+                                FutureBuilder<int>(
+                                  future: _getWAMessageCount(order.id, 'send'),
+                                  builder: (context, snapshot) {
+                                    final count = snapshot.data ?? 0;
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF25D366)
+                                            .withValues(alpha: 0.15),
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: const Color(0xFF25D366)
+                                              .withValues(alpha: 0.5),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.send,
+                                            size: 12,
+                                            color: const Color(0xFF25D366),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '$count',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                              color: const Color(0xFF25D366),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ],
                           ),
 
@@ -486,6 +582,31 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
         ],
       ),
     );
+  }
+
+  /// Get WA message count untuk order
+  Future<int> _getWAMessageCount(int orderId, String type) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'wa_count_${orderId}_$type';
+      return prefs.getInt(key) ?? 0;
+    } catch (e) {
+      print('Error getting WA count: $e');
+      return 0;
+    }
+  }
+
+  /// Increment WA message count untuk order
+  static Future<void> incrementWAMessageCount(int orderId, String type) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'wa_count_${orderId}_$type';
+      final currentCount = prefs.getInt(key) ?? 0;
+      await prefs.setInt(key, currentCount + 1);
+      print('✅ WA counter incremented: $type for Order #$orderId = ${currentCount + 1}');
+    } catch (e) {
+      print('❌ Error incrementing WA count: $e');
+    }
   }
 
   /// Build status filter chip (same as original transaction_list_page.dart)

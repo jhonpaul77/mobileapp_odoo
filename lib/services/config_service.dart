@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'secure_storage_service.dart';
+
 /// ✅ ConfigService - Mengelola konfigurasi aplikasi
 ///
 /// Architecture:
@@ -171,13 +173,34 @@ class ConfigService {
   }
 
   // ✅ Convenience method untuk update server settings
+  // ⚠️ Auto-logout karena API key dari server lama tidak valid di server baru
   Future<void> updateServerSettings({
     required String database,
     required String url,
   }) async {
     final config = await load();
+    final oldUrl = config['url'] as String?;
+    
+    // Check if URL changed
+    if (oldUrl != null && oldUrl != url) {
+      print('🔄 [CONFIG] Server URL changed!');
+      print('   Old: $oldUrl');
+      print('   New: $url');
+      print('⚠️  [CONFIG] Auto-logout karena server berubah');
+      
+      // Auto clear old credentials
+      final storage = SecureStorageService();
+      await storage.clearAll();
+      
+      print('✅ [CONFIG] Old credentials cleared');
+    }
+    
     config['database'] = database;
     config['url'] = url;
     await save(config);
+    
+    print('✅ [CONFIG] Server settings updated');
+    print('   Database: $database');
+    print('   URL: $url');
   }
 }

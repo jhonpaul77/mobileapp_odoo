@@ -63,9 +63,9 @@ android {
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
 
-            // Release mode - enable minification & shrinking untuk Play Store
-            isMinifyEnabled = true
-            isShrinkResources = true
+            // Release mode - disable minification to avoid NDK/stripping issues
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

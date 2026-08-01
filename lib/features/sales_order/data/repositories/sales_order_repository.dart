@@ -27,8 +27,10 @@ class SalesOrderRepository {
   }) async {
     try {
       print('🔄 [SALES_ORDER_REPO] Fetching sales orders...');
-      print('   [SALES_ORDER_REPO] Database: $db');
-      print('   [SALES_ORDER_REPO] API Key: ${apiKey.substring(0, 8)}...');
+      print('   Database: $db');
+      print('   API Key: ${apiKey.substring(0, 12)}...');
+      print('   Base URL: ${_apiService.dio.options.baseUrl}');
+      print('   Endpoint: /get_sale_order');
 
       final response = await _apiService.dio.get(
         '/get_sale_order',
@@ -40,9 +42,9 @@ class SalesOrderRepository {
         ),
       );
 
-      print('   [SALES_ORDER_REPO] Response received');
-      print(
-          '   [SALES_ORDER_REPO] Response type: ${response.data.runtimeType}');
+      print('✅ [SALES_ORDER_REPO] Response received');
+      print('   Status: ${response.statusCode}');
+      print('   Response type: ${response.data.runtimeType}');
 
       // ✅ VALIDASI: Cek database dari response header
       final responseDb = response.headers.value('db') ??
@@ -51,12 +53,9 @@ class SalesOrderRepository {
 
       if (responseDb != null && responseDb != db) {
         print('⚠️ [SALES_ORDER_REPO] Database mismatch!');
-        print('   Expected (config): $db');
-        print('   Received (API): $responseDb');
-        throw Exception('Database tidak sesuai!\n'
-            'Config: $db\n'
-            'API Response: $responseDb\n\n'
-            'Silakan logout dan login ulang untuk sinkronisasi database.');
+        print('   Expected: $db');
+        print('   Received: $responseDb');
+        throw Exception('Database tidak sesuai');
       }
 
       // Preview response (first 300 chars)
@@ -118,7 +117,43 @@ class SalesOrderRepository {
             'Unexpected response format: ${data.runtimeType}. Response: $preview');
       }
     } catch (e, stackTrace) {
-      print('❌ [SALES_ORDER_REPO] Error: $e');
+      print('');
+      print('═══════════════════════════════════════════════════════════');
+      print('❌ [SALES_ORDER_REPO] ERROR FETCHING SALES ORDERS');
+      print('═══════════════════════════════════════════════════════════');
+      
+      if (e is DioException) {
+        print('Error Type: DioException');
+        print('Status Code: ${e.response?.statusCode}');
+        print('Message: ${e.message}');
+        print('Response: ${e.response?.data}');
+        print('');
+        print('🔐 Credentials Check:');
+        print('   Database: $db');
+        print('   API Key: ${apiKey.substring(0, 12)}...');
+        print('   Base URL: ${_apiService.dio.options.baseUrl}');
+        print('');
+        
+        if (e.response?.statusCode == 400) {
+          print('⚠️  HTTP 400 - Invalid Credentials');
+          print('   → API Key mungkin expired atau salah');
+          print('   → Database name tidak sesuai');
+          print('   → Coba: Login ulang untuk refresh token');
+        } else if (e.response?.statusCode == 401) {
+          print('⚠️  HTTP 401 - Unauthorized');
+          print('   → API Key tidak valid');
+          print('   → Silakan login ulang');
+        } else if (e.response?.statusCode == 404) {
+          print('⚠️  HTTP 404 - Endpoint tidak ditemukan');
+          print('   → URL server mungkin salah');
+        }
+      } else {
+        print('Error Type: ${e.runtimeType}');
+        print('Message: $e');
+      }
+      
+      print('═══════════════════════════════════════════════════════════');
+      print('');
       print('   Stack trace: $stackTrace');
       rethrow;
     }
