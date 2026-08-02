@@ -31,6 +31,7 @@ class SalesOrderRepository {
       print('   API Key: ${apiKey.substring(0, 12)}...');
       print('   Base URL: ${_apiService.dio.options.baseUrl}');
       print('   Endpoint: /get_sale_order');
+      print('   Limit: 5000');
 
       final response = await _apiService.dio.get(
         '/get_sale_order',
@@ -38,6 +39,7 @@ class SalesOrderRepository {
           headers: {
             'db': db,
             'api-key': apiKey,
+            'limit': 5000,
           },
         ),
       );

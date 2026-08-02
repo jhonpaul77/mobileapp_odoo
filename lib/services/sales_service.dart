@@ -19,6 +19,7 @@ class SalesService {
   /// ```
   /// db: demotest
   /// api-key: {api_key}
+  /// limit: 10000 (optional, default: no limit)
   /// ```
   ///
   /// **Response**: Direct array of sale orders
@@ -36,12 +37,20 @@ class SalesService {
   ///   }
   /// ]
   /// ```
-  Future<Map<String, dynamic>> getSaleOrders() async {
+  Future<Map<String, dynamic>> getSaleOrders({int limit = 10000}) async {
     try {
       print('🔍 [SALES] Fetching sale orders from Odoo...');
       print('🔍 [SALES] URL: ${ApiConfig.baseUrl}${ApiConfig.getSaleOrder}');
+      print('🔍 [SALES] Limit: $limit');
 
-      final response = await _api.get(ApiConfig.getSaleOrder);
+      final response = await _api.get(
+        ApiConfig.getSaleOrder,
+        options: Options(
+          headers: {
+            'limit': limit,
+          },
+        ),
+      );
 
       print('🔍 [SALES] Response status: ${response.statusCode}');
       print('🔍 [SALES] Response data type: ${response.data.runtimeType}');
