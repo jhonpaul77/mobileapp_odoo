@@ -7,7 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../config/theme.dart';
 import '../../../../services/sales_service.dart';
-import '../../../../services/secure_storage_service.dart';
 import '../../domain/entities/order_line.dart';
 import '../../domain/entities/sales_order.dart';
 import 'sales_order_edit_page.dart';
@@ -72,15 +71,8 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
   Future<void> _sendWhatsAppReminder() async {
     final order = widget.order;
 
-    // Get customer phone from order
-    String? customerPhone;
-    if (order.customerName.contains('(') && order.customerName.contains(')')) {
-      // Extract phone from format "Name (phone)"
-      final match = RegExp(r'\((\d+)\)').firstMatch(order.customerName);
-      if (match != null) {
-        customerPhone = match.group(1);
-      }
-    }
+    // Get customer phone from partner_phone field
+    String? customerPhone = order.partnerPhone;
 
     // Check if phone number exists
     if (customerPhone == null || customerPhone.isEmpty) {
@@ -109,15 +101,6 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
     }
 
     try {
-      // Get current user name
-      String senderName = 'Tim Penjualan';
-      try {
-        // Try to get from AuthService or just use a default
-        senderName = 'Tim Penjualan';
-      } catch (e) {
-        print('Could not get user name: $e');
-      }
-
       // Get customer name without phone
       String customerNameOnly = order.customerName;
       if (customerNameOnly.contains('(')) {
@@ -140,12 +123,12 @@ Kecamatan:
 Kota/Kab: 
 Provinsi: ''';
 
-      // Build the full message
-      final message = '''Halo kak $customerNameOnly
+      // Build the full message - simplified format per user request
+      final message = '''Halo kak $customerNameOnly ($customerPhone)
 
-Dengan saya ($senderName) :
+Dengan saya CS Armand :
 
-Kami sudah terima pesanannya  dengan rincian sebagai berikut:
+Kami sudah terima pesanannya dengan rincian sebagai berikut:
 $itemsList
 _BISA TRANSFER_ maupun _BAYAR DI TEMPAT_
 
@@ -269,14 +252,9 @@ TERIMA KASIH''';
   /// Send WhatsApp shipment tracking message (for Sale/Confirm status)
   Future<void> _sendWhatsAppShipment() async {
     final order = widget.order;
-    String? customerPhone;
-    if (order.customerName.contains('(') && order.customerName.contains(')')) {
-      // Extract phone from format "Name (phone)"
-      final match = RegExp(r'\((\d+)\)').firstMatch(order.customerName);
-      if (match != null) {
-        customerPhone = match.group(1);
-      }
-    }
+
+    // Get customer phone from partner_phone field
+    String? customerPhone = order.partnerPhone;
 
     // Check if phone number exists
     if (customerPhone == null || customerPhone.isEmpty) {
@@ -342,8 +320,8 @@ TERIMA KASIH''';
       final kurirName = order.kurirName ?? '-';
       final awbNumber = order.awb?.toString() ?? '-';
 
-      // Build the shipment tracking message
-      final message = '''Halo kak $customerNameOnly
+      // Build the shipment tracking message - per user format
+      final message = '''Halo kak $customerNameOnly ($customerPhone)
 
 Dengan saya CS Armand dari UNIK TRENDI
 
@@ -700,41 +678,81 @@ TERIMA KASIH''';
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
                 fontSize: 18)),
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: Color(order.stateColor),
         elevation: 0,
         centerTitle: false,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
+          // Print Button
           Padding(
-            padding: const EdgeInsets.only(right: 2),
-            child: IconButton(
-              icon: const Icon(Icons.print_rounded, color: Colors.white),
-              onPressed: _printTransaction,
-              tooltip: 'Print',
-            ),
-          ),
-          if (isEditable)
-            Padding(
-              padding: const EdgeInsets.only(right: 0),
-              child: TextButton(
-                onPressed: _openEditPage,
-                child: const Text(
-                  'Edit',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w600),
+            padding: const EdgeInsets.only(right: 8),
+            child: Center(
+              child: GestureDetector(
+                onTap: _printTransaction,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(
+                    Icons.print_rounded,
+                    size: 18,
+                    color: Colors.black87,
+                  ),
                 ),
               ),
             ),
-          // Confirm button - AFTER Edit button, same UI/UX as Edit
-          if (isEditable) // isEditable = draft or sent
+          ),
+          
+          // Edit Button
+          if (isEditable)
             Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: TextButton(
-                onPressed: _confirmOrder,
-                child: const Text(
-                  'Confirm',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w600),
+              padding: const EdgeInsets.only(right: 8),
+              child: Center(
+                child: GestureDetector(
+                  onTap: _openEditPage,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'Edit',
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          
+          // Confirm Button
+          if (isEditable)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Center(
+                child: GestureDetector(
+                  onTap: _confirmOrder,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'Confirm',
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -745,157 +763,6 @@ TERIMA KASIH''';
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status Card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Color(order.stateColor).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: Color(order.stateColor).withValues(alpha: 0.3),
-                    width: 1),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: Color(order.stateColor),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child:
-                        const Icon(Icons.check, color: Colors.white, size: 18),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _formatDate(order.dateOrder),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: theme.textTheme.bodyMedium?.color,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // WhatsApp Button (only for Open status)
-                  if (isEditable) ...[
-                    GestureDetector(
-                      onTap: _sendWhatsAppReminder,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(
-                              0xFF25D366), // WhatsApp green original
-                          borderRadius: BorderRadius.circular(6),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF25D366)
-                                  .withValues(alpha: 0.3),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.message,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                            SizedBox(width: 6),
-                            Text(
-                              'Message',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  // WhatsApp Button (for Sale/Confirm status - shipment tracking)
-                  if (order.state.toLowerCase() == 'sale' ||
-                      order.state.toLowerCase() == 'confirm') ...[
-                    GestureDetector(
-                      onTap: _sendWhatsAppShipment,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(
-                              0xFF25D366), // WhatsApp green original
-                          borderRadius: BorderRadius.circular(6),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF25D366)
-                                  .withValues(alpha: 0.3),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.send,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                            SizedBox(width: 6),
-                            Text(
-                              'Send WA',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Color(order.stateColor),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      order.stateLabel,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
             // Main Info Card
             Container(
               width: double.infinity,
@@ -981,18 +848,135 @@ TERIMA KASIH''';
                   ),
                   const SizedBox(height: 16),
 
-                  // Grid Info - Customer
-                  _buildInfoGrid([
-                    {
-                      'label': 'Customer',
-                      'value': _getCustomerName(order.customerId),
-                    },
-                    {
-                      'label': 'Customer ID',
-                      'value': order.partnerId.toString(),
-                    },
-                  ]),
-                  const SizedBox(height: 12),
+                  // Grid Info - Customer & Status Badge with WhatsApp Button
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Customer Info (left side)
+                      Expanded(
+                        child: _buildInfoGrid([
+                          {
+                            'label': 'Customer',
+                            'value': _getCustomerName(order.customerId),
+                          },
+                        ]),
+                      ),
+                      // Status Badge & WhatsApp Button (right side, stacked)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          // Status Badge
+                          if (isEditable)
+                            // Open status - plain badge
+                            Container(
+                              margin: const EdgeInsets.only(left: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Color(order.stateColor).withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                order.stateLabel,
+                                style: TextStyle(
+                                  color: Color(order.stateColor),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            )
+                          else
+                            // Sale/Confirm/Other status - colored badge
+                            Container(
+                              margin: const EdgeInsets.only(left: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Color(order.stateColor),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                order.stateLabel,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          
+                          const SizedBox(height: 6),
+                          
+                          // WhatsApp Button
+                          if (isEditable)
+                            GestureDetector(
+                              onTap: _sendWhatsAppReminder,
+                              child: Container(
+                                margin: const EdgeInsets.only(left: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF25D366).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: const Color(0xFF25D366).withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.message_rounded,
+                                      size: 14,
+                                      color: Color(0xFF25D366),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Text(
+                                      'Follow Up',
+                                      style: TextStyle(
+                                        color: Color(0xFF25D366),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            // For Sale/Confirm status - Send WA button
+                            GestureDetector(
+                              onTap: _sendWhatsAppShipment,
+                              child: Container(
+                                margin: const EdgeInsets.only(left: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF25D366),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.send_rounded,
+                                      size: 14,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Text(
+                                      'No Resi',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
                   
                   // Address Information (above Warehouse)
                   if (order.partnerStreet != null || order.partnerDistrict != null || order.partnerCity != null || order.partnerState != null)
@@ -1001,12 +985,15 @@ TERIMA KASIH''';
                       children: [
                         if (order.partnerStreet != null)
                           _buildInfoRow('Alamat', order.partnerStreet!),
-                        if (order.partnerDistrict != null)
-                          _buildInfoRow('Kecamatan', order.partnerDistrict!),
-                        if (order.partnerCity != null)
-                          _buildInfoRow('Kota', order.partnerCity!),
-                        if (order.partnerState != null)
-                          _buildInfoRow('Provinsi', order.partnerState!),
+                        // Compact line for Kecamatan, Kota, Provinsi
+                        if (order.partnerDistrict != null || order.partnerCity != null || order.partnerState != null)
+                          Text(
+                            '${order.partnerDistrict ?? ''} ${order.partnerCity ?? ''} ${order.partnerState ?? ''}'.trim(),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.textTheme.bodyMedium?.color,
+                            ),
+                          ),
                       ],
                     ),
                   
@@ -1276,129 +1263,12 @@ TERIMA KASIH''';
               ),
             ),
             const SizedBox(height: 24),
-            
-            // DEBUG INFO - Log section at bottom
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildDebugInfoCard(theme),
-            ),
-            const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
   
-  Widget _buildDebugInfoCard(ThemeData theme) {
-    return FutureBuilder<Map<String, String>>(
-      future: _getDebugInfo(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const SizedBox.shrink();
-        }
-
-        final info = snapshot.data!;
-        final apiKey = info['apiKey'] ?? 'N/A';
-        final username = info['username'] ?? 'N/A';
-
-        return Container(
-          decoration: BoxDecoration(
-            color: theme.primaryColor.withValues(alpha: 0.1),
-            border: Border.all(
-              color: theme.primaryColor.withValues(alpha: 0.3),
-              width: 1,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.info_outlined,
-                    size: 14,
-                    color: theme.primaryColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Log Info',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: theme.primaryColor,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              
-              // Username
-              Text(
-                'User: $username',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontFamily: 'Courier',
-                  color: theme.textTheme.bodySmall?.color,
-                ),
-              ),
-              const SizedBox(height: 6),
-              
-              // API Key
-              Text(
-                'API Key:',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: theme.textTheme.bodySmall?.color,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: theme.brightness == Brightness.dark 
-                      ? Colors.black26 
-                      : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: SelectableText(
-                  apiKey,
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontFamily: 'Courier',
-                    color: theme.textTheme.bodyLarge?.color,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<Map<String, String>> _getDebugInfo() async {
-    try {
-      final storage = SecureStorageService();
-      final apiKey = await storage.getAccessToken() ?? 'Not set';
-      final userData = await storage.getUserData();
-      final username = userData?['username'] ?? 'Unknown';
-
-      return {
-        'apiKey': apiKey,
-        'username': username.toString(),
-      };
-    } catch (e) {
-      return {
-        'apiKey': 'Error: $e',
-        'username': 'Error loading',
-      };
-    }
-  }
-
   Widget _buildInfoGrid(List<Map<String, String>> items) {
     final theme = Theme.of(context);
 

@@ -20,6 +20,17 @@ class HomeDashboardPage extends StatefulWidget {
 }
 
 class _HomeDashboardPageState extends State<HomeDashboardPage> {
+  // 7 Motivational quotes for CS - rotated daily
+  static const List<String> _motivationalQuotes = [
+    '💪 Setiap pelanggan yang puas adalah kesuksesan Anda! Terus semangat!',
+    '🌟 Sikap positif adalah kunci melayani dengan hati. Anda pasti bisa!',
+    '🎯 Jangan lupa, setiap interaksi adalah kesempatan untuk bersinar!',
+    '❤️ Empati dan kesabaran adalah superpower Anda. Gunakan dengan baik!',
+    '🚀 Hari ini adalah peluang baru untuk memberikan layanan terbaik!',
+    '✨ Kepuasan pelanggan dimulai dari senyum dan dedikasi Anda!',
+    '🏆 Kerja keras Anda hari ini adalah pencapaian besok. Mari kita lakukan!',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -29,7 +40,8 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
       final provider = context.read<CustomerProvider>();
       provider.fetchCustomers();
       provider.loadSyncStats();
-      provider.loadLocationStats();
+      provider.syncLocations(); // Sync locations (States, Cities, Districts) to local DB
+      provider.loadLocationStats(); // Load stats after sync
     });
   }
 
@@ -119,115 +131,93 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
     );
   }
 
+  // 7 Motivational quotes for CS - rotated daily
   Widget _buildDebugInfoCard(ThemeData theme) {
     return FutureBuilder<Map<String, String>>(
-      future: _getDebugInfo(),
+      future: _getMotivationData(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox.shrink();
         }
 
-        final info = snapshot.data!;
-        final apiKey = info['apiKey'] ?? 'N/A';
-        final username = info['username'] ?? 'N/A';
+        final data = snapshot.data!;
+        final username = data['username'] ?? 'User';
+        final quote = data['quote'] ?? '';
 
         return Container(
           decoration: BoxDecoration(
-            color: theme.primaryColor.withValues(alpha: 0.1),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                theme.primaryColor.withValues(alpha: 0.15),
+                theme.primaryColor.withValues(alpha: 0.05),
+              ],
+            ),
             border: Border.all(
               color: theme.primaryColor.withValues(alpha: 0.3),
               width: 1,
             ),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
           ),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Greeting with username
               Row(
                 children: [
                   Icon(
-                    Icons.info_outlined,
-                    size: 16,
+                    Icons.waving_hand,
+                    size: 22,
                     color: theme.primaryColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Login Info',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: theme.primaryColor,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              
-              // Username
-              Row(
-                children: [
-                  Text(
-                    'User:',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: theme.textTheme.bodySmall?.color,
-                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      username,
+                      'Hello, $username! 👋',
                       style: TextStyle(
-                        fontSize: 12,
-                        fontFamily: 'Courier',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
                         color: theme.textTheme.bodyLarge?.color,
-                        fontWeight: FontWeight.w500,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 14),
               
-              // API Key - Full display
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'API Key:',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: theme.textTheme.bodySmall?.color,
+              // Motivational Quote
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.brightness == Brightness.dark
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.white.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outline,
+                      size: 18,
+                      color: theme.primaryColor,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: theme.brightness == Brightness.dark 
-                          ? Colors.black26 
-                          : Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: theme.dividerColor,
-                        width: 0.5,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        quote,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: theme.textTheme.bodyMedium?.color,
+                          height: 1.5,
+                        ),
                       ),
                     ),
-                    child: SelectableText(
-                      apiKey,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontFamily: 'Courier',
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -236,21 +226,27 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
     );
   }
 
-  Future<Map<String, String>> _getDebugInfo() async {
+  Future<Map<String, String>> _getMotivationData() async {
     try {
+      // Get username
       final storage = SecureStorageService();
-      final apiKey = await storage.getAccessToken() ?? 'Not set';
       final userData = await storage.getUserData();
-      final username = userData?['username'] ?? 'Unknown';
+      final username = userData?['username'] as String? ?? 'User';
+      
+      // Get today's motivational quote
+      final now = DateTime.now();
+      final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
+      final quoteIndex = dayOfYear % _motivationalQuotes.length;
+      final quote = _motivationalQuotes[quoteIndex];
 
       return {
-        'apiKey': apiKey,
-        'username': username.toString(),
+        'username': username,
+        'quote': quote,
       };
     } catch (e) {
       return {
-        'apiKey': 'Error: $e',
-        'username': 'Error loading',
+        'username': 'User',
+        'quote': '✨ Kepuasan pelanggan dimulai dari senyum dan dedikasi Anda!',
       };
     }
   }

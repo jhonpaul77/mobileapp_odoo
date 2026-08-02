@@ -6,14 +6,15 @@ import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 
 import '../../../config/api_config.dart';
-import '../../../features/customer/data/datasources/customer_remote_datasource.dart';
+import '../../../config/theme.dart';
 import '../../../features/sales_order/domain/entities/order_line.dart';
 import '../../../features/sales_order/domain/entities/sales_order.dart';
 import '../../../features/sales_order/presentation/pages/sales_order_detail_page.dart';
 import '../../../services/api_service.dart';
 import '../../../services/config_service.dart';
+import '../../../services/local_database/customer_local_database.dart';
+import '../../../services/local_database/location_local_database.dart';
 import '../../../services/sales_service.dart';
-import '../../../services/secure_storage_service.dart';
 import '../../../services/secure_storage_service.dart';
 
 /// Create Sales Order Page
@@ -157,123 +158,37 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
     try {
       logger.i('� [LOAD_CUSTOMERS] Starting to load customers...');
 
-      // Import yang diperlukan sudah ada di top file
-      final secureStorage = SecureStorageService();
-      final configService = ConfigService();
+      // Use local database - much faster than API!
+      final customerDb = CustomerLocalDatabase();
+      final customerModels = await customerDb.getAllCustomers();
 
-      // Get database from config
-      final config = await configService.load();
-      final database = config['database'] as String?;
-
-      // Get API key from secure storage
-      final apiKey = await secureStorage.getAccessToken();
-
-      logger.i('   Database: $database');
-      logger.i('   API Key exists: ${apiKey != null}');
-
-      // Validate authentication
-      if (database == null || database.isEmpty) {
-        throw Exception(
-            'Database not configured. Please logout and configure server settings.');
-      }
-
-      if (apiKey == null || apiKey.isEmpty) {
-        throw Exception('Not authenticated. Please login first.');
-      }
-
-      // Use Clean Architecture approach like Customer List Page
-      final datasource = CustomerRemoteDataSource();
-      final customerModels = await datasource.getCustomers(
-        db: database,
-        apiKey: apiKey,
-      );
-
-      logger.i(
-          '✅ [LOAD_CUSTOMERS] API SUCCESS: ${customerModels.length} customers');
+      logger.i('✅ [LOAD_CUSTOMERS] LOCAL DB: ${customerModels.length} customers loaded');
 
       if (customerModels.isNotEmpty) {
-        // Get raw API response to preserve location names [id, name] format
-        final dio = ApiService().dio;
+        // Convert to Map format
+        final customerList = customerModels.map((model) {
+          return {
+            'id': model.id,
+            'name': model.name,
+            'phone': model.phone,
+            'street': model.street,
+            'street2': model.street2,
+            'district_id': model.districtId,
+            'city_id': model.cityId,
+            'state_id': model.stateId,
+            'zip': model.zip,
+            'email': model.email,
+          };
+        }).toList();
 
-        try {
-          final rawResponse = await dio.get(
-            ApiConfig.getCustomer,
-            options: Options(
-              headers: {
-                'db': database,
-                'api-key': apiKey,
-              },
-            ),
-          );
+        setState(() {
+          _customers = customerList;
+          _isLoadingCustomers = false;
+        });
 
-          final rawCustomers = rawResponse.data as List;
-
-          // Convert to Map format for dropdown with location names preserved
-          final customerList = rawCustomers.map((raw) {
-            return {
-              'id': raw['id'],
-              'name': raw['name'],
-              'phone': raw['phone'],
-              'street': raw['street'],
-              'street2': raw['street2'],
-              // Preserve raw format [id, name] for location fields
-              'district_id': raw['district_id'],
-              'city_id': raw['city_id'],
-              'state_id': raw['state_id'],
-              'zip': raw['zip'],
-              'email': raw['email'],
-            };
-          }).toList();
-
-          setState(() {
-            _customers = customerList;
-            _isLoadingCustomers = false;
-          });
-
-          // Debug: Print first 3 customers
-          for (var i = 0;
-              i < (customerList.length > 3 ? 3 : customerList.length);
-              i++) {
-            logger.i(
-                '   Customer ${i + 1}: ${customerList[i]['name']} (ID: ${customerList[i]['id']})');
-          }
-        } catch (e) {
-          // Fallback: if raw response fails, use models without location names
-          logger.w(
-              '⚠️ [LOAD_CUSTOMERS] Could not get raw response, using models: $e');
-
-          final customerList = customerModels.map((model) {
-            return {
-              'id': model.id,
-              'name': model.name,
-              'phone': model.phone,
-              'street': model.street,
-              'street2': model.street2,
-              'district_id': model.districtId,
-              'city_id': model.cityId,
-              'state_id': model.stateId,
-              'zip': model.zip,
-              'email': model.email,
-            };
-          }).toList();
-
-          setState(() {
-            _customers = customerList;
-            _isLoadingCustomers = false;
-          });
+        for (var i = 0; i < (customerList.length > 3 ? 3 : customerList.length); i++) {
+          logger.i('   ${i + 1}. ${customerList[i]['name']}');
         }
-
-        // Show success message
-        // if (mounted) {
-        //   ScaffoldMessenger.of(context).showSnackBar(
-        //     SnackBar(
-        //       content:
-        //           Text('✅ Loaded ${customerList.length} customers from API'),
-        //       backgroundColor: Colors.green,
-        //       duration: const Duration(seconds: 2),
-        //     ),
-        //   );
-        // }
       } else {
         // API returned empty array
         // logger.w('⚠️ [LOAD_CUSTOMERS] API returned empty customer list');
@@ -736,7 +651,6 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
     return result;
   }
 
-  /// Show custom search dialog for product selection (used in order line)
   Future<Map<String, dynamic>?> _showProductSearchDialog() async {
     if (_isLoadingProducts) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -766,24 +680,59 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Cari Produk'),
-              contentPadding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-              content: SizedBox(
-                width: double.maxFinite,
-                height: MediaQuery.of(context).size.height * 0.7,
-                child: Column(
-                  children: [
-                    // Search TextField
-                    TextField(
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  // Custom Header
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Pilih Produk',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          onPressed: () => Navigator.pop(dialogContext),
+                          constraints: const BoxConstraints(),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Search TextField
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: TextField(
                       autofocus: true,
-                      decoration: const InputDecoration(
-                        hintText: 'Ketik nama produk atau kode...',
-                        prefixIcon: Icon(Icons.search),
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
+                      decoration: InputDecoration(
+                        hintText: 'Cari produk...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,
-                          vertical: 12,
+                          vertical: 10,
                         ),
                       ),
                       onChanged: (value) {
@@ -802,154 +751,103 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
                         });
                       },
                     ),
-                    const SizedBox(height: 12),
-
-                    // Product List
-                    Expanded(
-                      child: filteredProducts.isEmpty
-                          ? const Center(
-                              child: Text(
-                                'Tidak ada produk ditemukan',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey,
-                                ),
+                  ),
+                  // Product List
+                  Expanded(
+                    child: filteredProducts.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'Tidak ada produk ditemukan',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey,
                               ),
-                            )
-                          : ListView.builder(
-                              padding: EdgeInsets.zero,
-                              itemCount: filteredProducts.length,
-                              itemBuilder: (context, index) {
-                                final product = filteredProducts[index];
-                                final price = product['list_price'] ?? 0.0;
-                                final stock = product['qty_available'] ?? 0.0;
-                                final code = product['default_code'];
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: filteredProducts.length,
+                            itemBuilder: (context, index) {
+                              final product = filteredProducts[index];
+                              final price = product['list_price'] ?? 0.0;
+                              final stock = product['qty_available'] ?? 0.0;
+                              final code = product['default_code'];
 
-                                return InkWell(
-                                  onTap: () {
-                                    Navigator.pop(dialogContext, product);
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 10,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      border: Border(
-                                        bottom: BorderSide(
-                                          color: Colors.grey.shade200,
-                                          width: 0.5,
-                                        ),
+                              return InkWell(
+                                onTap: () {
+                                  Navigator.pop(dialogContext, product);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: Colors.grey[200]!,
                                       ),
                                     ),
-                                    child: Row(
-                                      children: [
-                                        // Product Icon
-                                        CircleAvatar(
-                                          radius: 16,
-                                          backgroundColor:
-                                              const Color(0xFF10B981)
-                                                  .withValues(alpha: 0.1),
-                                          child: const Icon(
-                                            Icons.inventory_2,
-                                            size: 16,
-                                            color: Color(0xFF10B981),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 10),
-
-                                        // Product Info
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                product['name'] ?? '',
-                                                style: const TextStyle(
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Row(
-                                                children: [
-                                                  if (code != null &&
-                                                      code != false)
-                                                    Container(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                        horizontal: 6,
-                                                        vertical: 2,
-                                                      ),
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            Colors.blue.shade50,
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(4),
-                                                      ),
-                                                      child: Text(
-                                                        code.toString(),
-                                                        style: TextStyle(
-                                                          fontSize: 10,
-                                                          color: Colors
-                                                              .blue.shade700,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    'Rp ${_formatCurrency(price)}',
-                                                    style: TextStyle(
-                                                      fontSize: 11,
-                                                      color:
-                                                          Colors.green.shade700,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                  const Spacer(),
-                                                  Text(
-                                                    'Stock: ${stock.toStringAsFixed(0)}',
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color:
-                                                          Colors.grey.shade600,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-
-                                        // Arrow Icon
-                                        Icon(
-                                          Icons.arrow_forward_ios,
-                                          size: 12,
-                                          color: Colors.grey.shade400,
-                                        ),
-                                      ],
-                                    ),
                                   ),
-                                );
-                              },
-                            ),
-                    ),
-                  ],
-                ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        product['name'] ?? '',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          if (code != null && code != false)
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 6,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.blue.shade50,
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                code.toString(),
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: Colors.blue.shade700,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                          if (code != null && code != false)
+                                            const SizedBox(width: 6),
+                                          Text(
+                                            'Rp ${_formatCurrency(price)}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.green.shade700,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          Text(
+                                            'Stock: ${stock.toStringAsFixed(0)}',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Batal'),
-                ),
-              ],
             );
           },
         );
@@ -1000,44 +898,87 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
     return formatted.reversed.join('');
   }
 
-  /// Extract location name from Odoo location field
+  /// Build location string (District, City, State) from customer data
+  Future<String> _buildLocationString() async {
+    if (_selectedCustomer == null) return '';
+
+    List<String> parts = [];
+
+    if (_selectedCustomer!['district_id'] != null &&
+        _selectedCustomer!['district_id'] != false) {
+      final district = await _extractLocationName(_selectedCustomer!['district_id']);
+      if (district.isNotEmpty && district != '-') {
+        parts.add(district);
+      }
+    }
+
+    if (_selectedCustomer!['city_id'] != null &&
+        _selectedCustomer!['city_id'] != false) {
+      final city = await _extractLocationName(_selectedCustomer!['city_id']);
+      if (city.isNotEmpty && city != '-') {
+        parts.add(city);
+      }
+    }
+
+    if (_selectedCustomer!['state_id'] != null &&
+        _selectedCustomer!['state_id'] != false) {
+      final state = await _extractLocationName(_selectedCustomer!['state_id']);
+      if (state.isNotEmpty && state != '-') {
+        parts.add(state);
+      }
+    }
+
+    return parts.isNotEmpty ? parts.join(', ') : '-';
+  }
+
+  /// Extract location name from local database using location ID
   ///
-  /// Odoo returns location fields in format: [id, name]
-  /// Example: [623, "Jawa Timur"]
+  /// Query database lokal untuk mendapat nama dari ID
+  /// Example: ID 2171 → "Jawa Timur"
   ///
   /// Returns:
-  /// - name (String) if input is List with 2 elements
-  /// - empty string if input is null, false, or invalid
-  String _extractLocationName(dynamic locationField) {
-    if (locationField == null || locationField == false) {
+  /// - name (String) if ID found in local database
+  /// - "-" if not found (ID exists but no mapping yet)
+  /// - empty string if input is null or false
+  Future<String> _extractLocationName(dynamic locationId) async {
+    if (locationId == null || locationId == false) {
       return '';
     }
 
-    // If it's a List (expected format: [id, name])
-    if (locationField is List) {
-      if (locationField.isEmpty) return '';
-      if (locationField.length == 1) {
-        // Only ID, no name - return empty
+    try {
+      // Extract ID if it's in [id, name] format
+      int id;
+      if (locationId is int) {
+        id = locationId;
+      } else if (locationId is double) {
+        id = locationId.toInt();
+      } else if (locationId is List && locationId.isNotEmpty) {
+        id = locationId[0] as int;
+      } else {
         return '';
       }
-      // Return name (index 1), safely convert to String
-      return locationField[1]?.toString() ?? '';
-    }
 
-    // If it's already a String (fallback case)
-    if (locationField is String) {
-      return locationField;
-    }
+      // Query database lokal untuk state, city, district
+      final locationDb = LocationLocalDatabase();
 
-    // If it's an int (only ID provided)
-    if (locationField is int) {
-      return ''; // Can't resolve ID to name without lookup
-    }
+      // Try state first
+      var state = await locationDb.getStateById(id);
+      if (state != null) return state.name;
 
-    // Unknown format
-    logger
-        .w('⚠️ Unexpected location field format: ${locationField.runtimeType}');
-    return '';
+      // Try city
+      var city = await locationDb.getCityById(id);
+      if (city != null) return city.name;
+
+      // Try district
+      var district = await locationDb.getDistrictById(id);
+      if (district != null) return district.name;
+
+      // Not found
+      return '-';
+    } catch (e) {
+      logger.w('⚠️ Error extracting location name for ID $locationId: $e');
+      return '-';
+    }
   }
 
   double _calculateTotal() {
@@ -1164,12 +1105,15 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                               const SizedBox(height: 2),
+                                              // Phone
                                               Text(
                                                 customer['phone'] ?? '-',
                                                 style: TextStyle(
                                                   fontSize: 11,
                                                   color: Colors.grey.shade600,
                                                 ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ],
                                           ),
@@ -1309,20 +1253,20 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
       final customerStreet = _selectedCustomer!['street'] ?? '';
       final customerStreet2 = _selectedCustomer!['street2'] ?? '';
 
-      // Extract location info from customer
+      // Extract location info from customer using local database
       String customerState = '';
       String customerCity = '';
       String customerDistrict = '';
 
       try {
-        customerState = _extractLocationName(_selectedCustomer!['state_id']);
+        customerState = await _extractLocationName(_selectedCustomer!['state_id']);
       } catch (e) {
         logger.e('❌ Error extracting state: $e');
         customerState = '';
       }
 
       try {
-        customerCity = _extractLocationName(_selectedCustomer!['city_id']);
+        customerCity = await _extractLocationName(_selectedCustomer!['city_id']);
       } catch (e) {
         logger.e('❌ Error extracting city: $e');
         customerCity = '';
@@ -1330,7 +1274,7 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
 
       try {
         customerDistrict =
-            _extractLocationName(_selectedCustomer!['district_id']);
+            await _extractLocationName(_selectedCustomer!['district_id']);
       } catch (e) {
         logger.e('❌ Error extracting district: $e');
         customerDistrict = '';
@@ -1635,57 +1579,70 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
     logger.d('   _orderLines.length: ${_orderLines.length}');
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Transaksi Baru'),
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarIconBrightness: theme.brightness == Brightness.dark
-              ? Brightness.light
-              : Brightness.dark,
-        ),
+        title: const Text('Transaksi Baru',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
+        backgroundColor: AppTheme.primaryColor,
+        elevation: 0,
+        centerTitle: false,
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Customer Information Section
-            _buildSectionTitle(theme, 'Informasi Customer'),
-            _buildCustomerSection(theme),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Customer Information Section
+              _buildSectionTitle('Informasi Pelanggan'),
+              _buildCustomerSection(),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 14),
 
-            // Order Lines Section
-            _buildSectionTitle(theme, 'Daftar Produk'),
-            _buildOrderLinesSection(theme),
+              // Order Lines Section
+              _buildSectionTitle('Daftar Produk'),
+              _buildOrderLinesSection(theme),
 
-            const SizedBox(height: 8),
+              const SizedBox(height: 8),
 
-            // Add Product Button
-            OutlinedButton.icon(
-              onPressed: _addNewOrderLine,
-              icon: const Icon(Icons.add_shopping_cart, size: 18),
-              label: const Text('Beli Produk Lain'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+              // Add Product Button - Modern Style
+              ElevatedButton.icon(
+                onPressed: _addNewOrderLine,
+                icon: const Icon(Icons.add, size: 20),
+                label: const Text('Tambah Produk'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 2,
+                ),
               ),
-            ),
 
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-            // Total
-            _buildTotalCard(theme),
+              // Total
+              _buildTotalCard(theme),
 
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-            // Submit Button - Changes based on state
-            if (!_isOrderSaved) ...[
+              // Submit Button - Changes based on state
+              if (!_isOrderSaved) ...[
               // Before save: Show "Simpan Transaksi" button
               ElevatedButton(
                 onPressed: _isLoading ? null : _saveDraft,
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade700,
+                  disabledBackgroundColor: Colors.grey[400],
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  backgroundColor: const Color(0xFF0A64AF),
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 1,
                 ),
                 child: _isLoading
                     ? const SizedBox(
@@ -1755,6 +1712,10 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         backgroundColor: Colors.green.shade700,
                         minimumSize: const Size(double.infinity, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 1,
                       ),
                       child: _isConfirming
                           ? const SizedBox(
@@ -1781,266 +1742,326 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
             ],
 
             const SizedBox(height: 10),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildSectionTitle(ThemeData theme, String title) {
+  Widget _buildSectionTitle(String title) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 20,
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEditField(
+    String label,
+    TextEditingController controller, {
+    TextInputType keyboardType = TextInputType.text,
+    ValueChanged<String>? onChanged,
+    bool readOnly = false,
+    String? prefixText,
+    int maxLines = 1,
+    IconData? icon,
+  }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-          color: theme.textTheme.bodyLarge?.color,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCustomerSection(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.brightness == Brightness.dark
-              ? Colors.grey[700]!
-              : Colors.grey[200]!,
-        ),
-      ),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Customer Selection with Search Dialog (Custom Implementation)
-          InkWell(
-            onTap: _isLoadingCustomers || _customers.isEmpty
-                ? null
-                : _showCustomerSearchDialog,
-            child: InputDecorator(
-              decoration: InputDecoration(
-                labelText: 'Pilih Customer *',
-                border: const OutlineInputBorder(),
-                prefixIcon: _isLoadingCustomers
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: Padding(
-                          padding: EdgeInsets.all(12.0),
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : const Icon(Icons.person),
-                suffixIcon: _selectedCustomer != null
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              // ANALISA POIN 1: User Friendly - boleh ganti customer meski sudah ada produk
-                              // Saat ganti customer, otomatis clear semua produk
-                              final hasSelectedProducts = _orderLines
-                                  .any((line) => line['product_id'] != null);
-
-                              if (hasSelectedProducts) {
-                                // Tampilkan dialog konfirmasi
-                                showDialog(
-                                  context: context,
-                                  builder: (dialogContext) => AlertDialog(
-                                    title: const Text('Konfirmasi'),
-                                    content: const Text(
-                                        'Mengganti customer akan menghapus semua produk yang sudah dipilih. Lanjutkan?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(dialogContext),
-                                        child: const Text('Batal'),
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          Navigator.pop(dialogContext);
-                                          setState(() {
-                                            _selectedCustomer = null;
-                                            // Clear semua produk
-                                            _orderLines.clear();
-                                            // Tambah 1 baris kosong
-                                            _orderLines.add({
-                                              'product_id': null,
-                                              'product_name': '',
-                                              'product_uom_qty': 1.0,
-                                              'analytic_distribution': false,
-                                              'analytic_account_id': null,
-                                              'analytic_account_name': '',
-                                              'price_unit': 0.0,
-                                            });
-                                          });
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.red,
-                                        ),
-                                        child: const Text(
-                                          'Ya, Hapus',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                return;
-                              }
-
-                              // Jika tidak ada produk, langsung clear customer
-                              setState(() {
-                                _selectedCustomer = null;
-                              });
-                            },
-                          ),
-                          const Icon(Icons.search, size: 20),
-                        ],
-                      )
-                    : const Icon(Icons.search),
-              ),
-              child: Text(
-                _selectedCustomer != null
-                    ? _selectedCustomer!['name'] ?? ''
-                    : (_isLoadingCustomers
-                        ? 'Memuat...'
-                        : 'Tap untuk cari customer'),
-                style: TextStyle(
-                  color: _selectedCustomer != null
-                      ? theme.textTheme.bodyLarge?.color
-                      : Colors.grey,
-                ),
-              ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
             ),
           ),
-
-          // Show customer details if selected
-          if (_selectedCustomer != null) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.brightness == Brightness.dark
-                    ? Colors.grey[800]
-                    : Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
+          const SizedBox(height: 3),
+          TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            onChanged: onChanged,
+            readOnly: readOnly,
+            maxLines: maxLines,
+            style: const TextStyle(fontSize: 12, color: Colors.black87),
+            decoration: InputDecoration(
+              prefixText: prefixText,
+              prefixIcon: icon != null
+                  ? Icon(icon, size: 16, color: AppTheme.primaryColor)
+                  : null,
+              filled: true,
+              fillColor: Colors.grey[50],
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Detail Customer:',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: theme.textTheme.bodySmall?.color,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildCustomerInfoRow(
-                    Icons.phone,
-                    'Phone',
-                    _selectedCustomer!['phone'] ?? '-',
-                    theme,
-                  ),
-                  _buildCustomerInfoRow(
-                    Icons.location_on,
-                    'Alamat',
-                    _selectedCustomer!['street'] ?? '-',
-                    theme,
-                  ),
-                  if (_selectedCustomer!['street2'] != null &&
-                      _selectedCustomer!['street2'] != '')
-                    _buildCustomerInfoRow(
-                      Icons.home,
-                      'RT/RW',
-                      _selectedCustomer!['street2'] ?? '-',
-                      theme,
-                    ),
-                  if (_selectedCustomer!['zip'] != null)
-                    _buildCustomerInfoRow(
-                      Icons.pin_drop,
-                      'Kode Pos',
-                      _selectedCustomer!['zip'] ?? '-',
-                      theme,
-                    ),
-                  if (_selectedCustomer!['email'] != null &&
-                      _selectedCustomer!['email'] != '')
-                    _buildCustomerInfoRow(
-                      Icons.email,
-                      'Email',
-                      _selectedCustomer!['email'] ?? '-',
-                      theme,
-                    ),
-                ],
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
               ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide:
+                    const BorderSide(color: AppTheme.primaryColor, width: 1.5),
+              ),
+              hintStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
             ),
-          ],
-
-          // Show warning if no customers loaded
-          if (!_isLoadingCustomers && _customers.isEmpty) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.warning_amber_rounded,
-                      color: Colors.orange.shade700),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Tidak ada customer. Pastikan Anda sudah login.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.orange.shade900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCustomerInfoRow(
-      IconData icon, String label, String value, ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
+  Widget _buildCustomerSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 14, color: theme.textTheme.bodySmall?.color),
-          const SizedBox(width: 8),
-          Text(
-            '$label: ',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: theme.textTheme.bodySmall?.color,
+          // Customer Field with Search Button
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Nama Pelanggan',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _selectedCustomer?['name'] ?? '',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 36,
+                      child: ElevatedButton.icon(
+                        onPressed: _isLoadingCustomers || _customers.isEmpty
+                            ? null
+                            : _showCustomerSearchDialog,
+                        icon: const Icon(Icons.search, size: 16),
+                        label: const Text('Cari'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          disabledBackgroundColor: Colors.grey[400],
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 11,
-                color: theme.textTheme.bodyMedium?.color,
+          // Show customer details if selected
+          if (_selectedCustomer != null) ...[
+            // Compact Telepon - just text without box
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Telepon',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    _selectedCustomer!['phone'] ?? '-',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
               ),
-              overflow: TextOverflow.ellipsis,
             ),
-          ),
+            // Compact Alamat - just text without box
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Alamat',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    _selectedCustomer!['street'] ?? '-',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            if (_selectedCustomer!['street2'] != null &&
+                _selectedCustomer!['street2'] != '')
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Alamat 2',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _selectedCustomer!['street2'] ?? '-',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            // District, City, State dalam satu baris
+            if ((_selectedCustomer!['district_id'] != null &&
+                    _selectedCustomer!['district_id'] != false) ||
+                (_selectedCustomer!['city_id'] != null &&
+                    _selectedCustomer!['city_id'] != false) ||
+                (_selectedCustomer!['state_id'] != null &&
+                    _selectedCustomer!['state_id'] != false))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Lokasi',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    FutureBuilder<String>(
+                      future: _buildLocationString(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Text(
+                            'Memuat...',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black87,
+                            ),
+                          );
+                        }
+                        return Text(
+                          snapshot.data ?? '-',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black87,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            if (_selectedCustomer!['zip'] != null &&
+                _selectedCustomer!['zip'] != '')
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Kode Pos',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _selectedCustomer!['zip'] ?? '-',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (_selectedCustomer!['email'] != null &&
+                _selectedCustomer!['email'] != '')
+              _buildEditField(
+                'Email',
+                TextEditingController(
+                  text: _selectedCustomer!['email'] ?? '',
+                ),
+                readOnly: true,
+              ),
+          ],
         ],
       ),
     );
@@ -2133,66 +2154,101 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
           ),
           const SizedBox(height: 12),
 
-          // Product Selection with Search Dialog (Like Customer)
-          InkWell(
-            onTap: _isLoadingProducts || _products.isEmpty
-                ? null
-                : () async {
-                    final result = await _showProductSearchDialog();
-                    if (result != null) {
-                      setState(() {
-                        _orderLines[index]['product_id'] = result['id'];
-                        _orderLines[index]['product_name'] = result['name'];
-                        _orderLines[index]['price_unit'] =
-                            result['list_price'] ?? 0.0;
-                      });
-                    }
-                  },
-            child: InputDecorator(
-              decoration: InputDecoration(
-                labelText: 'Pilih Produk *',
-                border: const OutlineInputBorder(),
-                prefixIcon: _isLoadingProducts
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: Padding(
-                          padding: EdgeInsets.all(12.0),
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : const Icon(Icons.inventory_2),
-                suffixIcon: line['product_id'] != null
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              setState(() {
-                                _orderLines[index]['product_id'] = null;
-                                _orderLines[index]['product_name'] = '';
-                                _orderLines[index]['price_unit'] = 0.0;
-                              });
-                            },
-                          ),
-                          const Icon(Icons.search, size: 20),
-                        ],
-                      )
-                    : const Icon(Icons.search),
-              ),
-              child: Text(
-                line['product_id'] != null
-                    ? line['product_name'] ?? ''
-                    : (_isLoadingProducts
-                        ? 'Memuat...'
-                        : 'Tap untuk cari produk'),
-                style: TextStyle(
-                  color: line['product_id'] != null
-                      ? theme.textTheme.bodyLarge?.color
-                      : Colors.grey,
+          // Product Selection - Modern Minimalist without border
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Pilih Produk',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[600],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 3),
+                GestureDetector(
+                  onTap: _isLoadingProducts || _products.isEmpty
+                      ? null
+                      : () async {
+                          final result = await _showProductSearchDialog();
+                          if (result != null) {
+                            setState(() {
+                              _orderLines[index]['product_id'] = result['id'];
+                              _orderLines[index]['product_name'] = result['name'];
+                              _orderLines[index]['price_unit'] =
+                                  result['list_price'] ?? 0.0;
+                            });
+                          }
+                        },
+                  child: Row(
+                    children: [
+                      // Icon or Loading
+                      if (_isLoadingProducts)
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      else if (line['product_id'] != null)
+                        Icon(
+                          Icons.check_circle,
+                          size: 20,
+                          color: AppTheme.primaryColor,
+                        )
+                      else
+                        Icon(
+                          Icons.inventory_2,
+                          size: 20,
+                          color: Colors.grey[400],
+                        ),
+                      const SizedBox(width: 10),
+                      // Product Name
+                      Expanded(
+                        child: Text(
+                          line['product_id'] != null
+                              ? line['product_name'] ?? ''
+                              : (_isLoadingProducts
+                                  ? 'Memuat...'
+                                  : 'Tap untuk cari produk'),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: line['product_id'] != null
+                                ? Colors.black87
+                                : Colors.grey[500],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      // Clear button
+                      if (line['product_id'] != null)
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _orderLines[index]['product_id'] = null;
+                              _orderLines[index]['product_name'] = '';
+                              _orderLines[index]['price_unit'] = 0.0;
+                            });
+                          },
+                          child: Icon(
+                            Icons.close,
+                            size: 18,
+                            color: Colors.grey[400],
+                          ),
+                        )
+                      else
+                        Icon(
+                          Icons.chevron_right,
+                          size: 20,
+                          color: Colors.grey[300],
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -2200,148 +2256,243 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
           if (line['product_id'] != null) ...[
             const SizedBox(height: 16),
 
-            // Price Input (Editable)
-            TextFormField(
-              key: ValueKey('price_${line['product_id']}'),
-              initialValue: _formatCurrency(line['price_unit']),
-              decoration: const InputDecoration(
-                labelText: 'Harga Satuan (Rp) *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.payments),
-                hintText: 'Contoh: 50.000',
-              ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                _ThousandsSeparatorInputFormatter(),
-              ],
-              onChanged: (value) {
-                // Remove dots and parse to double
-                final cleanValue = value.replaceAll('.', '');
-                final price = double.tryParse(cleanValue) ?? 0.0;
-                _updateOrderLine(index, 'price_unit', price);
-              },
-            ),
-
-            const SizedBox(height: 12),
-
-            // Analytic Account Selection with Search Dialog
-            InkWell(
-              onTap: _isLoadingAnalytics ||
-                      _analyticAccounts.isEmpty ||
-                      _isOrderSaved
-                  ? null
-                  : () async {
-                      final result = await _showAnalyticAccountSearchDialog();
-                      if (result != null) {
-                        setState(() {
-                          _orderLines[index]['analytic_account_id'] =
-                              result['id'];
-                          _orderLines[index]['analytic_account_name'] =
-                              result['name'];
-                          // Format as required by API
-                          _orderLines[index]['analytic_distribution'] =
-                              result['name'];
-                        });
-                      }
-                    },
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  labelText: 'Analytic Account',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: _isLoadingAnalytics
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: Padding(
-                            padding: EdgeInsets.all(12.0),
-                            child: CircularProgressIndicator(strokeWidth: 2),
+            // Price and Quantity in a row - Modern Minimalist
+            Row(
+              children: [
+                // Price Input
+                Expanded(
+                  flex: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Harga Satuan (Rp)',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      TextFormField(
+                        key: ValueKey('price_${line['product_id']}'),
+                        initialValue: _formatCurrency(line['price_unit']),
+                        decoration: InputDecoration(
+                          hintText: '0',
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide(color: Colors.grey[300]!, width: 0.8),
                           ),
-                        )
-                      : const Icon(Icons.analytics_outlined),
-                  suffixIcon: line['analytic_account_id'] != null
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: _isOrderSaved
-                                  ? null
-                                  : () {
-                                      setState(() {
-                                        _orderLines[index]
-                                            ['analytic_account_id'] = null;
-                                        _orderLines[index]
-                                            ['analytic_account_name'] = '';
-                                        _orderLines[index]
-                                            ['analytic_distribution'] = false;
-                                      });
-                                    },
-                            ),
-                            const Icon(Icons.search, size: 20),
-                          ],
-                        )
-                      : const Icon(Icons.search),
-                ),
-                child: Text(
-                  line['analytic_account_id'] != null
-                      ? line['analytic_account_name'] ?? ''
-                      : (_isLoadingAnalytics
-                          ? 'Memuat...'
-                          : 'Tap untuk cari (opsional)'),
-                  style: TextStyle(
-                    color: line['analytic_account_id'] != null
-                        ? Theme.of(context).textTheme.bodyLarge?.color
-                        : Colors.grey,
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide(color: Colors.grey[300]!, width: 0.8),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        ),
+                        style: const TextStyle(fontSize: 12, color: Colors.black87),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          _ThousandsSeparatorInputFormatter(),
+                        ],
+                        onChanged: (value) {
+                          final cleanValue = value.replaceAll('.', '');
+                          final price = double.tryParse(cleanValue) ?? 0.0;
+                          _updateOrderLine(index, 'price_unit', price);
+                        },
+                      ),
+                    ],
                   ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                // Quantity Input
+                Expanded(
+                  flex: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Jumlah',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      TextFormField(
+                        initialValue: line['product_uom_qty'].toString(),
+                        decoration: InputDecoration(
+                          hintText: '0',
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide(color: Colors.grey[300]!, width: 0.8),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide(color: Colors.grey[300]!, width: 0.8),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        ),
+                        style: const TextStyle(fontSize: 12, color: Colors.black87),
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          final qty = double.tryParse(value) ?? 1.0;
+                          _updateOrderLine(index, 'product_uom_qty', qty);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
 
-          const SizedBox(height: 12),
-
-          // Quantity Input
-          TextFormField(
-            initialValue: line['product_uom_qty'].toString(),
-            decoration: const InputDecoration(
-              labelText: 'Jumlah *',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.shopping_basket),
-            ),
-            keyboardType: TextInputType.number,
-            enabled: line['product_id'] != null,
-            onChanged: (value) {
-              final qty = double.tryParse(value) ?? 1.0;
-              _updateOrderLine(index, 'product_uom_qty', qty);
-            },
-          ),
-
-          // Show subtotal if product selected
-          if (line['product_id'] != null) ...[
             const SizedBox(height: 12),
+
+            // Subtotal - Modern Card
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF0A64AF).withValues(alpha: 0.1),
+                color: Colors.green.shade50,
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.green.shade200,
+                  width: 0.8,
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Subtotal:',
+                  Text(
+                    'Subtotal',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF0A64AF),
+                      color: Colors.green.shade700,
                     ),
                   ),
                   Text(
                     'Rp ${_formatCurrency(line['product_uom_qty'] * line['price_unit'])}',
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: TextStyle(
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF0A64AF),
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Analytic Account Selection - Modern Minimalist without border
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Analytic Account',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  GestureDetector(
+                    onTap: _isLoadingAnalytics ||
+                            _analyticAccounts.isEmpty ||
+                            _isOrderSaved
+                        ? null
+                        : () async {
+                            final result = await _showAnalyticAccountSearchDialog();
+                            if (result != null) {
+                              setState(() {
+                                _orderLines[index]['analytic_account_id'] =
+                                    result['id'];
+                                _orderLines[index]['analytic_account_name'] =
+                                    result['name'];
+                                // Format as required by API
+                                _orderLines[index]['analytic_distribution'] =
+                                    result['name'];
+                              });
+                            }
+                          },
+                    child: Row(
+                      children: [
+                        // Icon or Loading
+                        if (_isLoadingAnalytics)
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        else if (line['analytic_account_id'] != null)
+                          Icon(
+                            Icons.check_circle,
+                            size: 20,
+                            color: AppTheme.primaryColor,
+                          )
+                        else
+                          Icon(
+                            Icons.analytics_outlined,
+                            size: 20,
+                            color: Colors.grey[400],
+                          ),
+                        const SizedBox(width: 10),
+                        // Account Name
+                        Expanded(
+                          child: Text(
+                            line['analytic_account_id'] != null
+                                ? line['analytic_account_name'] ?? ''
+                                : (_isLoadingAnalytics
+                                    ? 'Memuat...'
+                                    : 'Tap untuk cari'),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: line['analytic_account_id'] != null
+                                  ? Colors.black87
+                                  : Colors.grey[500],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        // Clear button
+                        if (line['analytic_account_id'] != null && !_isOrderSaved)
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _orderLines[index]['analytic_account_id'] = null;
+                                _orderLines[index]['analytic_account_name'] = '';
+                                _orderLines[index]['analytic_distribution'] = false;
+                              });
+                            },
+                            child: Icon(
+                              Icons.close,
+                              size: 18,
+                              color: Colors.grey[400],
+                            ),
+                          )
+                        else
+                          Icon(
+                            Icons.chevron_right,
+                            size: 20,
+                            color: Colors.grey[300],
+                          ),
+                      ],
                     ),
                   ),
                 ],
@@ -2359,30 +2510,30 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A64AF).withValues(alpha: 0.1),
+        color: Colors.green.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF0A64AF),
-          width: 2,
+          color: Colors.green.shade200,
+          width: 1,
         ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
+          Text(
             'TOTAL',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF0A64AF),
+              color: Colors.green.shade700,
             ),
           ),
           Text(
             'Rp ${_formatCurrency(total)}',
-            style: const TextStyle(
-              fontSize: 18,
+            style: TextStyle(
+              fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF0A64AF),
+              color: Colors.green.shade700,
             ),
           ),
         ],

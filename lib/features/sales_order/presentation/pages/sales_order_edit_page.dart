@@ -5,6 +5,8 @@ import 'package:logger/logger.dart';
 
 import '../../../../config/theme.dart';
 import '../../../../services/config_service.dart';
+import '../../../../services/local_database/customer_local_database.dart';
+import '../../../../services/local_database/location_local_database.dart';
 import '../../../../services/sales_service.dart';
 import '../../../../services/secure_storage_service.dart';
 import '../../../analytic/presentation/pages/analytic_search_modal.dart';
@@ -198,36 +200,66 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         logger.e('❌ Error loading products', error: e);
       }
 
-      // Load customers
+      // Load customers from LOCAL DATABASE
       try {
-        final customerDatasource = CustomerRemoteDataSource();
-        final customers =
-            await customerDatasource.getCustomers(db: db, apiKey: apiKey);
-        logger.i('✅ Loaded ${customers.length} customers');
+        final customerDb = CustomerLocalDatabase();
+        final customers = await customerDb.getAllCustomers();
+        logger.i('✅ Loaded ${customers.length} customers from LOCAL DB');
+        
+        // Convert local models to entities
+        final customerEntities = customers
+            .map((localModel) => Customer(
+              id: localModel.id,
+              name: localModel.name,
+              email: localModel.email,
+              phone: localModel.phone,
+              street: localModel.street,
+              street2: localModel.street2,
+              districtId: localModel.districtId,
+              cityId: localModel.cityId,
+              stateId: localModel.stateId,
+              zip: localModel.zip,
+              countryId: localModel.countryId,
+            ))
+            .toList();
+        
         if (mounted) {
           setState(() {
-            _allCustomers = customers.map((model) => model.toEntity()).toList();
+            _allCustomers = customerEntities;
           });
         }
       } catch (e) {
-        logger.e('❌ Error loading customers', error: e);
+        logger.e('❌ Error loading customers from LOCAL DB', error: e);
+        // Fallback: try to load from API if local DB fails
+        try {
+          final customerDatasource = CustomerRemoteDataSource();
+          final customers =
+              await customerDatasource.getCustomers(db: db, apiKey: apiKey);
+          logger.i('✅ Loaded ${customers.length} customers from API (fallback)');
+          if (mounted) {
+            setState(() {
+              _allCustomers = customers.map((model) => model.toEntity()).toList();
+            });
+          }
+        } catch (apiError) {
+          logger.e('❌ Error loading customers from API fallback', error: apiError);
+        }
       }
 
-      // Load cities
+      // Load cities from LOCAL DATABASE
       try {
-        final locationDatasource = LocationRemoteDataSource();
-        final cities = await locationDatasource.getCities(
-          db: db,
-          apiKey: apiKey,
-        );
-        logger.i('✅ Loaded ${cities.length} cities');
+        final locationDb = LocationLocalDatabase();
+        final cities = await locationDb.getAllCities();
+        logger.i('✅ Loaded ${cities.length} cities from LOCAL DB');
 
         // Build city map and city-to-state map
         final cityMap = <int, String>{};
         final cityToStateMap = <int, int>{};
         for (final city in cities) {
           cityMap[city.id] = city.name;
-          cityToStateMap[city.id] = city.stateId;
+          if (city.stateId != null) {
+            cityToStateMap[city.id] = city.stateId!;
+          }
         }
 
         if (mounted) {
@@ -237,17 +269,14 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           });
         }
       } catch (e) {
-        logger.e('❌ Error loading cities', error: e);
+        logger.e('❌ Error loading cities from LOCAL DB', error: e);
       }
 
-      // Load states
+      // Load states from LOCAL DATABASE
       try {
-        final locationDatasource = LocationRemoteDataSource();
-        final states = await locationDatasource.getStates(
-          db: db,
-          apiKey: apiKey,
-        );
-        logger.i('✅ Loaded ${states.length} states');
+        final locationDb = LocationLocalDatabase();
+        final states = await locationDb.getAllStates();
+        logger.i('✅ Loaded ${states.length} states from LOCAL DB');
 
         // Build state map
         final stateMap = <int, String>{};
@@ -261,24 +290,48 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           });
         }
       } catch (e) {
-        logger.e('❌ Error loading states', error: e);
+        logger.e('❌ Error loading states from LOCAL DB', error: e);
       }
 
-      // Load districts
+      // Load districts from LOCAL DATABASE
       try {
-        final locationDatasource = LocationRemoteDataSource();
-        final districts = await locationDatasource.getAllDistricts(
-          db: db,
-          apiKey: apiKey,
-        );
-        logger.i('✅ Loaded ${districts.length} districts');
+        final locationDb = LocationLocalDatabase();
+        final districts = await locationDb.getAllDistricts();
+        logger.i('✅ Loaded ${districts.length} districts from LOCAL DB');
+        
+        // Convert local models to domain entities
+        final districtEntities = districts
+            .map((localModel) => District(
+              id: localModel.id,
+              name: localModel.name,
+              code: '', // Code not available in local DB
+              cityId: localModel.cityId ?? 0,
+            ))
+            .toList();
+        
         if (mounted) {
           setState(() {
-            _allDistricts = districts;
+            _allDistricts = districtEntities;
           });
         }
       } catch (e) {
-        logger.e('❌ Error loading districts', error: e);
+        logger.e('❌ Error loading districts from LOCAL DB', error: e);
+        // Fallback: try to load from API if local DB fails
+        try {
+          final locationDatasource = LocationRemoteDataSource();
+          final districts = await locationDatasource.getAllDistricts(
+            db: db,
+            apiKey: apiKey,
+          );
+          logger.i('✅ Loaded ${districts.length} districts from API (fallback)');
+          if (mounted) {
+            setState(() {
+              _allDistricts = districts;
+            });
+          }
+        } catch (apiError) {
+          logger.e('❌ Error loading districts from API fallback', error: apiError);
+        }
       }
     } catch (e) {
       logger.e('❌ Error in _loadData', error: e);
@@ -897,22 +950,25 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     int maxLines = 1,
     bool isPrice = false,
     bool isQty = false,
+    double fontSize = 13,
     ValueChanged<String>? onChanged,
   }) {
+    final theme = Theme.of(context);
+    
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 9),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
+              color: theme.textTheme.bodySmall?.color,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           TextField(
             controller: controller,
             keyboardType: keyboardType,
@@ -931,20 +987,39 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                         ),
                       ]
                     : null,
-            style: const TextStyle(fontSize: 13, color: Colors.black87),
+            style: TextStyle(
+              fontSize: fontSize,
+              color: theme.textTheme.bodyLarge?.color,
+            ),
             decoration: InputDecoration(
               prefixText: prefixText,
               filled: true,
-              fillColor: readOnly ? Colors.grey[100] : Colors.white,
+              fillColor: readOnly
+                  ? (theme.brightness == Brightness.dark
+                      ? Colors.grey[800]
+                      : Colors.grey[100])
+                  : (theme.brightness == Brightness.dark
+                      ? Colors.grey[800]
+                      : Colors.white),
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                borderSide: BorderSide(
+                  color: theme.brightness == Brightness.dark
+                      ? Colors.grey[700]!
+                      : Colors.grey[300]!,
+                  width: 1,
+                ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                borderSide: BorderSide(
+                  color: theme.brightness == Brightness.dark
+                      ? Colors.grey[700]!
+                      : Colors.grey[300]!,
+                  width: 1,
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -959,191 +1034,188 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   }
 
   Widget _buildLineItemCard(int index) {
+    final theme = Theme.of(context);
     final controllers = _lineControllers[index];
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor,
-                    borderRadius: BorderRadius.circular(6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.dark
+            ? Colors.grey[800]
+            : Colors.grey[50],
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? Colors.grey[700]!
+              : Colors.grey[200]!,
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'Item ${index + 1}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    color: Colors.white,
                   ),
-                  child: Text(
-                    'Item ${index + 1}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                      color: Colors.white,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, size: 18, color: Colors.red),
+                onPressed: () => _removeLineItem(index),
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+              )
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Product field - Simple Clickable Row
+          Padding(
+            padding: const EdgeInsets.only(bottom: 9),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Product',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: theme.textTheme.bodySmall?.color,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                GestureDetector(
+                  onTap: _allProducts.isEmpty ? null : () => _selectProduct(index),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 9,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[800]
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.grey[700]!
+                            : Colors.grey[300]!,
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            controllers['product']!.text.isEmpty
+                                ? 'Pilih Product'
+                                : controllers['product']!.text,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: controllers['product']!.text.isEmpty
+                                  ? Colors.grey[400]
+                                  : theme.textTheme.bodyLarge?.color,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 14,
+                          color: theme.textTheme.bodySmall?.color,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 18, color: Colors.red),
-                  onPressed: () => _removeLineItem(index),
-                  constraints: const BoxConstraints(),
-                  padding: EdgeInsets.zero,
-                )
               ],
             ),
-            const SizedBox(height: 10),
-            // Product field dengan search button
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Product',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
+          ),
+          
+          // Analytic Account field - Simple Clickable Row
+          Padding(
+            padding: const EdgeInsets.only(bottom: 9),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Analytic Account',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: theme.textTheme.bodySmall?.color,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                GestureDetector(
+                  onTap: () => _selectAnalytic(index),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 9,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[800]
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.grey[700]!
+                            : Colors.grey[300]!,
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            controllers['analyticAccount']!.text.isEmpty
+                                ? 'Pilih Account'
+                                : controllers['analyticAccount']!.text,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: controllers['analyticAccount']!.text.isEmpty
+                                  ? Colors.grey[400]
+                                  : theme.textTheme.bodyLarge?.color,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 14,
+                          color: theme.textTheme.bodySmall?.color,
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: controllers['product']!,
-                          readOnly: true,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.black87,
-                          ),
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                color: Colors.grey[300]!,
-                                width: 1,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                color: Colors.grey[300]!,
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        height: 42,
-                        child: ElevatedButton.icon(
-                          onPressed: _allProducts.isEmpty
-                              ? null
-                              : () => _selectProduct(index),
-                          icon: const Icon(Icons.search, size: 16),
-                          label: const Text('Search'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            disabledBackgroundColor: Colors.grey[400],
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            // Analytic Account field dengan search button
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Analytic Account',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: controllers['analyticAccount']!,
-                          readOnly: true,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.black87,
-                          ),
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                color: Colors.grey[300]!,
-                                width: 1,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                color: Colors.grey[300]!,
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        height: 42,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _selectAnalytic(index),
-                          icon: const Icon(Icons.search, size: 16),
-                          label: const Text('Search'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+          ),
             Row(
               children: [
                 Expanded(
@@ -1174,15 +1246,23 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                  width: 1,
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Subtotal:',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: theme.textTheme.bodyMedium?.color,
+                    ),
                   ),
                   Text(
                     _currencyFormat.format(
@@ -1199,20 +1279,24 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
             ),
           ],
         ),
-      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final order = widget.order;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           'Edit Transaksi',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+          ),
         ),
         backgroundColor: AppTheme.primaryColor,
         elevation: 0,
@@ -1227,36 +1311,72 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
             // Order Header Card
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.cardTheme.color,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.brightness == Brightness.dark
+                      ? Colors.grey[700]!
+                      : Colors.grey[200]!,
+                  width: 1,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
+                    color: Colors.black.withValues(
+                        alpha:
+                            theme.brightness == Brightness.dark ? 0.3 : 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Sales Order: ${order.name}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black87,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Sales Order No',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: theme.textTheme.bodySmall?.color,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        order.name,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Date: ${order.dateOrderFormatted}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Order Date',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: theme.textTheme.bodySmall?.color,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        order.dateOrderFormatted,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1266,13 +1386,21 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
             // Details Card
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.cardTheme.color,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.brightness == Brightness.dark
+                      ? Colors.grey[700]!
+                      : Colors.grey[200]!,
+                  width: 1,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
+                    color: Colors.black.withValues(
+                        alpha:
+                            theme.brightness == Brightness.dark ? 0.3 : 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -1284,167 +1412,252 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                   Text(
                     'Order Details',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: Colors.grey[700],
+                      color: theme.textTheme.bodyMedium?.color,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  // Customer Field with Search Button
+                  const SizedBox(height: 10),
+                  Divider(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]
+                        : Colors.grey[200],
+                    height: 1,
+                  ),
+                  const SizedBox(height: 10),
+                  // Customer Field - Simple Clickable Row
                   Text(
                     'Customer',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
+                      color: theme.textTheme.bodySmall?.color,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
+                  GestureDetector(
+                    onTap: _allCustomers.isEmpty ? null : _selectCustomer,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 9,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.grey[800]
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: theme.brightness == Brightness.dark
+                              ? Colors.grey[700]!
+                              : Colors.grey[300]!,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _customerNameController.text.isEmpty
+                                  ? 'Pilih Customer'
+                                  : _customerNameController.text,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: _customerNameController.text.isEmpty
+                                    ? Colors.grey[400]
+                                    : theme.textTheme.bodyLarge?.color,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 14,
+                            color: theme.textTheme.bodySmall?.color,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 9),
+                  _buildEditField('Address', _addressController, maxLines: 2, fontSize: 11),
+                  const SizedBox(height: 9),
+                  
+                  // Simplified Location Display (State, City, District in one line)
+                  Text(
+                    'Location',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: theme.textTheme.bodySmall?.color,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  GestureDetector(
+                    onTap: _allDistricts.isEmpty ? null : _selectDistrict,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 9,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.grey[800]
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: theme.brightness == Brightness.dark
+                              ? Colors.grey[700]!
+                              : Colors.grey[300]!,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _stateController.text.isEmpty
+                                  ? 'Pilih Lokasi'
+                                  : '${_stateController.text}, ${_cityController.text}, ${_districtController.text}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: _stateController.text.isEmpty
+                                    ? Colors.grey[400]
+                                    : theme.textTheme.bodyLarge?.color,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 14,
+                            color: theme.textTheme.bodySmall?.color,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 9),
+                  
+                  // Warehouse and Kurir in one row
                   Row(
                     children: [
                       Expanded(
-                        child: TextField(
-                          controller: _customerNameController,
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            hintText: 'Pilih Customer',
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide:
-                                  BorderSide(color: Colors.grey.shade300),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide:
-                                  BorderSide(color: Colors.grey.shade300),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        height: 42,
-                        child: ElevatedButton.icon(
-                          onPressed:
-                              _allCustomers.isEmpty ? null : _selectCustomer,
-                          icon: const Icon(Icons.search, size: 16),
-                          label: const Text('Search'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            disabledBackgroundColor: Colors.grey[400],
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _buildEditField('Address', _addressController, maxLines: 2),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'District',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _districtController,
-                                readOnly: true,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.black87,
-                                ),
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 10,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey[300]!,
-                                      width: 1,
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey[300]!,
-                                      width: 1,
-                                    ),
-                                  ),
-                                ),
+                            Text(
+                              'Warehouse',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: theme.textTheme.bodySmall?.color,
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              height: 42,
-                              child: ElevatedButton.icon(
-                                onPressed: _allDistricts.isEmpty
-                                    ? null
-                                    : _selectDistrict,
-                                icon: _allDistricts.isEmpty
-                                    ? const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                  Colors.grey),
-                                        ),
-                                      )
-                                    : const Icon(Icons.search, size: 16),
-                                label: Text(_allDistricts.isEmpty
-                                    ? 'Loading...'
-                                    : 'Search'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.primaryColor,
-                                  disabledBackgroundColor: Colors.grey[400],
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _warehouseNameController.text.isEmpty
+                                  ? '-'
+                                  : _warehouseNameController.text,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: theme.textTheme.bodyMedium?.color,
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Kurir',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: theme.textTheme.bodySmall?.color,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _kurirNameController.text.isEmpty
+                                  ? '-'
+                                  : _kurirNameController.text,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: theme.textTheme.bodyMedium?.color,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  _buildEditField('City', _cityController, readOnly: true),
-                  _buildEditField('State', _stateController, readOnly: true),
-                  _buildEditField('Warehouse', _warehouseNameController,
-                      readOnly: true),
-                  _buildEditField('Kurir', _kurirNameController,
-                      readOnly: true),
-                  _buildEditField('AWB', _awbController, readOnly: true),
-                  _buildEditField('Notes', _notesController,
-                      readOnly: true, maxLines: 3),
+                  const SizedBox(height: 9),
+                  
+                  // AWB without box
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'AWB',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: theme.textTheme.bodySmall?.color,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _awbController.text.isEmpty
+                            ? '-'
+                            : _awbController.text,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.textTheme.bodyMedium?.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 9),
+                  
+                  // Notes without box
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Notes',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: theme.textTheme.bodySmall?.color,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _notesController.text.isEmpty
+                            ? '-'
+                            : _notesController.text,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.textTheme.bodyMedium?.color,
+                          height: 1.4,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -1453,13 +1666,21 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
             // Line Items Card
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.cardTheme.color,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.brightness == Brightness.dark
+                      ? Colors.grey[700]!
+                      : Colors.grey[200]!,
+                  width: 1,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
+                    color: Colors.black.withValues(
+                        alpha:
+                            theme.brightness == Brightness.dark ? 0.3 : 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -1473,7 +1694,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: Colors.grey[700],
+                      color: theme.textTheme.bodyMedium?.color,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1508,13 +1729,21 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
             // Summary Card
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.cardTheme.color,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.brightness == Brightness.dark
+                      ? Colors.grey[700]!
+                      : Colors.grey[200]!,
+                  width: 1,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
+                    color: Colors.black.withValues(
+                        alpha:
+                            theme.brightness == Brightness.dark ? 0.3 : 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -1542,7 +1771,11 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Divider(color: Colors.grey[300]),
+                  Divider(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[700]
+                        : Colors.grey[200],
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
