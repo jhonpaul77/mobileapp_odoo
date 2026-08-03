@@ -17,8 +17,8 @@ void main() async {
 
   print('🚀 [MAIN] Initializing services...');
 
-  // Init API service
-  ApiService().init();
+  // Init API service - now async to load saved config
+  await ApiService().init();
 
   // Load token dari storage dan set ke ApiService (kalau ada)
   final auth = AuthService();

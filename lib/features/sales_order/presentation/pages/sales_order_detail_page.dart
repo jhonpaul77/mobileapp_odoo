@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../config/theme.dart';
 import '../../../../services/sales_service.dart';
+import '../../../../services/secure_storage_service.dart';
 import '../../domain/entities/order_line.dart';
 import '../../domain/entities/sales_order.dart';
 import 'sales_order_edit_page.dart';
@@ -108,6 +109,12 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
     }
 
     try {
+      // ✅ Get logged-in username for CS name
+      final storage = SecureStorageService();
+      final userData = await storage.getUserData();
+      final csName = userData?['username'] as String? ?? 'CS';
+      print('📞 [FOLLOWUP] CS Name: $csName');
+
       // Get customer name
       String customerName = order.customerName;
       if (customerName.contains('(')) {
@@ -122,10 +129,10 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
         orderLinesText += '$qty (pcs) $product\n';
       }
 
-      // Build the follow-up message - sesuai format user
+      // ✅ Build the follow-up message with logged-in username
       final message = '''Hai kak $customerName ($customerPhone)
 
-Dengan saya CS Armand :
+Dengan saya CS $csName :
 
 Kami sudah terima pesanannya dengan rincian sebagai berikut:
 $orderLinesText

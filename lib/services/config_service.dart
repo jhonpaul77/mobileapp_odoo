@@ -41,8 +41,8 @@ class ConfigService {
     } catch (e) {
       // Fallback jika file assets tidak ada
       return {
-        'database': 'demotest',
-        'url': 'https://demoerp.riztastore.id',
+        'database': '',
+        'url': '',
         'company': '',
         'language': 'id',
         'theme': 'light',

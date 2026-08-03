@@ -115,8 +115,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
     // ✅ Load dari config file
     final config = await _configService.load();
-    dbController.text = config['database'] ?? 'demotest';
-    urlController.text = config['url'] ?? 'https://demoerp.riztastore.id';
+    dbController.text = config['database'] ?? '';
+    urlController.text = config['url'] ?? '';
 
     if (!mounted) return;
 
@@ -193,7 +193,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               TextField(
                 controller: urlController,
                 decoration: InputDecoration(
-                  hintText: 'e.g., https://demoerp.riztastore.id',
+                  hintText: 'e.g., https://example.com',
                   prefixIcon: Icon(Icons.link_rounded,
                       color: AppTheme.brandBlue, size: 20),
                   filled: true,

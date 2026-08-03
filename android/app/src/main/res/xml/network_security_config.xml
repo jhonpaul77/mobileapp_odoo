@@ -8,11 +8,6 @@
         </trust-anchors>
     </base-config>
     
-    <!-- Specific domain configuration for Odoo server -->
-    <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">demoerp.riztastore.id</domain>
-        <trust-anchors>
-            <certificates src="system" />
-        </trust-anchors>
-    </domain-config>
+    <!-- Accept all domains - user can configure any server URL -->
+    <!-- Production: disable cleartextTrafficPermitted="true" -->
 </network-security-config>

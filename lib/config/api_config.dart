@@ -2,7 +2,10 @@ class ApiConfig {
   // ========================================
   // 🔧 ODOO API CONFIGURATION
   // ========================================
-  static const String baseUrl = 'https://demoerp.riztastore.id';
+  // ⚠️ DEPRECATED: Hardcoded URL is now ONLY a fallback
+  // ✅ USE: ConfigService.getUrl() to get user-configured URL
+  // ✅ INIT: ApiService.init() now loads URL from ConfigService
+  static const String baseUrl = 'https://localhost';  // Fallback only - actual URL loaded from config
 
   // Odoo Connect Endpoint
   static const String odooConnect = '/odoo_connect';
