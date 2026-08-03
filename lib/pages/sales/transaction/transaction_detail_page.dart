@@ -158,20 +158,44 @@ Terima kasih atas pesanan Anda! 🙏
 ''';
 
     try {
-      // Format phone number
+      // Format phone number correctly - extract only digits
       String formattedPhone = phone.trim();
+      print('🔧 [PHONE_FORMAT] Original: $phone');
+      
+      // Remove all non-digit characters (spaces, dashes, +, etc)
+      formattedPhone = formattedPhone.replaceAll(RegExp(r'[^0-9]'), '');
+      print('🔧 [PHONE_FORMAT] After removing non-digits: $formattedPhone');
+      
+      // Remove leading 0 if exists
       if (formattedPhone.startsWith('0')) {
         formattedPhone = formattedPhone.substring(1);
+        print('🔧 [PHONE_FORMAT] After removing leading 0: $formattedPhone');
       }
+      
+      // Remove leading 62 if exists (to avoid duplication)
+      int removeCount = 0;
+      while (formattedPhone.startsWith('62')) {
+        formattedPhone = formattedPhone.substring(2);
+        removeCount++;
+      }
+      if (removeCount > 0) {
+        print('🔧 [PHONE_FORMAT] Removed $removeCount leading 62: $formattedPhone');
+      }
+      
+      // Ensure it starts with 62
       if (!formattedPhone.startsWith('62')) {
         formattedPhone = '62$formattedPhone';
+        print('🔧 [PHONE_FORMAT] Added 62 prefix: $formattedPhone');
       }
+      
+      print('✅ [PHONE_FORMAT] Final formatted phone: $formattedPhone');
 
       // Encode message
       final encodedMessage = Uri.encodeComponent(message);
 
       // WhatsApp URL
       final whatsappUrl = 'https://wa.me/$formattedPhone?text=$encodedMessage';
+      print('🔵 [WHATSAPP] Opening: $whatsappUrl');
 
       // Launch WhatsApp
       if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
@@ -642,6 +666,31 @@ Terima kasih atas pesanan Anda! 🙏
                       ),
                     ),
                     const SizedBox(height: 12),
+                    // Phone Number - di atas alamat
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Phone',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          phone,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: theme.textTheme.bodyMedium?.color,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Address Location
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

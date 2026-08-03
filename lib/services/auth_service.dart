@@ -7,6 +7,7 @@ import '../models/auth/auth_response.dart';
 import '../models/auth/user.dart';
 import 'api_service.dart';
 import 'secure_storage_service.dart';
+import 'local_database/database_helper.dart';
 
 class AuthService {
   final _api = ApiService().dio;
@@ -25,6 +26,17 @@ class AuthService {
     try {
       print('🔄 [AUTH] Attempting Odoo login...');
       print('   DB: $db, User: $username');
+
+      // Check if user is switching (different user logged in before)
+      final previousUser = await _storage.getUserData();
+      final previousUsername = previousUser?['username'] as String?;
+      
+      if (previousUsername != null && previousUsername != username) {
+        print('⚠️ [AUTH] User switch detected ($previousUsername → $username)');
+        print('🔄 [AUTH] Clearing old user data from local database...');
+        await DatabaseHelper().clearAll();
+        print('✅ [AUTH] Old user data cleared');
+      }
 
       final response = await _api.get(
         ApiConfig.odooConnect,
@@ -186,7 +198,12 @@ class AuthService {
   // ✅ Logout
   Future<void> signOut() async {
     try {
-      // Optional: Panggil API signout jika ada
+      // Step 1: Clear local database
+      print('🔄 [AUTH] Clearing local database...');
+      await DatabaseHelper().clearAll();
+      print('✅ [AUTH] Local database cleared');
+
+      // Step 2: Optional API signout
       final refreshToken = await _storage.getRefreshToken();
       if (refreshToken != null) {
         await _api.post(
@@ -195,12 +212,12 @@ class AuthService {
         );
       }
     } catch (e) {
-      print('⚠️ [AUTH] Error during API signout: $e');
+      print('⚠️ [AUTH] Error during logout: $e');
     } finally {
-      // ✅ Clear ALL storage (termasuk hasSeenIntro!)
+      // Step 3: Clear storage (credentials, tokens, user data)
       await _storage.clearAll();
       ApiService().removeAuthToken();
-      print('✅ [AUTH] User logged out - All data cleared');
+      print('✅ [AUTH] User logged out - All data cleared (Database + Storage)');
     }
   }
 }

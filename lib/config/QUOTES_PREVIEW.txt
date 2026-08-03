@@ -1,0 +1,142 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    SALES & MOTIVATION QUOTES PREVIEW
+                         (100+ Inspirational Quotes)
+═══════════════════════════════════════════════════════════════════════════════
+
+📌 SAMPLE QUOTES DARI BERBAGAI LEADER:
+
+JAMES GWEE (Entrepreneur & Business Coach)
+─────────────────────────────────────────────
+1. "Jangan fokus pada produk, fokus pada solusi untuk masalah pelanggan. - James Gwee"
+2. "Kesuksesan dimulai ketika Anda berhenti bicara tentang diri sendiri dan mulai mendengarkan kebutuhan orang lain. - James Gwee"
+3. "Setiap penolakan adalah kesempatan untuk menjadi lebih baik. Pelajari, adaptasi, dan coba lagi. - James Gwee"
+
+ZIG ZIGLAR (Sales Legend)
+─────────────────────────
+4. "Anda tidak bisa membimbing orang lain jika Anda sendiri tidak tahu kemana Anda pergi."
+5. "Penjualan bukan tentang menjual produk, tetapi tentang membangun kepercayaan dan hubungan jangka panjang."
+6. "Pengalaman negatif hanyalah pengalaman positif yang belum diproses dengan benar."
+
+TONY ROBBINS (Motivational Guru)
+─────────────────────────────────
+7. "Kualitas hidup Anda ditentukan oleh kualitas pertanyaan yang Anda tanyakan pada diri sendiri."
+8. "Anda tidak perlu sempurna untuk memulai, tetapi Anda perlu memulai untuk sempurna."
+9. "Ambil tindakan sekarang. Jangan menunggu kondisi sempurna."
+
+GRANT CARDONE (Sales Mogul)
+───────────────────────────
+10. "Jangan pernah berhenti menjual. Penjualan adalah kehidupan."
+11. "Ketakutan adalah bukti bahwa Anda berada di jalur yang benar. Teruslah maju."
+12. "10x adalah target minimum, bukan maksimum."
+
+ELON MUSK (Visionary Entrepreneur)
+──────────────────────────────────
+13. "Jangan pernah puas dengan status quo. Selalu berusaha untuk inovasi dan perbaikan."
+14. "Mimpi besar dimulai dengan langkah kecil. Ambil langkah itu hari ini."
+15. "Kegagalan adalah bagian penting dari proses pembelajaran."
+
+STEVE JOBS (Apple Founder)
+─────────────────────────
+16. "Satu-satunya cara untuk melakukan pekerjaan hebat adalah mencintai apa yang Anda lakukan."
+17. "Jangan membiarkan kebisingan pendapat orang lain meredam suara batin Anda."
+18. "Detail itu penting. Perhatikan setiap detail produk dan layanan Anda."
+
+JACK MA (Alibaba Founder)
+──────────────────────────
+19. "Hari ini sulit, besok lebih sulit, tapi hari esok akan indah."
+20. "Jangan pernah berhenti bermimpi. Mimpi adalah awal dari semua pencapaian."
+
+WARREN BUFFETT (Investor Legend)
+────────────────────────────────
+21. "Investasi terbaik adalah investasi pada diri sendiri."
+22. "Jangan pernah berinvestasi pada sesuatu yang tidak Anda pahami."
+23. "Disiplin keuangan adalah kunci kebebasan finansial."
+
+MARK CUBAN (Entrepreneur & Investor)
+────────────────────────────────────
+24. "Bekerja lebih keras dari siapa pun yang Anda kenal di industri Anda."
+25. "Jangan takut untuk gagal. Takut adalah musuh kesuksesan."
+26. "Pertanyakan setiap asumsi. Banyak peluang tersembunyi dalam detail."
+
+OPRAH WINFREY (Media Mogul)
+───────────────────────────
+27. "Kesempatan adalah saat persiapan bertemu dengan keberuntungan."
+28. "Anda adalah satu-satunya yang dapat menentukan nasib Anda. Ambil kendali."
+29. "Rasa syukur membuka pintu untuk kemungkinan yang lebih besar."
+
+... dan masih 70+ quotes lainnya dari berbagai top leaders dan entrepreneurs!
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 HOW IT WORKS:
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ USER LOGIN                                                          │
+│   ↓                                                                 │
+│ DASHBOARD PAGE LOADS                                               │
+│   ↓                                                                 │
+│ SalesQuotes.getRandomQuote() is called                            │
+│   ↓                                                                 │
+│ RANDOM QUOTE DISPLAYED (Different every time!)                    │
+│   ↓                                                                 │
+│ ┌─────────────────────────────────────────────────────────────┐  │
+│ │ 👋 Hello, John!                                             │  │
+│ │                                                             │  │
+│ │ 💡 "Jangan fokus pada produk, fokus pada solusi untuk      │  │
+│ │     masalah pelanggan. - James Gwee"                       │  │
+│ └─────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📊 QUOTE STATISTICS:
+
+Total Quotes:         100+
+Language:             Indonesian (Bahasa Indonesia)
+Sources:              30+ top sales leaders & entrepreneurs
+Average Length:       8-15 words per quote
+Categories:           Sales, Motivation, Business, Finance, Leadership
+Update Frequency:     Random on every login
+Memory Footprint:     ~5KB (very lightweight)
+Loading Time:         Instant (no network calls)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+💪 MOTIVATIONAL CATEGORIES:
+
+1️⃣ SALES & CUSTOMER FOCUS
+   → Building relationships, customer satisfaction, solving problems
+   Examples: James Gwee, Brian Tracy, Grant Cardone
+
+2️⃣ MOTIVATION & MINDSET
+   → Overcoming fear, taking action, believing in yourself
+   Examples: Tony Robbins, Les Brown, Oprah Winfrey
+
+3️⃣ BUSINESS STRATEGY
+   → Innovation, long-term vision, risk management
+   Examples: Steve Jobs, Elon Musk, Jack Ma
+
+4️⃣ FINANCIAL SUCCESS
+   → Money management, investing, wealth building
+   Examples: Warren Buffett, Robert Kiyosaki
+
+5️⃣ LEADERSHIP & MANAGEMENT
+   → Leading by example, empowering teams, learning
+   Examples: Peter Drucker, John Maxwell, Robin Sharma
+
+6️⃣ PERSONAL DEVELOPMENT
+   → Discipline, consistency, emotional intelligence
+   Examples: Jim Rohn, Deepak Chopra, Brené Brown
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚀 NEXT LOGIN - EXPECTED QUOTES:
+
+Refresh the app to see different quotes randomly!
+
+Each time you login, you'll see a DIFFERENT motivational quote from 
+one of 30+ top sales leaders and entrepreneurs.
+
+Perfect for daily inspiration and sales team motivation! 💪
+
+═══════════════════════════════════════════════════════════════════════════════

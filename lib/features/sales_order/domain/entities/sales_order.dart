@@ -22,6 +22,8 @@ class SalesOrder {
   final String? partnerCity; // Partner city
   final String? partnerState; // Partner state/province
   final String? notes; // Order notes
+  final int? paymentTermId; // Payment term ID
+  final String? paymentTermName; // Payment term name
 
   SalesOrder({
     required this.id,
@@ -45,6 +47,8 @@ class SalesOrder {
     this.partnerCity,
     this.partnerState,
     this.notes,
+    this.paymentTermId,
+    this.paymentTermName,
   });
 
   factory SalesOrder.fromJson(Map<String, dynamic> json) {
@@ -141,6 +145,25 @@ class SalesOrder {
       notesParsed = notesRaw;
     }
 
+    // Parse payment term - can be int or [id, name] array
+    int? paymentTermIdParsed;
+    String? paymentTermNameParsed;
+    final paymentTermRaw = json['payment_term_id'];
+    if (paymentTermRaw is int) {
+      paymentTermIdParsed = paymentTermRaw;
+    } else if (paymentTermRaw is List && paymentTermRaw.length > 0) {
+      paymentTermIdParsed = paymentTermRaw[0] as int?;
+      if (paymentTermRaw.length > 1) {
+        paymentTermNameParsed = paymentTermRaw[1] as String?;
+      }
+    }
+
+    // Also check for direct payment_term_name field
+    final paymentTermNameRaw = json['payment_term_name'];
+    if (paymentTermNameRaw is String && paymentTermNameRaw.isNotEmpty) {
+      paymentTermNameParsed = paymentTermNameRaw;
+    }
+
     return SalesOrder(
       id: _parseInt(json['id']),
       name: json['name'] as String,
@@ -163,6 +186,8 @@ class SalesOrder {
       partnerCity: partnerCityParsed,
       partnerState: partnerStateParsed,
       notes: notesParsed,
+      paymentTermId: paymentTermIdParsed,
+      paymentTermName: paymentTermNameParsed,
     );
   }
 
@@ -309,6 +334,8 @@ class SalesOrder {
       'partner_city': partnerCity,
       'partner_state': partnerState,
       'notes': notes,
+      'payment_term_id': paymentTermId,
+      'payment_term_name': paymentTermName,
     };
   }
 }

@@ -4,7 +4,7 @@ import 'package:sqflite/sqflite.dart';
 /// DatabaseHelper - Handles SQLite database initialization and management
 ///
 /// Singleton pattern - ensures only one database connection
-/// Tables: customers, sync_logs
+/// Tables: customers, sync_logs, states, cities, districts, products
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
@@ -34,7 +34,7 @@ class DatabaseHelper {
       // Open database (create if doesn't exist)
       final db = await openDatabase(
         path,
-        version: 2,
+        version: 4,
         onCreate: _createTables,
         onUpgrade: _upgradeTables,
       );
@@ -134,6 +134,36 @@ class DatabaseHelper {
 
       print('   ✅ Created districts table');
 
+      // Products table
+      await db.execute('''
+        CREATE TABLE products (
+          id INTEGER PRIMARY KEY,
+          name TEXT NOT NULL,
+          default_code TEXT,
+          list_price REAL,
+          qty_available REAL,
+          category_id INTEGER,
+          categ_name TEXT,
+          sync_status TEXT DEFAULT 'SYNCED',
+          synced_at TEXT
+        )
+      ''');
+
+      print('   ✅ Created products table');
+
+      // Payment Terms table
+      await db.execute('''
+        CREATE TABLE payment_terms (
+          id INTEGER PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT,
+          sync_status TEXT DEFAULT 'SYNCED',
+          synced_at TEXT
+        )
+      ''');
+
+      print('   ✅ Created payment_terms table');
+
       print('✅ [DB_HELPER] All tables created');
     } catch (e) {
       print('❌ [DB_HELPER] Error creating tables: $e');
@@ -149,12 +179,13 @@ class DatabaseHelper {
       // Migration from v1 → v2: Add changed_fields column + location tables
       if (oldVersion < 2) {
         print('   [DB_HELPER] Migrating v1 → v2: Adding changed_fields + location tables...');
-        
+
         try {
           // Check if column already exists (safety check)
           final columns = await db.rawQuery("PRAGMA table_info(customers)");
-          final hasChangedFields = columns.any((col) => col['name'] == 'changed_fields');
-          
+          final hasChangedFields =
+              columns.any((col) => col['name'] == 'changed_fields');
+
           if (!hasChangedFields) {
             await db.execute('''
               ALTER TABLE customers ADD COLUMN changed_fields TEXT
@@ -165,9 +196,10 @@ class DatabaseHelper {
           }
 
           // Create location tables if they don't exist
-          final tables = await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'");
+          final tables =
+              await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'");
           final tableNames = tables.map((t) => t['name'] as String).toList();
-          
+
           if (!tableNames.contains('states')) {
             await db.execute('''
               CREATE TABLE states (
@@ -180,7 +212,7 @@ class DatabaseHelper {
             ''');
             print('   ✅ Created states table');
           }
-          
+
           if (!tableNames.contains('cities')) {
             await db.execute('''
               CREATE TABLE cities (
@@ -194,7 +226,7 @@ class DatabaseHelper {
             ''');
             print('   ✅ Created cities table');
           }
-          
+
           if (!tableNames.contains('districts')) {
             await db.execute('''
               CREATE TABLE districts (
@@ -209,8 +241,67 @@ class DatabaseHelper {
             print('   ✅ Created districts table');
           }
         } catch (e) {
-          print('   ⚠️ Error in migration: $e');
-          // Don't fail the entire migration, continue
+          print('   ⚠️ Error in v1→v2 migration: $e');
+        }
+      }
+
+      // Migration from v2 → v3: Ensure products table exists
+      if (oldVersion < 3) {
+        print('   [DB_HELPER] Migrating v2 → v3: Ensuring products table...');
+
+        try {
+          final tables =
+              await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'");
+          final tableNames = tables.map((t) => t['name'] as String).toList();
+
+          if (!tableNames.contains('products')) {
+            await db.execute('''
+              CREATE TABLE products (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                default_code TEXT,
+                list_price REAL,
+                qty_available REAL,
+                category_id INTEGER,
+                categ_name TEXT,
+                sync_status TEXT DEFAULT 'SYNCED',
+                synced_at TEXT
+              )
+            ''');
+            print('   ✅ Created products table');
+          } else {
+            print('   ℹ️ products table already exists, skipping');
+          }
+        } catch (e) {
+          print('   ⚠️ Error in v2→v3 migration: $e');
+        }
+      }
+
+      // Migration from v3 → v4: Create payment_terms table
+      if (oldVersion < 4) {
+        print('   [DB_HELPER] Migrating v3 → v4: Creating payment_terms table...');
+
+        try {
+          final tables =
+              await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'");
+          final tableNames = tables.map((t) => t['name'] as String).toList();
+
+          if (!tableNames.contains('payment_terms')) {
+            await db.execute('''
+              CREATE TABLE payment_terms (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                sync_status TEXT DEFAULT 'SYNCED',
+                synced_at TEXT
+              )
+            ''');
+            print('   ✅ Created payment_terms table');
+          } else {
+            print('   ℹ️ payment_terms table already exists, skipping');
+          }
+        } catch (e) {
+          print('   ⚠️ Error in v3→v4 migration: $e');
         }
       }
 
@@ -237,10 +328,81 @@ class DatabaseHelper {
       print('⚠️ [DB_HELPER] Clearing all database tables...');
       await db.execute('DELETE FROM customers');
       await db.execute('DELETE FROM sync_logs');
+      try {
+        await db.execute('DELETE FROM products');
+      } catch (e) {
+        print('   ℹ️ products table delete failed (may not exist): $e');
+      }
       print('✅ [DB_HELPER] Database cleared');
     } catch (e) {
       print('❌ [DB_HELPER] Error clearing database: $e');
       rethrow;
+    }
+  }
+
+  /// Force create products table if it doesn't exist
+  Future<void> ensureProductsTable() async {
+    final db = await database;
+    try {
+      print('🔄 [DB_HELPER] Ensuring products table exists...');
+      
+      // Check if table exists
+      final tables =
+          await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='products'");
+      
+      if (tables.isEmpty) {
+        print('   [DB_HELPER] products table not found, creating...');
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            default_code TEXT,
+            list_price REAL,
+            qty_available REAL,
+            category_id INTEGER,
+            categ_name TEXT,
+            sync_status TEXT DEFAULT 'SYNCED',
+            synced_at TEXT
+          )
+        ''');
+        print('   ✅ Created products table');
+      } else {
+        print('   ✅ products table already exists');
+      }
+    } catch (e) {
+      print('❌ [DB_HELPER] Error ensuring products table: $e');
+      // Don't rethrow - try to continue anyway
+    }
+  }
+
+  /// Force create payment_terms table if it doesn't exist
+  Future<void> ensurePaymentTermsTable() async {
+    final db = await database;
+    try {
+      print('🔄 [DB_HELPER] Ensuring payment_terms table exists...');
+      
+      // Check if table exists
+      final tables =
+          await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='payment_terms'");
+      
+      if (tables.isEmpty) {
+        print('   [DB_HELPER] payment_terms table not found, creating...');
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS payment_terms (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT,
+            sync_status TEXT DEFAULT 'SYNCED',
+            synced_at TEXT
+          )
+        ''');
+        print('   ✅ Created payment_terms table');
+      } else {
+        print('   ✅ payment_terms table already exists');
+      }
+    } catch (e) {
+      print('❌ [DB_HELPER] Error ensuring payment_terms table: $e');
+      // Don't rethrow - try to continue anyway
     }
   }
 
@@ -249,13 +411,19 @@ class DatabaseHelper {
     final db = await database;
     try {
       final customerCount =
-          Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM customers')) ?? 0;
+          Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM customers')) ??
+              0;
       final logCount =
-          Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM sync_logs')) ?? 0;
+          Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM sync_logs')) ??
+              0;
+      final productCount =
+          Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM products')) ??
+              0;
 
       print('📊 [DB_HELPER] Database size:');
       print('   Customers: $customerCount');
       print('   Sync logs: $logCount');
+      print('   Products: $productCount');
     } catch (e) {
       print('❌ [DB_HELPER] Error getting database size: $e');
     }

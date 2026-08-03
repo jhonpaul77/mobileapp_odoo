@@ -4,6 +4,7 @@ import 'package:nextpsa/features/customer/presentation/providers/customer_provid
 import 'package:nextpsa/pages/home/widgets/dashboard_stats_card.dart';
 import 'package:nextpsa/services/secure_storage_service.dart';
 import 'package:nextpsa/services/status_bar_service.dart';
+import 'package:nextpsa/config/sales_quotes.dart';
 import 'package:provider/provider.dart';
 
 /// Home Dashboard Page
@@ -20,16 +21,6 @@ class HomeDashboardPage extends StatefulWidget {
 }
 
 class _HomeDashboardPageState extends State<HomeDashboardPage> {
-  // 7 Motivational quotes for CS - rotated daily
-  static const List<String> _motivationalQuotes = [
-    '💪 Setiap pelanggan yang puas adalah kesuksesan Anda! Terus semangat!',
-    '🌟 Sikap positif adalah kunci melayani dengan hati. Anda pasti bisa!',
-    '🎯 Jangan lupa, setiap interaksi adalah kesempatan untuk bersinar!',
-    '❤️ Empati dan kesabaran adalah superpower Anda. Gunakan dengan baik!',
-    '🚀 Hari ini adalah peluang baru untuk memberikan layanan terbaik!',
-    '✨ Kepuasan pelanggan dimulai dari senyum dan dedikasi Anda!',
-    '🏆 Kerja keras Anda hari ini adalah pencapaian besok. Mari kita lakukan!',
-  ];
 
   @override
   void initState() {
@@ -233,11 +224,8 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
       final userData = await storage.getUserData();
       final username = userData?['username'] as String? ?? 'User';
       
-      // Get today's motivational quote
-      final now = DateTime.now();
-      final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
-      final quoteIndex = dayOfYear % _motivationalQuotes.length;
-      final quote = _motivationalQuotes[quoteIndex];
+      // Get random sales/motivation quote
+      final quote = SalesQuotes.getRandomQuote();
 
       return {
         'username': username,
@@ -246,7 +234,7 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
     } catch (e) {
       return {
         'username': 'User',
-        'quote': '✨ Kepuasan pelanggan dimulai dari senyum dan dedikasi Anda!',
+        'quote': SalesQuotes.getRandomQuote(),
       };
     }
   }

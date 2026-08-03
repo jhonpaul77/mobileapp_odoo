@@ -1405,21 +1405,34 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
     try {
       print('💬 [WHATSAPP] Input phone: "$phone"');
 
-      // Format phone number for WhatsApp
+      // Format phone number correctly - extract only digits
       String formattedPhone = phone.trim();
-
-      // Remove any non-digit characters except + at the beginning
-      formattedPhone = formattedPhone.replaceAll(RegExp(r'[^\d+]'), '');
-
+      
+      // Remove all non-digit characters (spaces, dashes, +, etc)
+      formattedPhone = formattedPhone.replaceAll(RegExp(r'[^0-9]'), '');
+      
       print('💬 [WHATSAPP] Cleaned phone: "$formattedPhone"');
 
-      // Handle Indonesian format
+      // Remove leading 0 if exists
       if (formattedPhone.startsWith('0')) {
-        formattedPhone = '62${formattedPhone.substring(1)}';
-      } else if (formattedPhone.startsWith('+')) {
         formattedPhone = formattedPhone.substring(1);
-      } else if (!formattedPhone.startsWith('62')) {
+        print('💬 [WHATSAPP] After removing leading 0: "$formattedPhone"');
+      }
+      
+      // Remove leading 62 if exists (to avoid duplication)
+      int removeCount = 0;
+      while (formattedPhone.startsWith('62')) {
+        formattedPhone = formattedPhone.substring(2);
+        removeCount++;
+      }
+      if (removeCount > 0) {
+        print('💬 [WHATSAPP] Removed $removeCount leading 62: "$formattedPhone"');
+      }
+      
+      // Ensure it starts with 62
+      if (!formattedPhone.startsWith('62')) {
         formattedPhone = '62$formattedPhone';
+        print('💬 [WHATSAPP] Added 62 prefix: "$formattedPhone"');
       }
 
       print('💬 [WHATSAPP] Final formatted: "$formattedPhone"');
@@ -1441,7 +1454,7 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                  'Tidak dapat membuka WhatsApp\nPastikan WhatsApp terinstall\nNomor: +$formattedPhone'),
+                  'Tidak dapat membuka WhatsApp\nPastikan WhatsApp terinstall\nNomor: $formattedPhone'),
               backgroundColor: Colors.red,
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 4),

@@ -7,6 +7,7 @@ import '../config/api_config.dart';
 import '../models/sales/sales.dart';
 import '../models/sales/sales_response.dart';
 import 'api_service.dart';
+import 'local_database/payment_term_local_database.dart';
 
 class SalesService {
   final _api = ApiService().dio;
@@ -255,12 +256,14 @@ class SalesService {
     int? kurirId,
     String? awb,
     String? notes,
+    int? paymentTermId,
     String state = 'draft', // draft, sent, sale, done, cancel
     required List<Map<String, dynamic>> orderLines,
   }) async {
     try {
       print('📝 [SALES] Creating sale order...');
       print('📝 [SALES] Partner: $partnerName');
+      print('📝 [SALES] Payment Term ID: $paymentTermId');
       print('📝 [SALES] Order lines: ${orderLines.length} items');
 
       // Validate order lines
@@ -292,6 +295,7 @@ class SalesService {
         'kurir_id': kurirId ?? false,
         'awb': awb ?? false,
         'notes': notes ?? '',
+        'payment_term_id': paymentTermId ?? false,
         // Backend will identify user from api-key in headers - don't pass user_id
         'state': state,
         'order_lines': orderLines,
@@ -415,6 +419,7 @@ class SalesService {
     String? awb,
     String? state,
     String? notes,
+    int? paymentTermId,
     required List<Map<String, dynamic>> orderLines,
   }) async {
     try {
@@ -451,6 +456,7 @@ class SalesService {
         'awb': awb ?? false,
         'state': state ?? 'draft',
         'notes': notes ?? false,
+        'payment_term_id': paymentTermId ?? false,
         // Backend will identify user from api-key in headers - don't pass user_id
         'order_lines': orderLines,
       };
@@ -576,6 +582,231 @@ class SalesService {
       return {
         'Success': false,
         'Message': 'Unexpected error: $e',
+      };
+    }
+  }
+
+  // ✅ ODOO: Get all products
+  ///
+  /// **Endpoint**: `/get_product_sale`
+  /// **Method**: `GET`
+  /// **Headers**:
+  /// ```
+  /// db: demotest
+  /// api-key: {api_key}
+  /// limit: 10000 (optional)
+  /// ```
+  ///
+  /// **Response**: Direct array of products
+  Future<Map<String, dynamic>> getProductsSync({
+    required String db,
+    required String apiKey,
+    int limit = 10000,
+  }) async {
+    try {
+      print('🔍 [SALES] Fetching products from Odoo...');
+      print('   Database: $db');
+      print('   API Key: ${apiKey.substring(0, 12)}...');
+      print('   Limit: $limit');
+
+      final response = await _api.get(
+        ApiConfig.getProductSale,
+        options: Options(
+          headers: {
+            'db': db,
+            'api-key': apiKey,
+            'limit': limit,
+          },
+        ),
+      );
+
+      print('🔍 [SALES] Response status: ${response.statusCode}');
+      print('🔍 [SALES] Response data type: ${response.data.runtimeType}');
+
+      if (response.statusCode == 200) {
+        // Handle case where API returns JSON string instead of parsed JSON
+        dynamic productsData = response.data;
+
+        // If response is a String, try to parse it as JSON
+        if (productsData is String) {
+          print('⚠️ [SALES] Response is String, parsing as JSON...');
+          try {
+            productsData = json.decode(productsData);
+            print(
+                '✅ [SALES] JSON parsed successfully, type: ${productsData.runtimeType}');
+          } catch (e) {
+            print('❌ [SALES] Failed to parse JSON: $e');
+            return {
+              'Success': false,
+              'Message': 'Invalid JSON response from API',
+              'Data': [],
+            };
+          }
+        }
+
+        // Now productsData should be a List
+        if (productsData is! List) {
+          print('❌ [SALES] Response is not a List: ${productsData.runtimeType}');
+          return {
+            'Success': false,
+            'Message': 'Invalid response format from API',
+            'Data': [],
+          };
+        }
+
+        final products = productsData;
+        print('✅ [SALES] Fetched ${products.length} products');
+
+        return {
+          'Success': true,
+          'Message': 'Products fetched successfully',
+          'Data': products,
+        };
+      } else {
+        print('⚠️ [SALES] Unexpected status: ${response.statusCode}');
+        return {
+          'Success': false,
+          'Message': 'Failed to fetch products',
+          'Data': [],
+        };
+      }
+    } on DioException catch (e) {
+      print('❌ [SALES] Fetch error: ${e.message}');
+      print('❌ [SALES] Status: ${e.response?.statusCode}');
+
+      return {
+        'Success': false,
+        'Message': e.response?.data['Message'] ??
+            'Failed to fetch products: ${e.message}',
+        'Data': [],
+      };
+    } catch (e) {
+      print('❌ [SALES] Unexpected error: $e');
+      return {
+        'Success': false,
+        'Message': 'Unexpected error: $e',
+        'Data': [],
+      };
+    }
+  }
+
+  // ✅ ODOO: Get all payment terms
+  ///
+  /// **Endpoint**: `/get_payment_term`
+  /// **Method**: `GET`
+  /// **Headers**:
+  /// ```
+  /// db: demotest
+  /// api-key: {api_key}
+  /// limit: 10000 (optional)
+  /// ```
+  ///
+  /// **Response**: Direct array of payment terms
+  Future<Map<String, dynamic>> getPaymentTermsSync({
+    required String db,
+    required String apiKey,
+    int limit = 10000,
+    bool saveToDatabase = true,
+  }) async {
+    try {
+      print('🔍 [SALES] Fetching payment terms from Odoo...');
+      print('   Database: $db');
+      print('   API Key: ${apiKey.substring(0, 12)}...');
+      print('   Limit: $limit');
+
+      final response = await _api.get(
+        ApiConfig.getPaymentTerm,
+        options: Options(
+          headers: {
+            'db': db,
+            'api-key': apiKey,
+            'limit': limit,
+          },
+        ),
+      );
+
+      print('🔍 [SALES] Response status: ${response.statusCode}');
+      print('🔍 [SALES] Response data type: ${response.data.runtimeType}');
+
+      if (response.statusCode == 200) {
+        // Handle case where API returns JSON string instead of parsed JSON
+        dynamic paymentTermsData = response.data;
+
+        // If response is a String, try to parse it as JSON
+        if (paymentTermsData is String) {
+          print('⚠️ [SALES] Response is String, parsing as JSON...');
+          try {
+            paymentTermsData = json.decode(paymentTermsData);
+            print(
+                '✅ [SALES] JSON parsed successfully, type: ${paymentTermsData.runtimeType}');
+          } catch (e) {
+            print('❌ [SALES] Failed to parse JSON: $e');
+            return {
+              'Success': false,
+              'Message': 'Invalid JSON response from API',
+              'Data': [],
+            };
+          }
+        }
+
+        // Now paymentTermsData should be a List
+        if (paymentTermsData is! List) {
+          print('❌ [SALES] Response is not a List: ${paymentTermsData.runtimeType}');
+          return {
+            'Success': false,
+            'Message': 'Invalid response format from API',
+            'Data': [],
+          };
+        }
+
+        final paymentTerms = paymentTermsData;
+        print('✅ [SALES] Fetched ${paymentTerms.length} payment terms');
+
+        // Save to database if requested
+        if (saveToDatabase && paymentTerms.isNotEmpty) {
+          print('💾 [SALES] Saving payment terms to local database...');
+          try {
+            final paymentTermDb = PaymentTermLocalDatabase();
+            final paymentTermsList = paymentTerms
+                .map((p) => p as Map<String, dynamic>)
+                .toList();
+            final savedCount = await paymentTermDb.upsertPaymentTerms(paymentTermsList);
+            print('✅ [SALES] Saved $savedCount payment terms to database');
+          } catch (e) {
+            print('⚠️ [SALES] Error saving payment terms to database: $e');
+            // Don't fail the sync, just log the warning
+          }
+        }
+
+        return {
+          'Success': true,
+          'Message': 'Payment terms fetched successfully',
+          'Data': paymentTerms,
+        };
+      } else {
+        print('⚠️ [SALES] Unexpected status: ${response.statusCode}');
+        return {
+          'Success': false,
+          'Message': 'Failed to fetch payment terms',
+          'Data': [],
+        };
+      }
+    } on DioException catch (e) {
+      print('❌ [SALES] Fetch error: ${e.message}');
+      print('❌ [SALES] Status: ${e.response?.statusCode}');
+
+      return {
+        'Success': false,
+        'Message': e.response?.data['Message'] ??
+            'Failed to fetch payment terms: ${e.message}',
+        'Data': [],
+      };
+    } catch (e) {
+      print('❌ [SALES] Unexpected error: $e');
+      return {
+        'Success': false,
+        'Message': 'Unexpected error: $e',
+        'Data': [],
       };
     }
   }

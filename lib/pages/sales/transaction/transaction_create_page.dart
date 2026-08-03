@@ -14,6 +14,7 @@ import '../../../services/api_service.dart';
 import '../../../services/config_service.dart';
 import '../../../services/local_database/customer_local_database.dart';
 import '../../../services/local_database/location_local_database.dart';
+import '../../../services/local_database/payment_term_local_database.dart';
 import '../../../services/sales_service.dart';
 import '../../../services/secure_storage_service.dart';
 
@@ -101,12 +102,17 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
   List<dynamic> _customers = [];
   List<dynamic> _products = [];
   List<dynamic> _analyticAccounts = []; // NEW: Analytic accounts
+  List<dynamic> _paymentTerms = []; // NEW: Payment terms list
 
   // Loading States
   bool _isLoading = false;
   bool _isLoadingCustomers = true;
   bool _isLoadingProducts = true;
   bool _isLoadingAnalytics = true; // NEW: Loading state for analytics
+  bool _isLoadingPaymentTerms = true; // NEW: Loading state for payment terms
+
+  // Payment Term selection
+  Map<String, dynamic>? _selectedPaymentTerm; // NEW: Selected payment term
 
   // Order State - for Save → Confirm flow
   int? _createdOrderId; // NEW: Store created order ID
@@ -147,6 +153,7 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
       _loadCustomers(),
       _loadProducts(),
       _loadAnalyticAccounts(), // NEW: Load analytic accounts
+      _loadPaymentTerms(), // NEW: Load payment terms
     ]);
   }
 
@@ -427,6 +434,162 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('❌ Error loading analytics: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadPaymentTerms() async {
+    setState(() {
+      _isLoadingPaymentTerms = true;
+    });
+
+    try {
+      logger.i('💳 [LOAD_PAYMENT_TERMS] Starting to load payment terms...');
+
+      // STEP 1: Try to load from LOCAL DATABASE (faster & offline)
+      logger.i('   [STEP 1] Trying LOCAL DATABASE...');
+      
+      final paymentTermDb = PaymentTermLocalDatabase();
+      final localPaymentTerms = await paymentTermDb.getAllPaymentTerms();
+
+      if (localPaymentTerms.isNotEmpty) {
+        logger.i('✅ [LOAD_PAYMENT_TERMS] LOCAL DB: ${localPaymentTerms.length} payment terms loaded');
+
+        // Convert from database format to UI format
+        final paymentTermList = localPaymentTerms.map((term) {
+          return {
+            'id': term['id'],
+            'name': term['name'],
+            'description': term['description'] ?? '',
+          };
+        }).toList();
+
+        setState(() {
+          _paymentTerms = paymentTermList;
+          // Auto-select first payment term if available
+          if (paymentTermList.isNotEmpty) {
+            _selectedPaymentTerm = paymentTermList[0];
+          }
+          _isLoadingPaymentTerms = false;
+        });
+
+        for (var i = 0;
+            i < (paymentTermList.length > 3 ? 3 : paymentTermList.length);
+            i++) {
+          logger.i(
+              '   Payment Term ${i + 1}: ${paymentTermList[i]['name']} (ID: ${paymentTermList[i]['id']})');
+        }
+
+        logger.i('💳 [LOAD_PAYMENT_TERMS] Using LOCAL database data');
+        return; // Success - return without trying API
+      }
+
+      // STEP 2: If local database is empty, fetch from API and sync to local database
+      logger.i('   [STEP 2] LOCAL DB empty, fetching from API...');
+
+      final secureStorage = SecureStorageService();
+      final configService = ConfigService();
+
+      final config = await configService.load();
+      final database = config['database'] as String?;
+      final apiKey = await secureStorage.getAccessToken();
+
+      logger.i('   Database: $database');
+      logger.i('   API Key exists: ${apiKey != null}');
+
+      if (database == null || database.isEmpty) {
+        throw Exception(
+            'Database not configured. Please logout and configure server settings.');
+      }
+
+      if (apiKey == null || apiKey.isEmpty) {
+        throw Exception('Not authenticated. Please login first.');
+      }
+
+      final dio = ApiService().dio;
+      final response = await dio.get(
+        ApiConfig.getPaymentTerm,
+        options: Options(
+          headers: {
+            'db': database,
+            'api-key': apiKey,
+          },
+        ),
+      );
+
+      logger.i('✅ [LOAD_PAYMENT_TERMS] Response status: ${response.statusCode}');
+
+      List<dynamic> paymentTermList;
+      if (response.data is String) {
+        final parsed = json.decode(response.data);
+        paymentTermList = parsed as List;
+      } else if (response.data is List) {
+        paymentTermList = response.data as List;
+      } else {
+        throw Exception(
+            'Unexpected response type: ${response.data.runtimeType}');
+      }
+
+      logger.i(
+          '✅ [LOAD_PAYMENT_TERMS] API SUCCESS: ${paymentTermList.length} terms');
+
+      // STEP 3: Save to local database for future use (sync)
+      if (paymentTermList.isNotEmpty) {
+        logger.i('   [STEP 3] Syncing payment terms to LOCAL DB...');
+        try {
+          // Convert API format to database format
+          final termsForDb = paymentTermList.map((term) {
+            return {
+              'id': term['id'],
+              'name': term['name'],
+              'description': term['description'] ?? '',
+            };
+          }).toList();
+
+          await paymentTermDb.upsertPaymentTerms(termsForDb);
+          logger.i('✅ [LOAD_PAYMENT_TERMS] Synced ${paymentTermList.length} terms to LOCAL DB');
+        } catch (syncError) {
+          logger.w('⚠️ [LOAD_PAYMENT_TERMS] Error syncing to local DB (non-critical): $syncError');
+          // Continue anyway - UI data is already loaded
+        }
+      }
+
+      setState(() {
+        _paymentTerms = paymentTermList;
+        // Auto-select first payment term if available
+        if (paymentTermList.isNotEmpty) {
+          _selectedPaymentTerm = paymentTermList[0];
+        }
+        _isLoadingPaymentTerms = false;
+      });
+
+      if (paymentTermList.isNotEmpty) {
+        for (var i = 0;
+            i < (paymentTermList.length > 3 ? 3 : paymentTermList.length);
+            i++) {
+          logger.i(
+              '   Payment Term ${i + 1}: ${paymentTermList[i]['name']} (ID: ${paymentTermList[i]['id']})');
+        }
+      }
+
+      logger.i('💳 [LOAD_PAYMENT_TERMS] Using API data (will be cached locally)');
+    } catch (e, stackTrace) {
+      logger.e('❌ [LOAD_PAYMENT_TERMS] Error loading payment terms', error: e);
+      logger.e('   Stack trace: $stackTrace');
+
+      setState(() {
+        _paymentTerms = [];
+        _isLoadingPaymentTerms = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error loading payment terms: $e'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),
           ),
@@ -857,6 +1020,164 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
     return result;
   }
 
+  Future<Map<String, dynamic>?> _showPaymentTermSearchDialog() async {
+    if (_isLoadingPaymentTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Payment terms masih loading, mohon tunggu...'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return null;
+    }
+
+    if (_paymentTerms.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tidak ada payment term tersedia'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return null;
+    }
+
+    String searchQuery = '';
+    List<dynamic> filteredTerms = _paymentTerms;
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Pilih Payment Term'),
+              contentPadding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: MediaQuery.of(context).size.height * 0.4,
+                child: Column(
+                  children: [
+                    // Search TextField
+                    TextField(
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        hintText: 'Cari payment term...',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                      ),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          searchQuery = value.toLowerCase();
+                          filteredTerms = _paymentTerms.where((term) {
+                            final name = (term['name'] ?? '')
+                                .toString()
+                                .toLowerCase();
+                            return name.contains(searchQuery);
+                          }).toList();
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Payment Term List
+                    Expanded(
+                      child: filteredTerms.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'Tidak ada payment term ditemukan',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: EdgeInsets.zero,
+                              itemCount: filteredTerms.length,
+                              itemBuilder: (context, index) {
+                                final term = filteredTerms[index];
+
+                                return InkWell(
+                                  onTap: () {
+                                    Navigator.pop(dialogContext, term);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border: Border(
+                                        bottom: BorderSide(
+                                          color: Colors.grey.shade200,
+                                          width: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        // Payment Term Icon
+                                        CircleAvatar(
+                                          radius: 16,
+                                          backgroundColor:
+                                              const Color(0xFF3B82F6)
+                                                  .withValues(alpha: 0.1),
+                                          child: const Icon(
+                                            Icons.calendar_today_outlined,
+                                            size: 16,
+                                            color: Color(0xFF3B82F6),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+
+                                        // Payment Term Info
+                                        Expanded(
+                                          child: Text(
+                                            term['name'] ?? '',
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+
+                                        // Arrow Icon
+                                        Icon(
+                                          Icons.arrow_forward_ios,
+                                          size: 12,
+                                          color: Colors.grey.shade400,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Batal'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    return result;
+  }
+
   void _removeOrderLine(int index) {
     setState(() {
       _orderLines.removeAt(index);
@@ -1180,6 +1501,17 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
       return;
     }
 
+    // Validasi payment term harus dipilih (MANDATORY)
+    if (_selectedPaymentTerm == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Payment Term harus dipilih'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     // Validasi minimal 1 produk
     if (_orderLines.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1310,6 +1642,7 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
         awb: null,
         notes:
             _notesController.text.isEmpty ? null : _notesController.text.trim(),
+        paymentTermId: _selectedPaymentTerm?['id'] as int?,
         state: 'draft', // Always draft when created
         orderLines: _orderLines
             .map((line) => {
@@ -1435,6 +1768,8 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
               name: _createdOrderName ?? 'SO-$_createdOrderId',
               partnerId: _selectedCustomer!['id'],
               partnerName: _selectedCustomer!['name'],
+              paymentTermId: _selectedPaymentTerm?['id'] as int?,
+              paymentTermName: _selectedPaymentTerm?['name'] as String?,
               dateOrder: dateOrderFromBackend,
               amountTotal: _calculateTotal(),
               state: 'draft', // Draft state
@@ -2026,41 +2361,145 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
                   ],
                 ),
               ),
-            if (_selectedCustomer!['zip'] != null &&
-                _selectedCustomer!['zip'] != '')
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Kode Pos',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[600],
+            // Email and Kode Pos side by side
+            Row(
+              children: [
+                // Email
+                if (_selectedCustomer!['email'] != null &&
+                    _selectedCustomer!['email'] != '')
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 8, bottom: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Email',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            _selectedCustomer!['email'] ?? '-',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black87,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      _selectedCustomer!['zip'] ?? '-',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black87,
+                  ),
+                // Kode Pos
+                if (_selectedCustomer!['zip'] != null &&
+                    _selectedCustomer!['zip'] != '')
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Kode Pos',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            _selectedCustomer!['zip'] ?? '-',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+              ],
+            ),
+            // Payment Term - similar to customer name style (MANDATORY)
+            Padding(
+              padding: const EdgeInsets.only(top: 16, bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Payment Term',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '*',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _selectedPaymentTerm?['name'] ?? 'Belum dipilih',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _selectedPaymentTerm == null
+                                ? Colors.grey[400]
+                                : Colors.black87,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 36,
+                        child: ElevatedButton.icon(
+                          onPressed: _isLoadingPaymentTerms ||
+                                  _paymentTerms.isEmpty
+                              ? null
+                              : () async {
+                                  final selectedTerm =
+                                      await _showPaymentTermSearchDialog();
+                                  if (selectedTerm != null) {
+                                    setState(() {
+                                      _selectedPaymentTerm = selectedTerm;
+                                    });
+                                    logger.i(
+                                      '✅ [PAYMENT_TERM_SELECTED] ${selectedTerm['name']} (ID: ${selectedTerm['id']})',
+                                    );
+                                  }
+                                },
+                          icon: const Icon(Icons.search, size: 16),
+                          label: const Text('Cari'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            disabledBackgroundColor: Colors.grey[400],
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            if (_selectedCustomer!['email'] != null &&
-                _selectedCustomer!['email'] != '')
-              _buildEditField(
-                'Email',
-                TextEditingController(
-                  text: _selectedCustomer!['email'] ?? '',
-                ),
-                readOnly: true,
-              ),
+            ),
           ],
         ],
       ),

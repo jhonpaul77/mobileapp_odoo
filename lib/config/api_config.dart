@@ -92,6 +92,10 @@ class ApiConfig {
   static const String getAnalytic =
       '/get_analytic'; // GET - Get all analytic accounts
 
+  // ✅ PAYMENT TERM ENDPOINTS - ODOO
+  static const String getPaymentTerm =
+      '/get_payment_term'; // GET - Get all payment terms
+
   // ✅ SALES ENDPOINTS - TAMBAHAN
   static const String sales = '$apiVersion/sales'; // POST - Create
   //static const String sales = "/sales";

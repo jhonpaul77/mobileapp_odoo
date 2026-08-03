@@ -1,0 +1,111 @@
+/// Sales & Motivation Quotes
+/// 80+ quotes dari top sales leaders dan entrepreneurs
+/// ATTRIBUTION LENGKAP: Setiap quote memiliki nama pembicara/penulis di akhir
+/// Random selection setiap login
+
+class SalesQuotes {
+  static const List<String> quotes = [
+    "Jangan fokus pada produk, fokus pada solusi untuk masalah pelanggan. - James Gwee",
+    "Kesuksesan dimulai ketika Anda berhenti bicara tentang diri sendiri dan mulai mendengarkan kebutuhan orang lain. - James Gwee",
+    "Setiap penolakan adalah kesempatan untuk menjadi lebih baik. Pelajari, adaptasi, dan coba lagi. - James Gwee",
+    "Anda tidak bisa membimbing orang lain jika Anda sendiri tidak tahu kemana Anda pergi. - Zig Ziglar",
+    "Penjualan bukan tentang menjual produk, tetapi tentang membangun kepercayaan dan hubungan jangka panjang. - Zig Ziglar",
+    "Pengalaman negatif hanyalah pengalaman positif yang belum diproses dengan benar. - Zig Ziglar",
+    "Kesuksesan adalah perjalanan, bukan destinasi. Nikmati perjalanan Anda. - Zig Ziglar",
+    "Anda akan mencapai apa yang Anda yakini. Percayalah pada diri sendiri. - Zig Ziglar",
+    "Waktu adalah sumber daya paling berharga. Gunakan dengan bijak. - Brian Tracy",
+    "Fokus pada hasil, bukan aktivitas. Hasil adalah satu-satunya yang penting. - Brian Tracy",
+    "Disiplin adalah jembatan antara tujuan dan pencapaian. - Brian Tracy",
+    "Seorang pembeli yang puas adalah aset terbaik Anda. - Brian Tracy",
+    "Efektivitas dimulai dengan perencanaan. Rencanakan hari Anda sebelum hari merencanakan Anda. - Brian Tracy",
+    "Jangan pernah berhenti menjual. Penjualan adalah kehidupan. - Grant Cardone",
+    "Ketakutan adalah bukti bahwa Anda berada di jalur yang benar. Teruslah maju. - Grant Cardone",
+    "10x adalah target minimum, bukan maksimum. - Grant Cardone",
+    "Obsesi adalah harga kesuksesan. - Grant Cardone",
+    "Setiap orang adalah prospek potensial. Setiap percakapan adalah kesempatan penjualan. - Grant Cardone",
+    "Kualitas hidup Anda ditentukan oleh kualitas pertanyaan yang Anda tanyakan pada diri sendiri. - Tony Robbins",
+    "Anda tidak perlu sempurna untuk memulai, tetapi Anda perlu memulai untuk sempurna. - Tony Robbins",
+    "Ambil tindakan sekarang. Jangan menunggu kondisi sempurna. - Tony Robbins",
+    "Masa depan bukan sesuatu yang terjadi, tetapi sesuatu yang Anda ciptakan. - Tony Robbins",
+    "Rasa syukur adalah kunci kesuksesan dan kebahagiaan. - Tony Robbins",
+    "Jangan pernah puas dengan status quo. Selalu berusaha untuk inovasi dan perbaikan. - Elon Musk",
+    "Mimpi besar dimulai dengan langkah kecil. Ambil langkah itu hari ini. - Elon Musk",
+    "Kegagalan adalah bagian penting dari proses pembelajaran. - Elon Musk",
+    "Bekerja keras, fokus, dan percaya pada visi Anda. - Elon Musk",
+    "Masa depan milik mereka yang berani mengambil risiko. - Elon Musk",
+    "Satu-satunya cara untuk melakukan pekerjaan hebat adalah mencintai apa yang Anda lakukan. - Steve Jobs",
+    "Jangan membiarkan kebisingan pendapat orang lain meredam suara batin Anda. - Steve Jobs",
+    "Detail itu penting. Perhatikan setiap detail produk dan layanan Anda. - Steve Jobs",
+    "Inovasi terjadi ketika Anda mengatakan 'tidak' pada seribu hal. - Steve Jobs",
+    "Percayakan diri Anda pada intuisi Anda. - Steve Jobs",
+    "Hari ini sulit, besok lebih sulit, tapi hari esok akan indah. - Jack Ma",
+    "Jangan pernah berhenti bermimpi. Mimpi adalah awal dari semua pencapaian. - Jack Ma",
+    "Jika Anda tidak bisa menang, pastikan Anda belajar. - Jack Ma",
+    "Orang hebat tidak dilahirkan, mereka dibuat. Anda perlu bekerja untuk itu. - Jack Ma",
+    "Optimisme adalah langkah pertama menuju kesuksesan. - Jack Ma",
+    "Kesempatan adalah saat persiapan bertemu dengan keberuntungan. - Oprah Winfrey",
+    "Anda adalah satu-satunya yang dapat menentukan nasib Anda. Ambil kendali. - Oprah Winfrey",
+    "Rasa syukur membuka pintu untuk kemungkinan yang lebih besar. - Oprah Winfrey",
+    "Dengarkan suara batin Anda. Itu tidak akan pernah membohongi Anda. - Oprah Winfrey",
+    "Setiap orang memiliki potensi untuk mencapai kesuksesan yang luar biasa. - Oprah Winfrey",
+    "Investasi terbaik adalah investasi pada diri sendiri. - Warren Buffett",
+    "Jangan pernah berinvestasi pada sesuatu yang tidak Anda pahami. - Warren Buffett",
+    "Disiplin keuangan adalah kunci kebebasan finansial. - Warren Buffett",
+    "Kesabaran adalah kunci kesuksesan investasi. - Warren Buffett",
+    "Belajar terus-menerus adalah rahasia kesuksesan jangka panjang. - Warren Buffett",
+    "Bekerja lebih keras dari siapa pun yang Anda kenal di industri Anda. - Mark Cuban",
+    "Jangan takut untuk gagal. Takut adalah musuh kesuksesan. - Mark Cuban",
+    "Pertanyakan setiap asumsi. Banyak peluang tersembunyi dalam detail. - Mark Cuban",
+    "Kesuksesan adalah hasil dari kerja keras, bukan keberuntungan. - Mark Cuban",
+    "Selalu cari peluang untuk belajar hal-hal baru. - Mark Cuban",
+    "Obsesi pada pelanggan adalah kunci kesuksesan. - Jeff Bezos",
+    "Bayar perhatian pada detail kecil. Mereka membuat perbedaan besar. - Jeff Bezos",
+    "Jangan pernah berhenti berinovasi. Stagnasi adalah kematian bisnis. - Jeff Bezos",
+    "Ambil risiko yang terukur dan pelajari dari kegagalan. - Jeff Bezos",
+    "Budaya perusahaan yang kuat adalah aset paling berharga. - Jeff Bezos",
+    "Kepemimpinan adalah tentang menginspirasi orang lain untuk mencapai hal-hal luar biasa. - Richard Branson",
+    "Bisnis harus menyenangkan dan menguntungkan. Keduanya bisa berjalan bersama. - Richard Branson",
+    "Berikan nilai tambah kepada pelanggan Anda setiap hari. - Richard Branson",
+    "Ambil risiko, tetapi selalu miliki rencana cadangan. - Richard Branson",
+    "Kesuksesan datang kepada mereka yang berani berbeda. - Richard Branson",
+    "Uang adalah alat, bukan tujuan. Gunakan bijak untuk mencapai tujuan Anda. - Robert Kiyosaki",
+    "Pelajari keterampilan baru setiap tahun. Itu adalah investasi terbaik. - Robert Kiyosaki",
+    "Jangan bekerja untuk uang, buat uang bekerja untuk Anda. - Robert Kiyosaki",
+    "Kegagalan adalah pembelajaran yang paling berharga. - Robert Kiyosaki",
+    "Pola pikir kaya dimulai dengan menghargai setiap rupiah. - Robert Kiyosaki",
+    "Jangan menjadi produk dari keadaan Anda. Jadilah pencipta keadaan Anda. - Jim Rohn",
+    "Disiplin adalah membayar harga kesuksesan lebih awal. - Jim Rohn",
+    "Pendapatan Anda adalah cerminan dari nilai yang Anda berikan. - Jim Rohn",
+    "Investasi pada pengetahuan membayar bunga terbaik. - Jim Rohn",
+    "Kesuksesan adalah hasil dari kebiasaan baik yang konsisten. - Jim Rohn",
+    "Memilih pekerjaan yang Anda cintai berarti Anda tidak pernah bekerja sehari dalam hidup Anda. - Confucius",
+    "Pelajar yang sejati tidak pernah berhenti belajar. - Confucius",
+    "Kesederhanaan adalah kunci dari kebesaran sejati. - Confucius",
+    "Sebelum Anda memimpin orang lain, pimpinlah diri sendiri dengan baik. - Confucius",
+    "Apa pun yang pikiran Anda dapat membayangkan dan percayai, pikiran Anda dapat mencapainya. - Napoleon Hill",
+    "Kesuksesan dimulai dengan sikap mental yang benar. - Napoleon Hill",
+    "Rencana aksi adalah bridge antara mimpi dan realitas. - Napoleon Hill",
+    "Kegigihan adalah jalan menuju kesuksesan. - Napoleon Hill",
+    "Kenali nama orang, dengarkan mereka dengan seksama, dan buat mereka merasa penting. - Dale Carnegie",
+    "Penjualan adalah seni membuat orang merasa didengar dan dipahami. - Dale Carnegie",
+    "Kebaikan adalah investasi terbaik dalam hubungan bisnis. - Dale Carnegie",
+    "Kepercayaan adalah mata uang terbesar dalam penjualan. - Dale Carnegie",
+    "Fokus pada kekuatan Anda, bukan kelemahan Anda. - Peter Drucker",
+    "Efektivitas bisa dipelajari dan ditingkatkan. Mulai hari ini. - Peter Drucker",
+    "Tujuan yang jelas adalah awal dari semua pencapaian. - Peter Drucker",
+    "Ukur apa yang penting. Apa yang diukur akan ditingkatkan. - Peter Drucker",
+  ];
+
+  static String getRandomQuote() {
+    final random = DateTime.now().microsecond;
+    return quotes[random % quotes.length];
+  }
+
+  static String getQuoteByIndex(int index) {
+    return quotes[index % quotes.length];
+  }
+
+  static int getTotalQuotes() {
+    return quotes.length;
+  }
+}

@@ -138,14 +138,37 @@ Mohon segera dikonfirmasi ya kak untuk pesanannya.
 
 TERIMA KASIH''';
 
-      // Format phone number (remove leading 0, add country code)
+      // Format phone number correctly - extract only digits
       String formattedPhone = customerPhone.trim();
+      print('🔧 [PHONE_FORMAT] Original: $customerPhone');
+      
+      // Remove all non-digit characters (spaces, dashes, +, etc)
+      formattedPhone = formattedPhone.replaceAll(RegExp(r'[^0-9]'), '');
+      print('🔧 [PHONE_FORMAT] After removing non-digits: $formattedPhone');
+      
+      // Remove leading 0 if exists
       if (formattedPhone.startsWith('0')) {
         formattedPhone = formattedPhone.substring(1);
+        print('🔧 [PHONE_FORMAT] After removing leading 0: $formattedPhone');
       }
+      
+      // Remove leading 62 if exists (to avoid duplication)
+      int removeCount = 0;
+      while (formattedPhone.startsWith('62')) {
+        formattedPhone = formattedPhone.substring(2);
+        removeCount++;
+      }
+      if (removeCount > 0) {
+        print('🔧 [PHONE_FORMAT] Removed $removeCount leading 62: $formattedPhone');
+      }
+      
+      // Ensure it starts with 62
       if (!formattedPhone.startsWith('62')) {
         formattedPhone = '62$formattedPhone';
+        print('🔧 [PHONE_FORMAT] Added 62 prefix: $formattedPhone');
       }
+      
+      print('✅ [PHONE_FORMAT] Final formatted phone: $formattedPhone');
 
       // Encode message for URL
       final encodedMessage = Uri.encodeComponent(message);
@@ -337,14 +360,37 @@ Dimohon untuk membayar paket sesuai kesepakatan di awal . :-)
 
 TERIMA KASIH''';
 
-      // Format phone number (remove leading 0, add country code)
+      // Format phone number correctly - extract only digits
       String formattedPhone = customerPhone.trim();
+      print('🔧 [PHONE_FORMAT] Original: $customerPhone');
+      
+      // Remove all non-digit characters (spaces, dashes, +, etc)
+      formattedPhone = formattedPhone.replaceAll(RegExp(r'[^0-9]'), '');
+      print('🔧 [PHONE_FORMAT] After removing non-digits: $formattedPhone');
+      
+      // Remove leading 0 if exists
       if (formattedPhone.startsWith('0')) {
         formattedPhone = formattedPhone.substring(1);
+        print('🔧 [PHONE_FORMAT] After removing leading 0: $formattedPhone');
       }
+      
+      // Remove leading 62 if exists (to avoid duplication)
+      int removeCount = 0;
+      while (formattedPhone.startsWith('62')) {
+        formattedPhone = formattedPhone.substring(2);
+        removeCount++;
+      }
+      if (removeCount > 0) {
+        print('🔧 [PHONE_FORMAT] Removed $removeCount leading 62: $formattedPhone');
+      }
+      
+      // Ensure it starts with 62
       if (!formattedPhone.startsWith('62')) {
         formattedPhone = '62$formattedPhone';
+        print('🔧 [PHONE_FORMAT] Added 62 prefix: $formattedPhone');
       }
+      
+      print('✅ [PHONE_FORMAT] Final formatted phone: $formattedPhone');
 
       // Encode message for URL
       final encodedMessage = Uri.encodeComponent(message);
@@ -978,6 +1024,34 @@ TERIMA KASIH''';
                     ],
                   ),
                   
+                  // Phone Information (di atas alamat)
+                  if (order.partnerPhone != null && order.partnerPhone!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Phone',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            order.partnerPhone!,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: theme.textTheme.bodyMedium?.color,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  
                   // Address Information (above Warehouse)
                   if (order.partnerStreet != null || order.partnerDistrict != null || order.partnerCity != null || order.partnerState != null)
                     Column(
@@ -1013,6 +1087,10 @@ TERIMA KASIH''';
                     {
                       'label': 'AWB',
                       'value': _formatFieldValue(order.awb),
+                    },
+                    {
+                      'label': 'Payment Term',
+                      'value': order.paymentTermName ?? 'N/A',
                     },
                   ]),
                   const SizedBox(height: 12),

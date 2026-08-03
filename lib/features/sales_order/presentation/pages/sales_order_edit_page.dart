@@ -7,6 +7,7 @@ import '../../../../config/theme.dart';
 import '../../../../services/config_service.dart';
 import '../../../../services/local_database/customer_local_database.dart';
 import '../../../../services/local_database/location_local_database.dart';
+import '../../../../services/local_database/payment_term_local_database.dart';
 import '../../../../services/sales_service.dart';
 import '../../../../services/secure_storage_service.dart';
 import '../../../analytic/presentation/pages/analytic_search_modal.dart';
@@ -87,6 +88,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   late final TextEditingController _cityController;
   late final TextEditingController _stateController;
   late final TextEditingController _notesController;
+  late final TextEditingController _paymentTermController;
   late final List<OrderLine> _orderLines;
   late final List<Map<String, TextEditingController>> _lineControllers;
   late List<ProductModel> _allProducts = [];
@@ -95,12 +97,14 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   late Map<int, String> _cityMap = {}; // cityId -> cityName
   late Map<int, String> _stateMap = {}; // stateId -> stateName
   late Map<int, int> _cityToStateMap = {}; // cityId -> stateId
+  late List<Map<String, dynamic>> _paymentTerms = []; // NEW: Payment terms list
   final _currencyFormat =
       NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
   // State variables
   bool _isLoading = false;
   int? _selectedCustomerId;
+  int? _selectedPaymentTermId; // NEW: Selected payment term ID
   bool _orderSavedSuccessfully = false;
   // int? _selectedDistrictId; // Removed: unused field
   // int? _selectedCityId; // Removed: unused field
@@ -129,9 +133,14 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     _kurirNameController =
         TextEditingController(text: order.kurirNameDisplay ?? '');
     _awbController = TextEditingController(text: order.awb?.toString() ?? '');
+    _paymentTermController =
+        TextEditingController(text: order.paymentTermName?.toString() ?? '');
 
     // Store IDs for API calls
     _selectedCustomerId = order.partnerId;
+
+    // Initialize payment term selection
+    _selectedPaymentTermId = order.paymentTermId;
 
     _orderLines = order.orderLines
         .map((line) => OrderLine(
@@ -333,6 +342,20 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           logger.e('❌ Error loading districts from API fallback', error: apiError);
         }
       }
+
+      // Load payment terms from local database
+      try {
+        final paymentTermDb = PaymentTermLocalDatabase();
+        final paymentTerms = await paymentTermDb.getAllPaymentTerms();
+        logger.i('✅ Loaded ${paymentTerms.length} payment terms');
+        if (mounted) {
+          setState(() {
+            _paymentTerms = paymentTerms;
+          });
+        }
+      } catch (e) {
+        logger.e('❌ Error loading payment terms from LOCAL DB', error: e);
+      }
     } catch (e) {
       logger.e('❌ Error in _loadData', error: e);
     }
@@ -515,6 +538,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
     _warehouseNameController.dispose();
     _kurirNameController.dispose();
     _awbController.dispose();
+    _paymentTermController.dispose();
     for (final controllers in _lineControllers) {
       for (final controller in controllers.values) {
         controller.dispose();
@@ -740,6 +764,10 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         notesToSend = order.notes!;
       }
 
+      print('🔍 DEBUG: _selectedPaymentTermId = $_selectedPaymentTermId');
+      print('🔍 DEBUG: order.paymentTermId = ${order.paymentTermId}');
+      print('🔍 DEBUG: _paymentTermController.text = ${_paymentTermController.text}');
+
       final result = await _salesService.editSaleOrder(
         id: order.id,
         partnerId: _selectedCustomerId!,
@@ -753,6 +781,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
         awb: awbToSend.isEmpty ? null : awbToSend,
         state: order.state,
         notes: notesToSend.isEmpty ? null : notesToSend,
+        paymentTermId: _selectedPaymentTermId,
         orderLines: apiOrderLines,
       );
 
@@ -847,6 +876,10 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
               notes: _notesController.text.isNotEmpty
                   ? _notesController.text
                   : widget.order.notes,
+              paymentTermId: _selectedPaymentTermId,
+              paymentTermName: _paymentTermController.text.isNotEmpty
+                  ? _paymentTermController.text
+                  : widget.order.paymentTermName,
               orderCount: widget.order.orderCount,
               orderLines: updatedOrderLines,
               amountTotal: newAmountTotal,
@@ -1484,6 +1517,43 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                     ),
                   ),
                   const SizedBox(height: 9),
+                  // Phone Display (Read-only)
+                  Text(
+                    'Phone',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: theme.textTheme.bodySmall?.color,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 9,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[800]
+                          : Colors.grey[50],
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.grey[700]!
+                            : Colors.grey[300]!,
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      widget.order.partnerPhone ?? '-',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 9),
                   _buildEditField('Address', _addressController, maxLines: 2, fontSize: 11),
                   const SizedBox(height: 9),
                   
@@ -1625,6 +1695,100 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                         style: TextStyle(
                           fontSize: 12,
                           color: theme.textTheme.bodyMedium?.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 9),
+                  
+                  // Payment Term - Seragam dengan Customer Style
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Payment Term',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: theme.textTheme.bodySmall?.color,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      GestureDetector(
+                        onTap: _paymentTerms.isEmpty
+                            ? null
+                            : () async {
+                                final selected = await showDialog<Map<String, dynamic>>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('Select Payment Term'),
+                                    content: SingleChildScrollView(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: _paymentTerms.map((term) {
+                                          return ListTile(
+                                            title: Text(term['name'] ?? 'Unknown'),
+                                            onTap: () {
+                                              Navigator.pop(ctx, term);
+                                            },
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ),
+                                  ),
+                                );
+
+                                if (selected != null) {
+                                  setState(() {
+                                    _selectedPaymentTermId = selected['id'] as int?;
+                                    _paymentTermController.text = selected['name'] ?? '';
+                                  });
+                                }
+                              },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 9,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.brightness == Brightness.dark
+                                ? Colors.grey[800]
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: theme.brightness == Brightness.dark
+                                  ? Colors.grey[700]!
+                                  : Colors.grey[300]!,
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _paymentTermController.text.isEmpty
+                                      ? 'Pilih Payment Term'
+                                      : _paymentTermController.text,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: _paymentTermController.text.isEmpty
+                                        ? Colors.grey[400]
+                                        : theme.textTheme.bodyLarge?.color,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.arrow_drop_down,
+                                color: Colors.grey[400],
+                                size: 20,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
