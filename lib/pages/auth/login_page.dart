@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../config/theme.dart';
 import '../../services/api_service.dart';
@@ -348,16 +349,24 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     if (!mounted) return;
 
     if (result != null && result['status'] == 'success') {
-      // ✅ Save ke config.json (file-based, bukan SecureStorage)
+      // ✅ CLEAR ALL STATE BEFORE SAVING
+      // 1. Clear secure storage
+      await _storage.clearAll();
+      
+      // 2. Clear SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // 3. Save ke config.json (file-based, bukan SecureStorage)
       await _configService.updateServerSettings(
         database: result['db'],
         url: result['url'],
       );
 
-      // Update ApiConfig baseUrl
+      // 4. Update ApiConfig baseUrl
       ApiService().updateBaseUrl(result['url']);
 
-      // Refresh database indicator
+      // 5. Refresh database indicator
       await _loadCurrentDb();
 
       if (!mounted) return;

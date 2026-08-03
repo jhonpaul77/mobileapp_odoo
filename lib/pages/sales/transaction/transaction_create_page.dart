@@ -1768,6 +1768,7 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
               name: _createdOrderName ?? 'SO-$_createdOrderId',
               partnerId: _selectedCustomer!['id'],
               partnerName: _selectedCustomer!['name'],
+              partnerPhone: _selectedCustomer!['phone'],  // ← ADD PHONE
               paymentTermId: _selectedPaymentTerm?['id'] as int?,
               paymentTermName: _selectedPaymentTerm?['name'] as String?,
               dateOrder: dateOrderFromBackend,

@@ -67,9 +67,16 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
     return line.productNameDisplay;
   }
 
-  /// Send WhatsApp order confirmation message
+  /// Send follow-up via WhatsApp with order details
   Future<void> _sendWhatsAppReminder() async {
     final order = widget.order;
+
+    // DEBUG: Print order details
+    print('📞 [FOLLOWUP] Order ID: ${order.id}');
+    print('📞 [FOLLOWUP] Order Name: ${order.name}');
+    print('📞 [FOLLOWUP] Customer Name: ${order.customerName}');
+    print('📞 [FOLLOWUP] Partner Phone: ${order.partnerPhone}');
+    print('📞 [FOLLOWUP] Order Lines Count: ${order.orderLines.length}');
 
     // Get customer phone from partner_phone field
     String? customerPhone = order.partnerPhone;
@@ -101,40 +108,37 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
     }
 
     try {
-      // Get customer name without phone
-      String customerNameOnly = order.customerName;
-      if (customerNameOnly.contains('(')) {
-        customerNameOnly = customerNameOnly.split('(')[0].trim();
+      // Get customer name
+      String customerName = order.customerName;
+      if (customerName.contains('(')) {
+        customerName = customerName.split('(')[0].trim();
       }
 
-      // Build items list
-      String itemsList = '';
-      for (final line in order.orderLines) {
+      // Build order lines text
+      String orderLinesText = '';
+      for (var line in order.orderLines) {
         final qty = line.productUomQty.toInt();
-        final product = _getProductName(line.productId, line);
-        itemsList += '$qty (pcs) $product\n';
+        final product = line.productNameDisplay;
+        orderLinesText += '$qty (pcs) $product\n';
       }
 
-      // Build address section for customer to fill in
-      final addressSection = '''Tolong isi alamat kakak dengan lengkap :
-RT/RW/Nama Jalan: 
-Desa/Kelurahan: 
-Kecamatan: 
-Kota/Kab: 
-Provinsi: ''';
-
-      // Build the full message - simplified format per user request
-      final message = '''Halo kak $customerNameOnly ($customerPhone)
+      // Build the follow-up message - sesuai format user
+      final message = '''Hai kak $customerName ($customerPhone)
 
 Dengan saya CS Armand :
 
 Kami sudah terima pesanannya dengan rincian sebagai berikut:
-$itemsList
+$orderLinesText
 _BISA TRANSFER_ maupun _BAYAR DI TEMPAT_
 
-$addressSection
+Tolong isi alamat kakak dengan lengkap :
+RT/RW/Nama Jalan: 
+Desa/Kelurahan: 
+Kecamatan: 
+Kota/Kab: 
+Provinsi: 
 
-Mohon segera dikonfirmasi ya kak untuk pesanannya. 
+Mohon segera dikonfirmasi ya kak untuk pesanannya.
 
 TERIMA KASIH''';
 
@@ -175,7 +179,7 @@ TERIMA KASIH''';
 
       bool launched = false;
 
-      // Use api.whatsapp.com - the only reliable method that works
+      // Use api.whatsapp.com
       final whatsappUrl =
           'https://api.whatsapp.com/send?phone=$formattedPhone&text=$encodedMessage';
       print('🔵 Opening WhatsApp: $whatsappUrl');
@@ -190,7 +194,7 @@ TERIMA KASIH''';
           print('✅ WhatsApp opened successfully');
         } else {
           print('⚠️ Cannot launch URL');
-          // If canLaunchUrl fails, try anyway - sometimes it fails but still works
+          // If canLaunchUrl fails, try anyway
           try {
             await launchUrl(
               Uri.parse(whatsappUrl),
@@ -207,13 +211,12 @@ TERIMA KASIH''';
       }
 
       if (launched) {
-        // ✅ Increment counter untuk Message
+        // ✅ Tandai sudah di follow-up (tidak perlu counter)
         final orderId = widget.order.id;
         final prefs = await SharedPreferences.getInstance();
-        final key = 'wa_count_${orderId}_message';
-        final currentCount = prefs.getInt(key) ?? 0;
-        await prefs.setInt(key, currentCount + 1);
-        print('✅ Message counter: +1 (total: ${currentCount + 1})');
+        final key = 'followup_sent_$orderId';
+        await prefs.setBool(key, true);
+        print('✅ Follow-up marked as sent');
         
         // Show success message
         if (mounted) {
@@ -223,10 +226,10 @@ TERIMA KASIH''';
                 children: [
                   Icon(Icons.check_circle, color: Colors.white),
                   SizedBox(width: 12),
-                  Text('Membuka WhatsApp...'),
+                  Text('Follow-up berhasil dikirim'),
                 ],
               ),
-              backgroundColor: Color(0xFF25D366),
+              backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
               duration: Duration(seconds: 2),
             ),
@@ -305,9 +308,11 @@ TERIMA KASIH''';
       return;
     }
 
-    // Check if kurir and awb exist
-    if ((order.kurirName == null || order.kurirName!.isEmpty) &&
-        (order.awb == null || order.awb!.isEmpty)) {
+    // Check if at least kurir OR awb exists (message can be sent with either one or both)
+    final hasKurirName = order.kurirName != null && order.kurirName!.isNotEmpty;
+    final hasAwb = order.awb != null && order.awb.toString().isNotEmpty && order.awb.toString() != 'false';
+    
+    if (!hasKurirName && !hasAwb) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -340,8 +345,8 @@ TERIMA KASIH''';
       }
 
       // Get kurir name and AWB
-      final kurirName = order.kurirName ?? '-';
-      final awbNumber = order.awb?.toString() ?? '-';
+      final kurirName = (hasKurirName ? order.kurirName : '-') ?? '-';
+      final awbNumber = (hasAwb ? order.awb?.toString() : '-') ?? '-';
 
       // Build the shipment tracking message - per user format
       final message = '''Halo kak $customerNameOnly ($customerPhone)

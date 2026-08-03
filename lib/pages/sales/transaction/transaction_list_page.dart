@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nextpsa/config/theme.dart';
-import 'package:nextpsa/pages/sales/transaction/transaction_detail_page.dart';
+import 'package:nextpsa/features/sales_order/domain/entities/order_line.dart';
+import 'package:nextpsa/features/sales_order/domain/entities/sales_order.dart';
+import 'package:nextpsa/features/sales_order/presentation/pages/sales_order_detail_page.dart';
 import 'package:nextpsa/services/sales_service.dart';
 
 class TransactionListPage extends StatefulWidget {
@@ -110,6 +112,46 @@ class _TransactionListPageState extends State<TransactionListPage> {
       default:
         return 'Open';
     }
+  }
+
+  /// Convert transaction Map to SalesOrder entity for detail page
+  SalesOrder _transactionToSalesOrder(Map<String, dynamic> transaction) {
+    // Get raw order data which includes full order_line details
+    final rawOrder = transaction['rawData'] as Map<String, dynamic>? ?? {};
+    
+    // Parse order lines from raw order
+    List<OrderLine> orderLines = [];
+    if (rawOrder['order_line'] != null && rawOrder['order_line'] is List) {
+      orderLines = (rawOrder['order_line'] as List).map((line) {
+        return OrderLine(
+          productId: line['product_id'] as int? ?? 0,
+          productName: line['product_name'] as String? ?? 'Unknown',
+          productUomQty: (line['product_uom_qty'] as num?)?.toDouble() ?? 0.0,
+          priceUnit: (line['price_unit'] as num?)?.toDouble() ?? 0.0,
+          analyticDistribution: line['analytic_distribution'],
+        );
+      }).toList();
+    }
+
+    return SalesOrder(
+      id: transaction['id'] as int? ?? 0,
+      name: transaction['noTransaksi'] as String? ?? 'SO-???',
+      partnerName: transaction['customer'] as String? ?? 'Unknown',
+      partnerPhone: transaction['phone'] as String?,
+      state: transaction['status'] as String? ?? 'draft',
+      warehouseId: 1,
+      kurirId: null,
+      kurirName: transaction['salesRep'] as String?,
+      awb: transaction['awb'] as String?,
+      dateOrder: (transaction['tanggal'] as DateTime?)?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      amountTotal: transaction['nominal'] as double? ?? 0.0,
+      orderLines: orderLines,
+      partnerStreet: transaction['deliveryAddress'] as String?,
+      partnerCity: transaction['deliveryCity'] as String?,
+      partnerState: transaction['deliveryProvince'] as String?,
+      partnerDistrict: transaction['deliveryDistrict'] as String?,
+      paymentTermName: transaction['paymentTerms'] as String?,
+    );
   }
 
   List<Map<String, dynamic>> get _filteredTransactions {
@@ -251,12 +293,15 @@ class _TransactionListPageState extends State<TransactionListPage> {
 
                                   return InkWell(
                                     onTap: () async {
+                                      final transaction = transactions[index];
+                                      final salesOrder = _transactionToSalesOrder(transaction);
+                                      
                                       final updated =
                                           await Navigator.of(context)
                                               .push<Map<String, dynamic>>(
                                         MaterialPageRoute(
-                                          builder: (_) => TransactionDetailPage(
-                                              transaction: transaction),
+                                          builder: (_) => SalesOrderDetailPage(
+                                              order: salesOrder),
                                         ),
                                       );
 
