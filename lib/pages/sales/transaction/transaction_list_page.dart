@@ -54,6 +54,15 @@ class _TransactionListPageState extends State<TransactionListPage> {
             return state.toString().toLowerCase() == 'cancel';
           }).length;
 
+          // ✅ Parse fu_count with debugging
+          final fuCountRaw = order['fu_count'];
+          final fuCountParsed = _parseFuCount(fuCountRaw);
+          
+          if (order['name'] == 'S00003') {
+            print('🔍 [DEBUG_S00003] Raw fu_count: $fuCountRaw (type: ${fuCountRaw.runtimeType})');
+            print('🔍 [DEBUG_S00003] Parsed fuCount: $fuCountParsed');
+          }
+
           return {
             'id': order['id'],
             'soNumber': order['name'] ?? 'SO-???',
@@ -66,10 +75,22 @@ class _TransactionListPageState extends State<TransactionListPage> {
             'nominal': (order['amount_total'] ?? 0.0).toDouble(),
             'orderedCount': orderedCount,
             'canceledCount': canceledCount,
+            'fuCount': fuCountParsed, // Follow-up count from API
             // Keep original data for detail page
             'rawData': order,
           };
         }).toList();
+
+        // DEBUG: Print fu_count from first few transactions
+        if (transformedOrders.isNotEmpty) {
+          print('📊 [TRANSACTION_LIST] ✅ Loaded and transformed ${transformedOrders.length} orders');
+          print('📊 [TRANSACTION_LIST] Sample fu_count values from first 5:');
+          for (int i = 0; i < (transformedOrders.length > 5 ? 5 : transformedOrders.length); i++) {
+            final tx = transformedOrders[i];
+            final rawFuCount = tx['rawData']?['fu_count'];
+            print('   [$i] ${tx['soNumber']}: fu_count=$rawFuCount → fuCount=${tx['fuCount']}');
+          }
+        }
 
         if (mounted) {
           setState(() {
@@ -114,6 +135,20 @@ class _TransactionListPageState extends State<TransactionListPage> {
     }
   }
 
+  /// Parse fu_count from various types
+  int _parseFuCount(dynamic value) {
+    if (value == null) {
+      return 0;
+    } else if (value is int) {
+      return value;
+    } else if (value is String) {
+      return int.tryParse(value) ?? 0;
+    } else if (value is num) {
+      return value.toInt();
+    }
+    return 0;
+  }
+
   /// Convert transaction Map to SalesOrder entity for detail page
   SalesOrder _transactionToSalesOrder(Map<String, dynamic> transaction) {
     // Get raw order data which includes full order_line details
@@ -151,6 +186,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
       partnerState: transaction['deliveryProvince'] as String?,
       partnerDistrict: transaction['deliveryDistrict'] as String?,
       paymentTermName: transaction['paymentTerms'] as String?,
+      fuCount: rawOrder['fu_count'] as int? ?? 0, // Parse follow-up count from API data
     );
   }
 
@@ -290,6 +326,12 @@ class _TransactionListPageState extends State<TransactionListPage> {
                                     const SizedBox(height: 10),
                                 itemBuilder: (context, index) {
                                   final transaction = transactions[index];
+                                  
+                                  // DEBUG: Print transaction keys to verify fuCount exists
+                                  if (index == 0 || transaction['soNumber'] == 'S00003') {
+                                    print('🐛 [TRANSACTION_BUILDER] ${transaction['soNumber']}: fuCount=${transaction['fuCount']} (type: ${transaction['fuCount'].runtimeType})');
+                                    print('🐛 [TRANSACTION_BUILDER] rawData fu_count=${transaction['rawData']?['fu_count']}');
+                                  }
 
                                   return InkWell(
                                     onTap: () async {
@@ -412,50 +454,70 @@ class _TransactionListPageState extends State<TransactionListPage> {
                                                   MainAxisAlignment
                                                       .spaceBetween,
                                               children: [
-                                                Text(
-                                                  _formatCurrency(
-                                                      transaction['nominal']
-                                                          as double),
-                                                  style: const TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w700,
-                                                    color:
-                                                        AppTheme.successColor,
-                                                  ),
-                                                ),
-                                                Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 10,
-                                                      vertical: 5),
-                                                  decoration: BoxDecoration(
-                                                    color: AppTheme.primaryColor
-                                                        .withValues(alpha: 0.1),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                  ),
+                                                Expanded(
                                                   child: Text(
-                                                    transaction['status']
-                                                        as String,
+                                                    _formatCurrency(
+                                                        transaction['nominal']
+                                                            as double),
                                                     style: const TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.w700,
                                                       color:
-                                                          AppTheme.primaryColor,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 11,
+                                                          AppTheme.successColor,
                                                     ),
                                                   ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    // ✅ Follow-up count badge
+                                                    _buildSmallBadge(
+                                                      '${transaction['fuCount'] ?? 0}',
+                                                      AppTheme.brandGreen,
+                                                      icon: Icons.message_rounded,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    // ✅ Status badge
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 10,
+                                                          vertical: 5),
+                                                      decoration: BoxDecoration(
+                                                        color: AppTheme.primaryColor
+                                                            .withValues(alpha: 0.1),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                                8),
+                                                      ),
+                                                      child: Text(
+                                                        transaction['status']
+                                                            as String,
+                                                        style: const TextStyle(
+                                                          color:
+                                                              AppTheme.primaryColor,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          fontSize: 11,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ],
                                             ),
                                             const SizedBox(height: 10),
-                                            Row(
+                                            Wrap(
+                                              spacing: 8,
+                                              runSpacing: 4,
                                               children: [
+                                                _buildBadge(
+                                                    'Follow-up: ${transaction['fuCount'] ?? 0}',
+                                                    AppTheme.brandGreen),
                                                 _buildBadge(
                                                     'Order: ${transaction['orderedCount']}',
                                                     AppTheme.brandBlue),
-                                                const SizedBox(width: 8),
                                                 _buildBadge(
                                                     'Canceled: ${transaction['canceledCount']}',
                                                     AppTheme.errorColor),
@@ -575,6 +637,35 @@ class _TransactionListPageState extends State<TransactionListPage> {
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[400],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build small badge with optional icon and count
+  Widget _buildSmallBadge(String label, Color color, {IconData? icon}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 12, color: color),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],

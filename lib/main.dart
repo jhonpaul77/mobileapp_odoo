@@ -9,6 +9,7 @@ import 'package:nextpsa/providers/connectivity_provider.dart';
 import 'package:nextpsa/providers/theme_provider.dart';
 import 'package:nextpsa/services/api_service.dart';
 import 'package:nextpsa/services/auth_service.dart';
+import 'package:nextpsa/services/pixel_tracking_service.dart';
 import 'package:provider/provider.dart';
 // import 'package:intl/date_symbol_data_local.dart'; // Tambahkan ini
 
@@ -23,6 +24,10 @@ void main() async {
   // Load token dari storage dan set ke ApiService (kalau ada)
   final auth = AuthService();
   await auth.initialize();
+  
+  // Track app open for pixel tracking
+  final pixelTracking = PixelTrackingService();
+  await pixelTracking.trackAppOpen();
 
   runApp(const MyApp());
 }

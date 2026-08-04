@@ -881,6 +881,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                   ? _paymentTermController.text
                   : widget.order.paymentTermName,
               orderCount: widget.order.orderCount,
+              fuCount: widget.order.fuCount, // Preserve follow-up count from original
               orderLines: updatedOrderLines,
               amountTotal: newAmountTotal,
             );

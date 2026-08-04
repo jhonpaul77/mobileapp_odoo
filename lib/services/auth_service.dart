@@ -68,6 +68,7 @@ class AuthService {
       }
 
       print('✅ [AUTH] Parsed JSON: $jsonData');
+      print('📋 [AUTH] Available fields in response: ${jsonData.keys.toList()}');
 
       final authResponse = AuthResponse.fromJson(jsonData);
 
@@ -78,11 +79,17 @@ class AuthService {
           authResponse.data!.refreshToken,
         );
 
-        // Simpan user data dengan database name untuk future requests
+        // ✅ Simpan user data dengan user_id untuk pixel tracking
+        // Try to get user_id from response, fallback to hash of username
+        int userId = jsonData['user_id'] as int? ?? 
+                     jsonData['id'] as int? ??
+                     jsonData['uid'] as int? ??
+                     username.hashCode.abs(); // Fallback: hash username
+        
         final userData = {
           'username': username,
-          'odoo_db': db, // ✅ Key yang benar: 'odoo_db'
-          // Add more fields as they come from Odoo response
+          'odoo_db': db,
+          'user_id': userId,
         };
         await _storage.saveUserData(userData);
 
@@ -91,6 +98,8 @@ class AuthService {
 
         print('✅ [AUTH] Login successful');
         print('   Saved DB: $db');
+        print('   Saved Username: $username');
+        print('   Saved User ID: $userId (source: ${jsonData.containsKey('user_id') ? 'user_id' : jsonData.containsKey('id') ? 'id' : jsonData.containsKey('uid') ? 'uid' : 'username_hash'})');
       } else {
         print('❌ [AUTH] Login failed: ${authResponse.message}');
       }

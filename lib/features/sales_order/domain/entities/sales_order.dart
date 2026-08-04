@@ -14,6 +14,7 @@ class SalesOrder {
   final dynamic awb; // Can be false or string
   final String state;
   final int? orderCount; // From API - number of orders for this customer
+  final int fuCount; // Follow-up count from API - u_count field
   final List<OrderLine> orderLines;
   final String? partnerPhone; // Partner phone number
   final String? partnerStreet; // Partner street address
@@ -39,6 +40,7 @@ class SalesOrder {
     this.awb,
     required this.state,
     this.orderCount,
+    required this.fuCount,
     required this.orderLines,
     this.partnerPhone,
     this.partnerStreet,
@@ -178,6 +180,7 @@ class SalesOrder {
       awb: awbParsed,
       state: json['state'] as String? ?? 'draft',
       orderCount: json['order_count'] as int?,
+      fuCount: json['fu_count'] as int? ?? 0, // Parse follow-up count from u_count field
       orderLines: orderLines,
       partnerPhone: partnerPhoneParsed,
       partnerStreet: partnerStreetParsed,
@@ -327,6 +330,7 @@ class SalesOrder {
       'awb': awb,
       'state': state,
       'order_count': orderCount,
+      'fu_count': fuCount,
       'order_lines': orderLines.map((line) => line.toJson()).toList(),
       'partner_street': partnerStreet,
       'partner_street2': partnerStreet2,

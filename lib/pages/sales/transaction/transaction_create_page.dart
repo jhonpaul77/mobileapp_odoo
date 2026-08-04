@@ -1780,6 +1780,7 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
               kurirName: null,
               awb: null,
               orderCount: _orderLines.length,
+              fuCount: 0, // New order - no follow-ups yet
               orderLines: _orderLines
                   .map((line) => OrderLine(
                         productId: [line['product_id'], line['product_name']],

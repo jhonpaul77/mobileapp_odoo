@@ -132,7 +132,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           children: [
             Icon(Icons.settings_rounded, color: AppTheme.brandBlue),
             const SizedBox(width: 12),
-            const Text('Pengaturan Server'),
+            const Expanded(
+              child: Text(
+                'Pengaturan Server',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         content: SingleChildScrollView(
@@ -243,105 +248,130 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, null),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              minimumSize: const Size(60, 32),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: const Text(
-              'Batal',
-              style: TextStyle(fontSize: 13),
-            ),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: () {
-              // ✅ Synchronous button handler - just validate and return data
-              final db = dbController.text.trim();
-              final url = urlController.text.trim();
-
-              // Validate database name
-              if (db.isEmpty) {
-                showDialog(
-                  context: dialogContext,
-                  builder: (alertContext) => AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    title: Row(
-                      children: [
-                        Icon(Icons.warning_rounded, color: AppTheme.errorColor),
-                        const SizedBox(width: 8),
-                        const Text('Peringatan'),
-                      ],
-                    ),
-                    content: const Text('Company name harus diisi!'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(alertContext),
-                        child: const Text('OK'),
-                      ),
-                    ],
+          SizedBox(
+            width: double.maxFinite,
+            child: Wrap(
+              spacing: 8,
+              alignment: WrapAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, null),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    minimumSize: const Size(60, 32),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                );
-                return;
-              }
-
-              // Validate URL
-              if (url.isEmpty) {
-                showDialog(
-                  context: dialogContext,
-                  builder: (alertContext) => AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    title: Row(
-                      children: [
-                        Icon(Icons.warning_rounded, color: AppTheme.errorColor),
-                        const SizedBox(width: 8),
-                        const Text('Peringatan'),
-                      ],
-                    ),
-                    content: const Text('Server URL harus diisi!'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(alertContext),
-                        child: const Text('OK'),
-                      ),
-                    ],
+                  child: const Text(
+                    'Batal',
+                    style: TextStyle(fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                );
-                return;
-              }
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // ✅ Synchronous button handler - just validate and return data
+                    final db = dbController.text.trim();
+                    final url = urlController.text.trim();
 
-              Navigator.pop(dialogContext, {
-                'status': 'success',
-                'db': db,
-                'url': url,
-              });
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.brandBlue,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              minimumSize: const Size(70, 32),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                    // Validate database name
+                    if (db.isEmpty) {
+                      showDialog(
+                        context: dialogContext,
+                        builder: (alertContext) => AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        title: Row(
+                          children: [
+                            Icon(Icons.warning_rounded, color: AppTheme.errorColor),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'Peringatan',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        content: const Text('Company name harus diisi!'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(alertContext),
+                            child: const Text('OK'),
+                          ),
+                        ],
+                      ),
+                    );
+                    return;
+                  }
+
+                  // Validate URL
+                  if (url.isEmpty) {
+                    showDialog(
+                      context: dialogContext,
+                      builder: (alertContext) => AlertDialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        title: Row(
+                          children: [
+                            Icon(Icons.warning_rounded, color: AppTheme.errorColor),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'Peringatan',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        content: const Text('Server URL harus diisi!'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(alertContext),
+                            child: const Text('OK'),
+                          ),
+                        ],
+                      ),
+                    );
+                    return;
+                  }
+
+                  Navigator.pop(dialogContext, {
+                    'status': 'success',
+                    'db': db,
+                    'url': url,
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.brandBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  minimumSize: const Size(70, 32),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Simpan',
+                  style: TextStyle(fontSize: 13),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
-            child: const Text(
-              'Simpan',
-              style: TextStyle(fontSize: 13),
+              ],
             ),
           ),
         ],
       ),
     );
 
-    // ✅ Dispose controllers immediately after dialog closes
+    // ✅ Wait for dialog to fully close before disposing
+    await Future.delayed(const Duration(milliseconds: 100));
+    
+    // ✅ Dispose controllers after dialog animation completes
     dbController.dispose();
     urlController.dispose();
 
@@ -378,7 +408,13 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             children: [
               const Icon(Icons.check_circle, color: Colors.white),
               const SizedBox(width: 8),
-              const Text('Pengaturan berhasil disimpan'),
+              const Expanded(
+                child: Text(
+                  'Pengaturan berhasil disimpan, silakan login ulang',
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                ),
+              ),
             ],
           ),
           backgroundColor: AppTheme.successColor,
@@ -387,7 +423,19 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             borderRadius: BorderRadius.circular(12),
           ),
           margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 2),
         ),
+      );
+
+      // Wait for snackbar to show, then restart login page
+      await Future.delayed(const Duration(seconds: 2));
+      
+      if (!mounted) return;
+      
+      // Restart login page with fresh state
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+        (route) => false,
       );
     }
   }

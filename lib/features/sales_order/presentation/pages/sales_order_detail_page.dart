@@ -218,52 +218,48 @@ TERIMA KASIH''';
       }
 
       if (launched) {
-        // ✅ Tandai sudah di follow-up (tidak perlu counter)
-        final orderId = widget.order.id;
-        final prefs = await SharedPreferences.getInstance();
-        final key = 'followup_sent_$orderId';
-        await prefs.setBool(key, true);
-        print('✅ Follow-up marked as sent');
+        // ✅ Data follow-up count sudah disimpan di server (u_count field)
+        // Tampilkan info follow-up count saja
+        print('✅ Follow-up WhatsApp opened');
+        print('   Current fu_count: ${order.fuCount}');
+        
+        // ✅ KIRIM PUT /followup_order ke server
+        try {
+          print('📤 [FOLLOWUP] Sending PUT /followup_order...');
+          final salesService = SalesService();
+          final result = await salesService.followupOrder(orderId: order.id);
+          
+          if (result['Success'] == true) {
+            print('✅ [FOLLOWUP] Server confirmed, fu_count updated');
+          } else {
+            print('⚠️ [FOLLOWUP] Server response: ${result['Message']}');
+          }
+        } catch (e) {
+          print('❌ [FOLLOWUP] Error: $e');
+        }
         
         // Show success message
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Row(
                 children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 12),
-                  Text('Follow-up berhasil dikirim'),
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Follow-up #${order.fuCount + 1} berhasil dikirim',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                    ),
+                  ),
                 ],
               ),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Membuka WhatsApp Web di browser...'),
-              backgroundColor: Colors.orange,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 3),
-              action: SnackBarAction(
-                label: 'Salin Pesan',
-                textColor: Colors.white,
-                onPressed: () {
-                  // Copy message to clipboard
-                  Clipboard.setData(ClipboardData(text: message));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Pesan disalin ke clipboard'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
-                },
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
+              margin: const EdgeInsets.all(16),
             ),
           );
         }

@@ -586,6 +586,89 @@ class SalesService {
     }
   }
 
+  // ✅ ODOO: Mark order as followed-up
+  ///
+  /// **Endpoint**: `/followup_order`
+  /// **Method**: `PUT`
+  /// **Headers**:
+  /// ```
+  /// db: demotest
+  /// api-key: {api_key}
+  /// Content-Type: application/json
+  /// ```
+  ///
+  /// **Request Body**:
+  /// ```json
+  /// {
+  ///   "id": 4230
+  /// }
+  /// ```
+  ///
+  /// **Response**: Success/Error message
+  /// ```json
+  /// {
+  ///   "Success": true,
+  ///   "Message": "Follow-up recorded",
+  ///   "Data": {
+  ///     "id": 4230,
+  ///     "fu_count": 2
+  ///   }
+  /// }
+  /// ```
+  ///
+  /// **Notes**:
+  /// - Increments fu_count on the order
+  /// - Records follow-up activity on server
+  Future<Map<String, dynamic>> followupOrder({required int orderId}) async {
+    try {
+      print('📱 [SALES] Recording follow-up for order #$orderId...');
+
+      final requestBody = {
+        'id': orderId,
+      };
+
+      print('📝 [SALES] Request body: $requestBody');
+
+      final response = await _api.put(
+        '/followup_order',
+        data: requestBody,
+      );
+
+      print('📝 [SALES] Response status: ${response.statusCode}');
+      print('📝 [SALES] Response data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        return {
+          'Success': true,
+          'Message': 'Follow-up recorded successfully',
+          'Data': response.data,
+        };
+      } else {
+        return {
+          'Success': false,
+          'Message': 'Failed to record follow-up',
+          'Data': response.data,
+        };
+      }
+    } on DioException catch (e) {
+      print('❌ [SALES] Follow-up error: ${e.message}');
+      print('❌ [SALES] Response: ${e.response?.data}');
+
+      return {
+        'Success': false,
+        'Message': e.response?.data['Message'] ??
+            e.response?.data['message'] ??
+            'Failed to record follow-up: ${e.message}',
+      };
+    } catch (e) {
+      print('❌ [SALES] Unexpected error: $e');
+      return {
+        'Success': false,
+        'Message': 'Unexpected error: $e',
+      };
+    }
+  }
+
   // ✅ ODOO: Get all products
   ///
   /// **Endpoint**: `/get_product_sale`
