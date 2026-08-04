@@ -8,5 +8,6 @@
   "timeout": 30,
   "warehouse": "",
   "printer": "",
-  "currency": "IDR"
+  "currency": "IDR",
+  "pixel_tracking_url": "https://internal.hector.my.id/create_pixel"
 }

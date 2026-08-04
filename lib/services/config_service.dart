@@ -172,11 +172,17 @@ class ConfigService {
     return 30;
   }
 
+  Future<String> getPixelTrackingUrl() async {
+    final value = await get('pixel_tracking_url');
+    return value?.toString() ?? 'https://internal.hector.my.id/create_pixel';
+  }
+
   // ✅ Convenience method untuk update server settings
   // ⚠️ Auto-logout karena API key dari server lama tidak valid di server baru
   Future<void> updateServerSettings({
     required String database,
     required String url,
+    String? pixelTrackingUrl,
   }) async {
     final config = await load();
     final oldUrl = config['url'] as String?;
@@ -197,10 +203,16 @@ class ConfigService {
     
     config['database'] = database;
     config['url'] = url;
+    if (pixelTrackingUrl != null && pixelTrackingUrl.isNotEmpty) {
+      config['pixel_tracking_url'] = pixelTrackingUrl;
+    }
     await save(config);
     
     print('✅ [CONFIG] Server settings updated');
     print('   Database: $database');
     print('   URL: $url');
+    if (pixelTrackingUrl != null) {
+      print('   Pixel URL: $pixelTrackingUrl');
+    }
   }
 }

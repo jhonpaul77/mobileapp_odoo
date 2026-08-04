@@ -4,8 +4,6 @@ import 'secure_storage_service.dart';
 
 /// Pixel Tracking Service - POST user activity tracking data
 class PixelTrackingService {
-  static const String _pixelEndpoint = 'https://internal.hector.my.id/create_pixel';
-  
   final _dio = Dio();
   final _configService = ConfigService();
   final _storage = SecureStorageService();
@@ -15,29 +13,32 @@ class PixelTrackingService {
     try {
       print('📍 [PIXEL] Tracking app open...');
       
+      // Get pixel tracking URL from config
+      final pixelEndpoint = await _configService.getPixelTrackingUrl();
+      print('📍 [PIXEL] Endpoint: $pixelEndpoint');
+      
       // Get database from config
       final database = await _configService.getDatabase();
       
       // Get user data from storage
       final userData = await _storage.getUserData();
-      final userId = userData?['user_id'] as int?;
       final userName = userData?['username'] as String?;
       
-      if (database.isEmpty || userId == null || userName == null) {
-        print('⚠️  [PIXEL] Missing data - database: $database, user_id: $userId, user_name: $userName');
+      if (database.isEmpty || userName == null) {
+        print('⚠️  [PIXEL] Missing data - database: $database, user_name: $userName');
         return;
       }
       
-      print('📍 [PIXEL] Sending: database=$database, user_id=$userId, user_name=$userName');
+      print('📍 [PIXEL] Sending: database=$database, user_id=1, user_name=$userName');
       
       final payload = {
         'database': database,
-        'user_id': userId,
+        'user_id': 1,  // ✅ Always 1
         'user_name': userName,
       };
       
       final response = await _dio.post(
-        _pixelEndpoint,
+        pixelEndpoint,
         data: payload,
         options: Options(
           contentType: Headers.jsonContentType,
@@ -59,24 +60,24 @@ class PixelTrackingService {
     try {
       print('📍 [PIXEL] Tracking logout...');
       
+      final pixelEndpoint = await _configService.getPixelTrackingUrl();
       final database = await _configService.getDatabase();
       final userData = await _storage.getUserData();
-      final userId = userData?['user_id'] as int?;
       final userName = userData?['username'] as String?;
       
-      if (database.isEmpty || userId == null) {
+      if (database.isEmpty) {
         return;
       }
       
       final payload = {
         'database': database,
-        'user_id': userId,
+        'user_id': 1,  // ✅ Always 1
         'user_name': userName ?? 'unknown',
         'action': 'logout',
       };
       
       await _dio.post(
-        _pixelEndpoint,
+        pixelEndpoint,
         data: payload,
         options: Options(
           contentType: Headers.jsonContentType,
