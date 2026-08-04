@@ -99,16 +99,51 @@ class AuthService {
       return authResponse;
     } on DioException catch (e) {
       print('❌ [AUTH] Login failed: ${e.message}');
+      print('   Status Code: ${e.response?.statusCode}');
       print('   Response: ${e.response?.data}');
+      
+      // ✅ Parse error message from response
+      String errorMessage = 'Login gagal';
+      
+      // Try to extract error from response
+      final responseData = e.response?.data;
+      if (responseData is String) {
+        // API mengembalikan plain text error message
+        if (responseData.toLowerCase().contains('wrong login') || 
+            responseData.toLowerCase().contains('access denied')) {
+          errorMessage = 'Username atau password salah';
+        } else {
+          errorMessage = responseData;
+        }
+      } else if (responseData is Map) {
+        // API mengembalikan JSON object dengan error field
+        if (responseData['Message'] != null) {
+          errorMessage = responseData['Message'];
+        } else if (responseData['error'] != null) {
+          errorMessage = responseData['error'];
+        }
+      }
+      
+      // Check status code untuk additional context
+      if (e.response?.statusCode == 403) {
+        errorMessage = 'Username atau password salah';
+      } else if (e.response?.statusCode == 401) {
+        errorMessage = 'Akses tidak diizinkan';
+      } else if (e.response?.statusCode == 404) {
+        errorMessage = 'Server tidak ditemukan';
+      } else if (e.response?.statusCode == 500) {
+        errorMessage = 'Server error - coba lagi nanti';
+      }
+      
       return AuthResponse(
         success: false,
-        message: e.response?.data['Message'] ?? e.message ?? 'Login failed',
+        message: errorMessage,
       );
     } catch (e) {
       print('❌ [AUTH] Unexpected error: $e');
       return AuthResponse(
         success: false,
-        message: 'Unexpected error: $e',
+        message: 'Terjadi kesalahan: $e',
       );
     }
   }

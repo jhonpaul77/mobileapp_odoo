@@ -714,6 +714,95 @@ TERIMA KASIH''';
     }
   }
 
+  Future<void> _cancelOrder() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Batalkan Transaksi'),
+          content: Text(
+            'Apakah Anda yakin ingin membatalkan transaksi ${widget.order.name}?\n\n'
+            'Status akan berubah menjadi Canceled dan tidak dapat dikembalikan.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Tidak'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              icon:
+                  const Icon(Icons.cancel, color: Colors.white, size: 16),
+              label: const Text('Batalkan',
+                  style: TextStyle(color: Colors.white, fontSize: 13)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    // Show loading
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('⏳ Membatalkan transaksi...'),
+        duration: Duration(seconds: 30),
+      ),
+    );
+
+    try {
+      final salesService = SalesService();
+      final result = await salesService.cancelOrder(orderId: widget.order.id);
+
+      // Hide loading snackbar
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      if (result['Success'] == true) {
+        // Success
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('✅ Transaksi ${widget.order.name} berhasil dibatalkan'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // Refresh page after 2 seconds
+        await Future.delayed(const Duration(seconds: 2));
+        if (!mounted) return;
+        Navigator.pop(context, true); // Return true to indicate refresh needed
+      } else {
+        // Failed
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Gagal batalkan: ${result['Message']}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -788,7 +877,7 @@ TERIMA KASIH''';
           // Confirm Button
           if (isEditable)
             Padding(
-              padding: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.only(right: 8),
               child: Center(
                 child: GestureDetector(
                   onTap: _confirmOrder,
@@ -802,6 +891,32 @@ TERIMA KASIH''';
                       'Confirm',
                       style: TextStyle(
                         color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          
+          // Cancel Button (Merah)
+          if (isEditable)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Center(
+                child: GestureDetector(
+                  onTap: _cancelOrder,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.red[400],
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: Colors.white,
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
                       ),

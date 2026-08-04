@@ -669,6 +669,75 @@ class SalesService {
     }
   }
 
+  // ✅ ODOO: Cancel sale order
+  ///
+  /// **Endpoint**: `/cancel_order`
+  /// **Method**: `PUT`
+  /// **Headers**:
+  /// ```
+  /// db: demotest
+  /// api-key: {api_key}
+  /// Content-Type: application/json
+  /// ```
+  ///
+  /// **Request Body**:
+  /// ```json
+  /// {
+  ///   "id": 4230
+  /// }
+  /// ```
+  ///
+  /// **Response**: Success/Error message
+  Future<Map<String, dynamic>> cancelOrder({required int orderId}) async {
+    try {
+      print('❌ [SALES] Canceling sale order #$orderId...');
+
+      final requestBody = {
+        'id': orderId,
+      };
+
+      print('📝 [SALES] Request body: $requestBody');
+
+      final response = await _api.put(
+        '/cancel_order',
+        data: requestBody,
+      );
+
+      print('📝 [SALES] Response status: ${response.statusCode}');
+      print('📝 [SALES] Response data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        return {
+          'Success': true,
+          'Message': 'Order canceled successfully',
+          'Data': response.data,
+        };
+      } else {
+        return {
+          'Success': false,
+          'Message': 'Failed to cancel order',
+          'Data': response.data,
+        };
+      }
+    } on DioException catch (e) {
+      print('❌ [SALES] Cancel error: ${e.message}');
+      print('❌ [SALES] Response: ${e.response?.data}');
+
+      return {
+        'Success': false,
+        'Message': e.response?.data['Message'] ??
+            e.response?.data['message'] ??
+            'Failed to cancel order: ${e.message}',
+      };
+    } catch (e) {
+      print('❌ [SALES] Unexpected error: $e');
+      return {
+        'Success': false,
+        'Message': 'Unexpected error: $e',
+      };
+    }
+  }
+
   // ✅ ODOO: Get all products
   ///
   /// **Endpoint**: `/get_product_sale`

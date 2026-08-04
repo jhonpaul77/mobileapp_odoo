@@ -6,10 +6,12 @@ import '../../config/theme.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/config_service.dart';
+import '../../services/pixel_tracking_service.dart';
 import '../../services/secure_storage_service.dart';
 import '../home/home_page.dart';
 import 'intro_page.dart';
 import 'setup_pin_page.dart';
+import 'sync_splash_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -112,13 +114,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   Future<void> _handleSettings() async {
     final dbController = TextEditingController();
     final urlController = TextEditingController();
-    final pixelUrlController = TextEditingController();
 
     // ✅ Load dari config file
     final config = await _configService.load();
     dbController.text = config['database'] ?? '';
     urlController.text = config['url'] ?? '';
-    pixelUrlController.text = config['pixel_tracking_url'] ?? 'https://internal.hector.my.id/create_pixel';
 
     if (!mounted) return;
 
@@ -202,37 +202,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 decoration: InputDecoration(
                   hintText: 'e.g., https://example.com',
                   prefixIcon: Icon(Icons.link_rounded,
-                      color: AppTheme.brandBlue, size: 20),
-                  filled: true,
-                  fillColor: AppTheme.backgroundColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Pixel Tracking URL
-              const Text(
-                'Pixel Tracking URL',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: pixelUrlController,
-                decoration: InputDecoration(
-                  hintText: 'e.g., https://internal.hector.my.id/create_pixel',
-                  prefixIcon: Icon(Icons.analytics_rounded,
                       color: AppTheme.brandBlue, size: 20),
                   filled: true,
                   fillColor: AppTheme.backgroundColor,
@@ -375,7 +344,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     'status': 'success',
                     'db': db,
                     'url': url,
-                    'pixel_url': pixelUrlController.text.trim(),
                   });
                 },
                 style: ElevatedButton.styleFrom(
@@ -408,7 +376,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     // ✅ Dispose controllers after dialog animation completes
     dbController.dispose();
     urlController.dispose();
-    pixelUrlController.dispose();
 
     // ✅ Handle result - ALL async operations happen here in parent context
     if (!mounted) return;
@@ -426,7 +393,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       await _configService.updateServerSettings(
         database: result['db'],
         url: result['url'],
-        pixelTrackingUrl: result['pixel_url'],
       );
 
       // 4. Update ApiConfig baseUrl
@@ -509,18 +475,29 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       if (!mounted) return;
 
       if (response.success) {
+        // ✅ SEND PIXEL TRACKING after successful login
+        print('📍 [LOGIN] Login berhasil, mengirim pixel tracking...');
+        final pixelTracking = PixelTrackingService();
+        await pixelTracking.trackAppOpen();
+        print('📍 [LOGIN] Pixel tracking selesai');
+
         final isFirstLogin = await _storage.isFirstLogin();
 
         if (isFirstLogin) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const SetupPinPage()),
-          );
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const SetupPinPage()),
+            );
+          }
         } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const HomePage()),
-          );
+          // Navigate to sync splash page for data sync
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const SyncSplashPage()),
+            );
+          }
         }
       } else {
         _showErrorSnackBar(response.message);

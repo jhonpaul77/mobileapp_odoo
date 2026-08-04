@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../services/biometric_service.dart';
+import '../../services/pixel_tracking_service.dart';
 import '../../services/secure_storage_service.dart';
-import '../home/home_page.dart';
+import '../auth/sync_splash_page.dart';
 
 class SetupPinPage extends StatefulWidget {
   const SetupPinPage({super.key});
@@ -219,10 +220,19 @@ class _SetupPinPageState extends State<SetupPinPage>
     );
   }
 
-  void _goToHome() {
+  void _goToHome() async {
+    // ✅ SEND PIXEL TRACKING before navigating to home
+    print('📍 [SETUP_PIN] PIN setup berhasil, mengirim pixel tracking...');
+    final pixelTracking = PixelTrackingService();
+    await pixelTracking.trackAppOpen();
+    print('📍 [SETUP_PIN] Pixel tracking selesai');
+
+    if (!mounted) return;
+
+    // Navigate to sync splash page instead of home directly
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const HomePage()),
+      MaterialPageRoute(builder: (_) => const SyncSplashPage()),
       (route) => false,
     );
   }

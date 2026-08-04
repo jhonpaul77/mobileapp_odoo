@@ -19,15 +19,19 @@ void main() async {
   print('🚀 [MAIN] Initializing services...');
 
   // Init API service - now async to load saved config
+  print('🚀 [MAIN] Init ApiService...');
   await ApiService().init();
 
   // Load token dari storage dan set ke ApiService (kalau ada)
+  print('🚀 [MAIN] Init AuthService...');
   final auth = AuthService();
   await auth.initialize();
   
   // Track app open for pixel tracking
+  print('🚀 [MAIN] Starting pixel tracking...');
   final pixelTracking = PixelTrackingService();
   await pixelTracking.trackAppOpen();
+  print('🚀 [MAIN] Pixel tracking completed');
 
   runApp(const MyApp());
 }

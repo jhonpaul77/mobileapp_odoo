@@ -166,6 +166,9 @@ class SalesOrder {
       paymentTermNameParsed = paymentTermNameRaw;
     }
 
+    // Safely parse fu_count - can be int, double, string, or other types
+    int fuCountParsed = _parseFuCount(json['fu_count']);
+
     return SalesOrder(
       id: _parseInt(json['id']),
       name: json['name'] as String,
@@ -180,7 +183,7 @@ class SalesOrder {
       awb: awbParsed,
       state: json['state'] as String? ?? 'draft',
       orderCount: json['order_count'] as int?,
-      fuCount: json['fu_count'] as int? ?? 0, // Parse follow-up count from u_count field
+      fuCount: fuCountParsed,
       orderLines: orderLines,
       partnerPhone: partnerPhoneParsed,
       partnerStreet: partnerStreetParsed,
@@ -199,6 +202,23 @@ class SalesOrder {
     if (value is int) return value;
     if (value is String) return int.parse(value);
     throw Exception('Cannot parse id: $value');
+  }
+
+  /// Helper: Safely parse fu_count from various types
+  static int _parseFuCount(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) {
+      try {
+        return int.parse(value);
+      } catch (e) {
+        print('⚠️ [SALES_ORDER] Could not parse fu_count string: $value');
+        return 0;
+      }
+    }
+    print('⚠️ [SALES_ORDER] Unknown fu_count type: ${value.runtimeType} = $value');
+    return 0;
   }
 
   /// Get customer name - use API value if available, otherwise fallback
