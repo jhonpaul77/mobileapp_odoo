@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../../services/sync/sync_progress_manager.dart';
 
 /// Sync Progress Dialog
@@ -23,8 +24,8 @@ class SyncProgressDialog extends StatefulWidget {
 class _SyncProgressDialogState extends State<SyncProgressDialog> {
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false, // Prevent dismissal
+    return PopScope(
+      canPop: false, // Prevent dismissal
       child: AlertDialog(
         title: Text(widget.title),
         content: Consumer<SyncProgressManager>(
@@ -50,15 +51,11 @@ class _SyncProgressDialogState extends State<SyncProgressDialog> {
                           children: [
                             Text(
                               'Overall Progress',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelMedium,
+                              style: Theme.of(context).textTheme.labelMedium,
                             ),
                             Text(
                               '$completedCount/${steps.length}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall,
+                              style: Theme.of(context).textTheme.labelSmall,
                             ),
                           ],
                         ),

@@ -153,7 +153,7 @@ class SalesOrder {
     final paymentTermRaw = json['payment_term_id'];
     if (paymentTermRaw is int) {
       paymentTermIdParsed = paymentTermRaw;
-    } else if (paymentTermRaw is List && paymentTermRaw.length > 0) {
+    } else if (paymentTermRaw is List && paymentTermRaw.isNotEmpty) {
       paymentTermIdParsed = paymentTermRaw[0] as int?;
       if (paymentTermRaw.length > 1) {
         paymentTermNameParsed = paymentTermRaw[1] as String?;

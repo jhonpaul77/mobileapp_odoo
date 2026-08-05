@@ -3,14 +3,14 @@ import 'package:provider/provider.dart';
 
 import '../../../../config/theme.dart';
 import '../../../../services/config_service.dart';
-import '../../../../services/secure_storage_service.dart';
 import '../../../../services/local_database/customer_local_database.dart';
 import '../../../../services/local_database/location_local_database.dart';
+import '../../../../services/secure_storage_service.dart';
 import '../../../location/data/datasources/location_remote_datasource.dart';
 import '../../../location/domain/entities/district.dart';
 import '../../../sales_order/presentation/pages/district_search_modal.dart';
-import '../../domain/entities/customer.dart';
 import '../../data/models/customer_local_model.dart';
+import '../../domain/entities/customer.dart';
 import '../providers/customer_provider.dart';
 
 /// Customer Edit Page
@@ -107,7 +107,7 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
 
       // ⭐ PRIORITAS 1: Ambil dari lokal database (CEPAT!)
       final locationDb = LocationLocalDatabase();
-      
+
       print('📡 [EDIT CUSTOMER] Loading locations from LOCAL database...');
 
       // Load all from local database
@@ -136,12 +136,14 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
       }
 
       // Convert to District entities for compatibility with modal
-      final districtEntities = districts.map((d) => District(
-        id: d.id,
-        name: d.name,
-        code: '', // Not available in local model
-        cityId: d.cityId ?? 0,
-      )).toList();
+      final districtEntities = districts
+          .map((d) => District(
+                id: d.id,
+                name: d.name,
+                code: '', // Not available in local model
+                cityId: d.cityId ?? 0,
+              ))
+          .toList();
 
       if (mounted) {
         setState(() {
@@ -152,7 +154,8 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
           _cityToStateMap = cityToStateMap;
         });
 
-        print('✅ [EDIT CUSTOMER] Loaded ${_allDistricts.length} districts from LOCAL');
+        print(
+            '✅ [EDIT CUSTOMER] Loaded ${_allDistricts.length} districts from LOCAL');
 
         // Set initial district display if customer has district
         _updateDistrictDisplay();
@@ -160,7 +163,7 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
     } catch (e) {
       print('⚠️ [EDIT CUSTOMER] Error loading from local DB: $e');
       print('   Fallback to API...');
-      
+
       // ⭐ PRIORITAS 2: Jika lokal gagal, ambil dari API
       try {
         final configService = ConfigService();
@@ -203,9 +206,7 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
         final cityToStateMap = <int, int>{};
         for (final city in cities) {
           cityMap[city.id] = city.name;
-          if (city.stateId != null) {
-            cityToStateMap[city.id] = city.stateId;
-          }
+          cityToStateMap[city.id] = city.stateId;
         }
 
         final stateMap = <int, String>{};
@@ -222,7 +223,8 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
             _cityToStateMap = cityToStateMap;
           });
 
-          print('✅ [EDIT CUSTOMER] Loaded ${_allDistricts.length} districts from API');
+          print(
+              '✅ [EDIT CUSTOMER] Loaded ${_allDistricts.length} districts from API');
 
           // Set initial district display if customer has district
           _updateDistrictDisplay();
@@ -332,7 +334,8 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
       print('📝 [EDIT CUSTOMER] Request data: $data');
 
       // Try to update - will throw error jika gagal POST
-      final updatedCustomer = await context.read<CustomerProvider>().updateCustomer(data);
+      final updatedCustomer =
+          await context.read<CustomerProvider>().updateCustomer(data);
 
       if (mounted) {
         // Berhasil! Show success message
@@ -356,12 +359,13 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
             duration: const Duration(seconds: 3),
           ),
         );
-        
+
         // Wait a moment before navigating back to ensure data is saved
         await Future.delayed(const Duration(milliseconds: 500));
-        
+
         if (mounted) {
-          print('📤 [EDIT CUSTOMER] Returning to detail page with: $updatedCustomer');
+          print(
+              '📤 [EDIT CUSTOMER] Returning to detail page with: $updatedCustomer');
           Navigator.pop(context, updatedCustomer);
         }
       }
@@ -468,21 +472,31 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
         name: data['name'] ?? '',
         email: data['email'],
         phone: data['phone'],
-        userId: data['user_id'] != null ? int.tryParse(data['user_id'].toString()) : null,
+        userId: data['user_id'] != null
+            ? int.tryParse(data['user_id'].toString())
+            : null,
         street: data['street'],
         street2: data['street2'],
-        districtId: data['district_id'] != null ? int.tryParse(data['district_id'].toString()) : null,
-        cityId: data['city_id'] != null ? int.tryParse(data['city_id'].toString()) : null,
-        stateId: data['state_id'] != null ? int.tryParse(data['state_id'].toString()) : null,
+        districtId: data['district_id'] != null
+            ? int.tryParse(data['district_id'].toString())
+            : null,
+        cityId: data['city_id'] != null
+            ? int.tryParse(data['city_id'].toString())
+            : null,
+        stateId: data['state_id'] != null
+            ? int.tryParse(data['state_id'].toString())
+            : null,
         zip: data['zip'],
-        countryId: data['country_id'] != null ? int.tryParse(data['country_id'].toString()) : null,
+        countryId: data['country_id'] != null
+            ? int.tryParse(data['country_id'].toString())
+            : null,
       );
 
       // Save ke lokal dengan status UPDATED
       final localDb = CustomerLocalDatabase();
       final localModel = CustomerLocalModel.fromEntity(
         updatedCustomer,
-        syncStatus: SyncStatus.UPDATED,
+        syncStatus: SyncStatus.updated,
       );
       await localDb.insertOrReplace(localModel);
       print('✅ [EDIT CUSTOMER] Tersimpan lokal (UPDATED) - akan di-sync nanti');
@@ -509,12 +523,13 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
             duration: const Duration(seconds: 3),
           ),
         );
-        
+
         // Wait a moment before navigating back
         await Future.delayed(const Duration(milliseconds: 500));
-        
+
         if (mounted) {
-          print('📤 [EDIT CUSTOMER OFFLINE] Returning to detail page with: $updatedCustomer');
+          print(
+              '📤 [EDIT CUSTOMER OFFLINE] Returning to detail page with: $updatedCustomer');
           Navigator.pop(context, updatedCustomer);
         }
       }

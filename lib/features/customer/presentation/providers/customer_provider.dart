@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../../services/config_service.dart';
-import '../../../../services/secure_storage_service.dart';
 import '../../../../services/local_database/customer_local_database.dart';
+import '../../../../services/secure_storage_service.dart';
 import '../../../../services/sync/customer_sync_manager.dart';
 import '../../../../services/sync/location_sync_manager.dart';
+import '../../data/datasources/location_remote_datasource.dart';
+import '../../data/models/customer_local_model.dart';
 import '../../data/repositories/customer_repository_impl.dart';
 import '../../domain/entities/customer.dart';
-import '../../data/models/customer_local_model.dart';
-import '../../data/datasources/location_remote_datasource.dart';
 import '../../domain/usecases/create_customer_usecase.dart';
 import '../../domain/usecases/get_customers_usecase.dart';
 
@@ -47,7 +47,7 @@ class CustomerProvider extends ChangeNotifier {
   SyncResult? _lastSyncResult;
   Map<String, dynamic> _syncStats = {};
   int _syncProgress = 0; // Current count during sync
-  int _syncTotal = 0;    // Total count target
+  int _syncTotal = 0; // Total count target
   Map<String, int> _locationStats = {'states': 0, 'cities': 0, 'districts': 0};
 
   // Public getters
@@ -79,7 +79,7 @@ class CustomerProvider extends ChangeNotifier {
       // Try to get from local database first
       try {
         final localCustomers = await _localDb.getAllCustomers();
-        
+
         if (localCustomers.isNotEmpty) {
           // Use local cache if available
           _customers = localCustomers.map((c) => c.toEntity()).toList();
@@ -97,7 +97,8 @@ class CustomerProvider extends ChangeNotifier {
       }
 
       // If local DB empty or not available, fetch from API with very large limit
-      print('🔄 [CUSTOMER_PROVIDER] Fetching ALL customers from API (limit: 9999999)...');
+      print(
+          '🔄 [CUSTOMER_PROVIDER] Fetching ALL customers from API (limit: 9999999)...');
 
       // Get database from config.json
       final config = await _configService.load();
@@ -128,24 +129,25 @@ class CustomerProvider extends ChangeNotifier {
 
       _customers = fetchedCustomers;
       _filteredCustomers = _customers;
-      
+
       // Try to save to local DB (don't fail if DB not ready)
       try {
         for (final customer in fetchedCustomers) {
           final localModel = CustomerLocalModel.fromEntity(
             customer,
-            syncStatus: SyncStatus.SYNCED,
+            syncStatus: SyncStatus.synced,
           );
           await _localDb.insertOrReplace(localModel);
         }
-        print('✅ [CUSTOMER_PROVIDER] Saved ${fetchedCustomers.length} to local DB');
-      } catch (dbError) {
         print(
-            '⚠️ [CUSTOMER_PROVIDER] Could not save to local DB: $dbError');
+            '✅ [CUSTOMER_PROVIDER] Saved ${fetchedCustomers.length} to local DB');
+      } catch (dbError) {
+        print('⚠️ [CUSTOMER_PROVIDER] Could not save to local DB: $dbError');
       }
 
       _isLoading = false;
-      print('✅ [CUSTOMER_PROVIDER] Customers loaded from API: ${_customers.length}');
+      print(
+          '✅ [CUSTOMER_PROVIDER] Customers loaded from API: ${_customers.length}');
       notifyListeners();
     } catch (e, stackTrace) {
       _errorMessage = e.toString();
@@ -200,8 +202,8 @@ class CustomerProvider extends ChangeNotifier {
       print('   [CUSTOMER_PROVIDER] Checking for pending local updates...');
       try {
         final pendingCustomers =
-            await _localDb.getCustomersByStatus(SyncStatus.UPDATED);
-        
+            await _localDb.getCustomersByStatus(SyncStatus.updated);
+
         if (pendingCustomers.isNotEmpty) {
           print(
               '   📤 [CUSTOMER_PROVIDER] Found ${pendingCustomers.length} pending updates to sync');
@@ -212,7 +214,7 @@ class CustomerProvider extends ChangeNotifier {
             try {
               final repository = CustomerRepositoryImpl();
               final entity = customer.toEntity();
-              
+
               await repository.editCustomer(
                 id: entity.id,
                 db: database,
@@ -232,8 +234,7 @@ class CustomerProvider extends ChangeNotifier {
               );
 
               // Mark as synced
-              await _localDb.updateSyncStatus(
-                  entity.id, SyncStatus.SYNCED);
+              await _localDb.updateSyncStatus(entity.id, SyncStatus.synced);
               syncedPendingCount++;
               print(
                   '   ✅ [CUSTOMER_PROVIDER] Pushed pending update: ${entity.name}');
@@ -245,7 +246,7 @@ class CustomerProvider extends ChangeNotifier {
           }
 
           print(
-              '   ✅ [CUSTOMER_PROVIDER] Synced $syncedPendingCount/${ pendingCustomers.length} pending updates');
+              '   ✅ [CUSTOMER_PROVIDER] Synced $syncedPendingCount/${pendingCustomers.length} pending updates');
         }
       } catch (e) {
         print('   ⚠️ [CUSTOMER_PROVIDER] Error syncing pending updates: $e');
@@ -253,7 +254,8 @@ class CustomerProvider extends ChangeNotifier {
       }
 
       // STEP 2: Fetch ALL customers from API
-      print('   [CUSTOMER_PROVIDER] Fetching ALL customers from API (limit: 2000)...');
+      print(
+          '   [CUSTOMER_PROVIDER] Fetching ALL customers from API (limit: 2000)...');
       final remoteCustomers = await _getCustomersUseCase.call(
         db: database,
         apiKey: apiKey,
@@ -327,7 +329,7 @@ class CustomerProvider extends ChangeNotifier {
 
         // Normalize phone search for different formats
         bool matchesNormalized = false;
-        
+
         // If query starts with 0, convert to +62 and check
         if (_searchQuery.startsWith('0')) {
           final normalizedWith62 = '+62${_searchQuery.substring(1)}';
@@ -335,7 +337,7 @@ class CustomerProvider extends ChangeNotifier {
         }
         // If query starts with 62 (without +), convert to +62 and check
         else if (_searchQuery.startsWith('62')) {
-          final normalizedWithPlus = '+${_searchQuery}';
+          final normalizedWithPlus = '+$_searchQuery';
           matchesNormalized = phone.contains(normalizedWithPlus);
         }
 
@@ -375,7 +377,10 @@ class CustomerProvider extends ChangeNotifier {
     try {
       final customer = await _localDb.getCustomerById(customerId);
       if (customer != null) {
-        return customer.syncStatus.toString().split('.').last; // 'SYNCED', 'UPDATED', etc
+        return customer.syncStatus
+            .toString()
+            .split('.')
+            .last; // 'SYNCED', 'UPDATED', etc
       }
       return 'SYNCED'; // Default
     } catch (e) {
@@ -422,7 +427,7 @@ class CustomerProvider extends ChangeNotifier {
       // Save to local database
       final localModel = CustomerLocalModel.fromEntity(
         newCustomer,
-        syncStatus: SyncStatus.SYNCED,
+        syncStatus: SyncStatus.synced,
       );
       await _localDb.insertOrReplace(localModel);
 
@@ -438,7 +443,7 @@ class CustomerProvider extends ChangeNotifier {
   }
 
   /// Update existing customer
-  /// 
+  ///
   /// Simple flow:
   /// 1. POST to /edit_customer immediately
   /// 2. If successful: Update local DB with SYNCED status
@@ -478,14 +483,24 @@ class CustomerProvider extends ChangeNotifier {
         name: data['name'] ?? '',
         email: data['email'],
         phone: data['phone'],
-        userId: data['user_id'] != null ? int.tryParse(data['user_id'].toString()) : null,
+        userId: data['user_id'] != null
+            ? int.tryParse(data['user_id'].toString())
+            : null,
         street: data['street'],
         street2: data['street2'],
-        districtId: data['district_id'] != null ? int.tryParse(data['district_id'].toString()) : null,
-        cityId: data['city_id'] != null ? int.tryParse(data['city_id'].toString()) : null,
-        stateId: data['state_id'] != null ? int.tryParse(data['state_id'].toString()) : null,
+        districtId: data['district_id'] != null
+            ? int.tryParse(data['district_id'].toString())
+            : null,
+        cityId: data['city_id'] != null
+            ? int.tryParse(data['city_id'].toString())
+            : null,
+        stateId: data['state_id'] != null
+            ? int.tryParse(data['state_id'].toString())
+            : null,
         zip: data['zip'],
-        countryId: data['country_id'] != null ? int.tryParse(data['country_id'].toString()) : null,
+        countryId: data['country_id'] != null
+            ? int.tryParse(data['country_id'].toString())
+            : null,
       );
 
       // ⭐ STEP 1: POST langsung ke /edit_customer
@@ -499,7 +514,7 @@ class CustomerProvider extends ChangeNotifier {
         apiKey: apiKey,
         data: data,
       );
-      
+
       print('✅ [CUSTOMER_PROVIDER] API POST berhasil');
 
       // ⭐ STEP 2: Jika berhasil, update lokal dengan SYNCED
@@ -518,24 +533,23 @@ class CustomerProvider extends ChangeNotifier {
       // Save ke lokal dengan status SYNCED
       final localModel = CustomerLocalModel.fromEntity(
         updatedCustomer,
-        syncStatus: SyncStatus.SYNCED,
+        syncStatus: SyncStatus.synced,
       );
       await _localDb.insertOrReplace(localModel);
       print('✅ [CUSTOMER_PROVIDER] Tersimpan lokal (SYNCED)');
 
       notifyListeners();
       return updatedCustomer;
-      
     } on Exception catch (e) {
       // ⭐ STEP 3: Jika gagal, coba simpan ke lokal dengan UPDATED (optional)
       print('❌ [CUSTOMER_PROVIDER] API POST gagal: $e');
-      
+
       // Extract error message yang lebih readable
       String errorMsg = e.toString();
       if (errorMsg.startsWith('Exception: ')) {
         errorMsg = errorMsg.substring(11);
       }
-      
+
       rethrow;
     } catch (e, stackTrace) {
       print('❌ [CUSTOMER_PROVIDER] Update error: $e');
@@ -550,14 +564,21 @@ class CustomerProvider extends ChangeNotifier {
       _syncStats = await _syncManager.getSyncStats();
       notifyListeners();
     } catch (e) {
-      print('⚠️ [CUSTOMER_PROVIDER] Error loading sync stats (local DB may not be ready): $e');
-      _syncStats = {'total': 0, 'synced': 0, 'new': 0, 'updated': 0, 'deleted': 0};
+      print(
+          '⚠️ [CUSTOMER_PROVIDER] Error loading sync stats (local DB may not be ready): $e');
+      _syncStats = {
+        'total': 0,
+        'synced': 0,
+        'new': 0,
+        'updated': 0,
+        'deleted': 0
+      };
       notifyListeners();
     }
   }
 
   /// Sync locations (States, Cities, Districts) from backend
-  /// 
+  ///
   /// Fetches ALL locations from API and syncs with local DB
   Future<void> syncLocations() async {
     try {

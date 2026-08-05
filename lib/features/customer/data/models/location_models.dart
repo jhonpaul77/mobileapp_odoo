@@ -1,13 +1,13 @@
-/// Location Models - State, City, District
-///
-/// Models untuk menyimpan data lokasi (negara, provinsi, kota, distrik)
-/// ke database lokal
+// Location Models - State, City, District
+//
+// Models untuk menyimpan data lokasi (negara, provinsi, kota, distrik)
+// ke database lokal
 
 enum SyncStatus {
-  SYNCED,
-  UPDATED,
-  NEW,
-  DELETED,
+  synced,
+  updated,
+  new_,
+  deleted,
 }
 
 /// Model untuk State/Province
@@ -22,18 +22,18 @@ class StateLocalModel {
     required this.id,
     required this.name,
     this.code,
-    this.syncStatus = SyncStatus.SYNCED,
+    this.syncStatus = SyncStatus.synced,
     this.syncedAt,
   });
 
   /// Convert ke JSON untuk simpan di database
   Map<String, dynamic> toLocalJson() => {
-    'id': id,
-    'name': name,
-    'code': code,
-    'sync_status': syncStatus.toString().split('.').last,
-    'synced_at': syncedAt?.toIso8601String(),
-  };
+        'id': id,
+        'name': name,
+        'code': code,
+        'sync_status': syncStatus.toString().split('.').last,
+        'synced_at': syncedAt?.toIso8601String(),
+      };
 
   /// Convert dari JSON database ke model
   factory StateLocalModel.fromLocalJson(Map<String, dynamic> json) {
@@ -54,7 +54,7 @@ class StateLocalModel {
       id: json['id'] as int? ?? 0,
       name: json['name'] as String? ?? '',
       code: json['code'] as String?,
-      syncStatus: SyncStatus.SYNCED,
+      syncStatus: SyncStatus.synced,
       syncedAt: DateTime.now(),
     );
   }
@@ -72,18 +72,18 @@ class CityLocalModel {
     required this.id,
     required this.name,
     this.stateId,
-    this.syncStatus = SyncStatus.SYNCED,
+    this.syncStatus = SyncStatus.synced,
     this.syncedAt,
   });
 
   /// Convert ke JSON untuk simpan di database
   Map<String, dynamic> toLocalJson() => {
-    'id': id,
-    'name': name,
-    'state_id': stateId,
-    'sync_status': syncStatus.toString().split('.').last,
-    'synced_at': syncedAt?.toIso8601String(),
-  };
+        'id': id,
+        'name': name,
+        'state_id': stateId,
+        'sync_status': syncStatus.toString().split('.').last,
+        'synced_at': syncedAt?.toIso8601String(),
+      };
 
   /// Convert dari JSON database ke model
   factory CityLocalModel.fromLocalJson(Map<String, dynamic> json) {
@@ -104,7 +104,7 @@ class CityLocalModel {
       id: json['id'] as int? ?? 0,
       name: json['name'] as String? ?? '',
       stateId: json['state_id'] as int?,
-      syncStatus: SyncStatus.SYNCED,
+      syncStatus: SyncStatus.synced,
       syncedAt: DateTime.now(),
     );
   }
@@ -122,18 +122,18 @@ class DistrictLocalModel {
     required this.id,
     required this.name,
     this.cityId,
-    this.syncStatus = SyncStatus.SYNCED,
+    this.syncStatus = SyncStatus.synced,
     this.syncedAt,
   });
 
   /// Convert ke JSON untuk simpan di database
   Map<String, dynamic> toLocalJson() => {
-    'id': id,
-    'name': name,
-    'city_id': cityId,
-    'sync_status': syncStatus.toString().split('.').last,
-    'synced_at': syncedAt?.toIso8601String(),
-  };
+        'id': id,
+        'name': name,
+        'city_id': cityId,
+        'sync_status': syncStatus.toString().split('.').last,
+        'synced_at': syncedAt?.toIso8601String(),
+      };
 
   /// Convert dari JSON database ke model
   factory DistrictLocalModel.fromLocalJson(Map<String, dynamic> json) {
@@ -154,7 +154,7 @@ class DistrictLocalModel {
       id: json['id'] as int? ?? 0,
       name: json['name'] as String? ?? '',
       cityId: json['city_id'] as int?,
-      syncStatus: SyncStatus.SYNCED,
+      syncStatus: SyncStatus.synced,
       syncedAt: DateTime.now(),
     );
   }
@@ -162,15 +162,15 @@ class DistrictLocalModel {
 
 /// Helper function untuk parse sync status
 SyncStatus _parseSyncStatus(String? status) {
-  if (status == null) return SyncStatus.SYNCED;
+  if (status == null) return SyncStatus.synced;
   switch (status) {
     case 'UPDATED':
-      return SyncStatus.UPDATED;
+      return SyncStatus.updated;
     case 'NEW':
-      return SyncStatus.NEW;
+      return SyncStatus.new_;
     case 'DELETED':
-      return SyncStatus.DELETED;
+      return SyncStatus.deleted;
     default:
-      return SyncStatus.SYNCED;
+      return SyncStatus.synced;
   }
 }

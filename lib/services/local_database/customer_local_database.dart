@@ -71,7 +71,8 @@ class CustomerLocalDatabase {
       final customers =
           maps.map((json) => CustomerLocalModel.fromLocalJson(json)).toList();
 
-      print('✅ [CUSTOMER_LOCAL_DB] Retrieved ${customers.length} customers (excluding deleted)');
+      print(
+          '✅ [CUSTOMER_LOCAL_DB] Retrieved ${customers.length} customers (excluding deleted)');
       return customers;
     } catch (e) {
       print('❌ [CUSTOMER_LOCAL_DB] Error getting all customers: $e');
@@ -135,8 +136,7 @@ class CustomerLocalDatabase {
       final db = await _dbHelper.database;
       final maps = await db.query(
         'customers',
-        where:
-            'sync_status IN (?, ?, ?)',
+        where: 'sync_status IN (?, ?, ?)',
         whereArgs: ['NEW', 'UPDATED', 'DELETED'],
         orderBy: 'local_updated_at ASC',
       );
@@ -163,7 +163,7 @@ class CustomerLocalDatabase {
         'customers',
         {
           'sync_status': statusStr,
-          'synced_at': status == SyncStatus.SYNCED
+          'synced_at': status == SyncStatus.synced
               ? DateTime.now().toIso8601String()
               : null,
         },
@@ -287,8 +287,7 @@ class CustomerLocalDatabase {
         return null;
       }
 
-      final lastSync =
-          DateTime.parse(result[0]['last_sync'] as String);
+      final lastSync = DateTime.parse(result[0]['last_sync'] as String);
       print('✅ [CUSTOMER_LOCAL_DB] Last sync: $lastSync');
       return lastSync;
     } catch (e) {
@@ -357,8 +356,7 @@ class CustomerLocalDatabase {
       whereArgs.add(searchTerm);
 
       // Phone search - any of the variants
-      final phoneConditions =
-          phoneVariants.map((_) => 'phone LIKE ?').toList();
+      final phoneConditions = phoneVariants.map((_) => 'phone LIKE ?').toList();
       whereConditions.add('(${phoneConditions.join(' OR ')})');
       whereArgs.addAll(phoneVariants.map((p) => '%$p%'));
 

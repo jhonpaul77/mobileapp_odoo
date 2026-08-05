@@ -193,7 +193,7 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
           _isLoadingCustomers = false;
         });
 
-        for (var i = 0; i < (customerList.length > 3 ? 3 : customerList.length); i++) {
+        for (var i = 0; i < (customerList.length > 3 ? 3 : customerList.length);i++) {
           logger.i('   ${i + 1}. ${customerList[i]['name']}');
         }
       } else {
@@ -452,12 +452,13 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
 
       // STEP 1: Try to load from LOCAL DATABASE (faster & offline)
       logger.i('   [STEP 1] Trying LOCAL DATABASE...');
-      
+
       final paymentTermDb = PaymentTermLocalDatabase();
       final localPaymentTerms = await paymentTermDb.getAllPaymentTerms();
 
       if (localPaymentTerms.isNotEmpty) {
-        logger.i('✅ [LOAD_PAYMENT_TERMS] LOCAL DB: ${localPaymentTerms.length} payment terms loaded');
+        logger.i(
+            '✅ [LOAD_PAYMENT_TERMS] LOCAL DB: ${localPaymentTerms.length} payment terms loaded');
 
         // Convert from database format to UI format
         final paymentTermList = localPaymentTerms.map((term) {
@@ -521,7 +522,8 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
         ),
       );
 
-      logger.i('✅ [LOAD_PAYMENT_TERMS] Response status: ${response.statusCode}');
+      logger
+          .i('✅ [LOAD_PAYMENT_TERMS] Response status: ${response.statusCode}');
 
       List<dynamic> paymentTermList;
       if (response.data is String) {
@@ -551,9 +553,11 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
           }).toList();
 
           await paymentTermDb.upsertPaymentTerms(termsForDb);
-          logger.i('✅ [LOAD_PAYMENT_TERMS] Synced ${paymentTermList.length} terms to LOCAL DB');
+          logger.i(
+              '✅ [LOAD_PAYMENT_TERMS] Synced ${paymentTermList.length} terms to LOCAL DB');
         } catch (syncError) {
-          logger.w('⚠️ [LOAD_PAYMENT_TERMS] Error syncing to local DB (non-critical): $syncError');
+          logger.w(
+              '⚠️ [LOAD_PAYMENT_TERMS] Error syncing to local DB (non-critical): $syncError');
           // Continue anyway - UI data is already loaded
         }
       }
@@ -576,7 +580,8 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
         }
       }
 
-      logger.i('💳 [LOAD_PAYMENT_TERMS] Using API data (will be cached locally)');
+      logger
+          .i('💳 [LOAD_PAYMENT_TERMS] Using API data (will be cached locally)');
     } catch (e, stackTrace) {
       logger.e('❌ [LOAD_PAYMENT_TERMS] Error loading payment terms', error: e);
       logger.e('   Stack trace: $stackTrace');
@@ -949,7 +954,8 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
                                     ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         product['name'] ?? '',
@@ -1073,9 +1079,8 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
                         setDialogState(() {
                           searchQuery = value.toLowerCase();
                           filteredTerms = _paymentTerms.where((term) {
-                            final name = (term['name'] ?? '')
-                                .toString()
-                                .toLowerCase();
+                            final name =
+                                (term['name'] ?? '').toString().toLowerCase();
                             return name.contains(searchQuery);
                           }).toList();
                         });
@@ -1227,7 +1232,8 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
 
     if (_selectedCustomer!['district_id'] != null &&
         _selectedCustomer!['district_id'] != false) {
-      final district = await _extractLocationName(_selectedCustomer!['district_id']);
+      final district =
+          await _extractLocationName(_selectedCustomer!['district_id']);
       if (district.isNotEmpty && district != '-') {
         parts.add(district);
       }
@@ -1550,9 +1556,10 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
       }
 
       // Cek analytic account mandatory
-      if (line['analytic_distribution'] == null || 
-          line['analytic_distribution'] == false || 
-          (line['analytic_distribution'] is String && line['analytic_distribution'].isEmpty)) {
+      if (line['analytic_distribution'] == null ||
+          line['analytic_distribution'] == false ||
+          (line['analytic_distribution'] is String &&
+              line['analytic_distribution'].isEmpty)) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('⚠️ Analytic Account produk ${i + 1} harus dipilih'),
@@ -1591,14 +1598,16 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
       String customerDistrict = '';
 
       try {
-        customerState = await _extractLocationName(_selectedCustomer!['state_id']);
+        customerState =
+            await _extractLocationName(_selectedCustomer!['state_id']);
       } catch (e) {
         logger.e('❌ Error extracting state: $e');
         customerState = '';
       }
 
       try {
-        customerCity = await _extractLocationName(_selectedCustomer!['city_id']);
+        customerCity =
+            await _extractLocationName(_selectedCustomer!['city_id']);
       } catch (e) {
         logger.e('❌ Error extracting city: $e');
         customerCity = '';
@@ -1623,9 +1632,10 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
       final storage = SecureStorageService();
       final currentUser = await storage.getUserData();
       final currentApiKey = await storage.getAccessToken();
-      
+
       logger.i('🔐 [SAVE_DRAFT] Current User: ${currentUser?['username']}');
-      logger.i('🔐 [SAVE_DRAFT] API Key: ${currentApiKey?.substring(0, 12)}...');
+      logger
+          .i('🔐 [SAVE_DRAFT] API Key: ${currentApiKey?.substring(0, 12)}...');
 
       // POIN 4: Call API - always save as DRAFT
       final result = await _salesService.createSaleOrder(
@@ -1665,13 +1675,15 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
         final currentApiKey = await storage.getAccessToken();
         final currentDb = await ConfigService().getDatabase();
         final currentUrl = await ConfigService().getUrl();
-        
+
         final username = currentUser?['username'] ?? 'Unknown';
         final apiKeyShort = currentApiKey?.substring(0, 12) ?? 'NOT SET';
-        
-        logger.i('═════════════════════════════════════════════════════════════');
+
+        logger
+            .i('═════════════════════════════════════════════════════════════');
         logger.i('✅ [CREATE_SO_SUCCESS] Sales Order Created Successfully');
-        logger.i('═════════════════════════════════════════════════════════════');
+        logger
+            .i('═════════════════════════════════════════════════════════════');
         logger.i('');
         logger.i('📋 REQUEST INFO:');
         logger.i('   User: $username');
@@ -1724,7 +1736,8 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
           logger.i('   ├─ Created By: $username');
           logger.i('   ├─ Database: $currentDb');
           logger.i('   └─ Time: ${DateTime.now().toIso8601String()}');
-          logger.i('═════════════════════════════════════════════════════════════');
+          logger.i(
+              '═════════════════════════════════════════════════════════════');
         } catch (e, stackTrace) {
           logger.e('   Error extracting order data: $e');
           logger.e('   Stack trace: $stackTrace');
@@ -1755,7 +1768,7 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
         // Navigate to detail page
         if (mounted && _createdOrderId != null) {
           // Extract date_order dari response backend
-          final dateOrderFromBackend = orderData['date_order']?.toString() ?? 
+          final dateOrderFromBackend = orderData['date_order']?.toString() ??
               DateTime.now().toIso8601String();
 
           // Wait a bit for snackbar
@@ -1768,7 +1781,7 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
               name: _createdOrderName ?? 'SO-$_createdOrderId',
               partnerId: _selectedCustomer!['id'],
               partnerName: _selectedCustomer!['name'],
-              partnerPhone: _selectedCustomer!['phone'],  // ← ADD PHONE
+              partnerPhone: _selectedCustomer!['phone'], // ← ADD PHONE
               paymentTermId: _selectedPaymentTerm?['id'] as int?,
               paymentTermName: _selectedPaymentTerm?['name'] as String?,
               dateOrder: dateOrderFromBackend,
@@ -1951,7 +1964,8 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -1968,117 +1982,117 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
 
               // Submit Button - Changes based on state
               if (!_isOrderSaved) ...[
-              // Before save: Show "Simpan Transaksi" button
-              ElevatedButton(
-                onPressed: _isLoading ? null : _saveDraft,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700,
-                  disabledBackgroundColor: Colors.grey[400],
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  minimumSize: const Size(double.infinity, 48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                // Before save: Show "Simpan Transaksi" button
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _saveDraft,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade700,
+                    disabledBackgroundColor: Colors.grey[400],
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    minimumSize: const Size(double.infinity, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 1,
                   ),
-                  elevation: 1,
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Text(
-                        'Simpan Transaksi',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-              ),
-            ] else ...[
-              // After save: Show order info and "Konfirmasi Order" button
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.green.shade200, width: 2),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.check_circle,
-                            color: Colors.green.shade700, size: 24),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Draft Tersimpan',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.green.shade700,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _createdOrderName ?? '-',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.green.shade900,
-                                ),
-                              ),
-                            ],
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Simpan Transaksi',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: _isConfirming ? null : _confirmOrder,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: Colors.green.shade700,
-                        minimumSize: const Size(double.infinity, 48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 1,
-                      ),
-                      child: _isConfirming
-                          ? const SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Text(
-                              'Konfirmasi Order',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                    ),
-                  ],
                 ),
-              ),
-            ],
+              ] else ...[
+                // After save: Show order info and "Konfirmasi Order" button
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.green.shade200, width: 2),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle,
+                              color: Colors.green.shade700, size: 24),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Draft Tersimpan',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.green.shade700,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _createdOrderName ?? '-',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.green.shade900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: _isConfirming ? null : _confirmOrder,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          backgroundColor: Colors.green.shade700,
+                          minimumSize: const Size(double.infinity, 48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 1,
+                        ),
+                        child: _isConfirming
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                ),
+                              )
+                            : const Text(
+                                'Konfirmasi Order',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
 
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
             ],
           ),
         ),
@@ -2107,67 +2121,6 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildEditField(
-    String label,
-    TextEditingController controller, {
-    TextInputType keyboardType = TextInputType.text,
-    ValueChanged<String>? onChanged,
-    bool readOnly = false,
-    String? prefixText,
-    int maxLines = 1,
-    IconData? icon,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 3),
-          TextField(
-            controller: controller,
-            keyboardType: keyboardType,
-            onChanged: onChanged,
-            readOnly: readOnly,
-            maxLines: maxLines,
-            style: const TextStyle(fontSize: 12, color: Colors.black87),
-            decoration: InputDecoration(
-              prefixText: prefixText,
-              prefixIcon: icon != null
-                  ? Icon(icon, size: 16, color: AppTheme.primaryColor)
-                  : null,
-              filled: true,
-              fillColor: Colors.grey[50],
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide:
-                    const BorderSide(color: AppTheme.primaryColor, width: 1.5),
-              ),
-              hintStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -2340,7 +2293,8 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
                     FutureBuilder<String>(
                       future: _buildLocationString(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const Text(
                             'Memuat...',
                             style: TextStyle(
@@ -2473,21 +2427,21 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
                       SizedBox(
                         height: 36,
                         child: ElevatedButton.icon(
-                          onPressed: _isLoadingPaymentTerms ||
-                                  _paymentTerms.isEmpty
-                              ? null
-                              : () async {
-                                  final selectedTerm =
-                                      await _showPaymentTermSearchDialog();
-                                  if (selectedTerm != null) {
-                                    setState(() {
-                                      _selectedPaymentTerm = selectedTerm;
-                                    });
-                                    logger.i(
-                                      '✅ [PAYMENT_TERM_SELECTED] ${selectedTerm['name']} (ID: ${selectedTerm['id']})',
-                                    );
-                                  }
-                                },
+                          onPressed:
+                              _isLoadingPaymentTerms || _paymentTerms.isEmpty
+                                  ? null
+                                  : () async {
+                                      final selectedTerm =
+                                          await _showPaymentTermSearchDialog();
+                                      if (selectedTerm != null) {
+                                        setState(() {
+                                          _selectedPaymentTerm = selectedTerm;
+                                        });
+                                        logger.i(
+                                          '✅ [PAYMENT_TERM_SELECTED] ${selectedTerm['name']} (ID: ${selectedTerm['id']})',
+                                        );
+                                      }
+                                    },
                           icon: const Icon(Icons.search, size: 16),
                           label: const Text('Cari'),
                           style: ElevatedButton.styleFrom(
@@ -2618,7 +2572,8 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
                           if (result != null) {
                             setState(() {
                               _orderLines[index]['product_id'] = result['id'];
-                              _orderLines[index]['product_name'] = result['name'];
+                              _orderLines[index]['product_name'] =
+                                  result['name'];
                               _orderLines[index]['price_unit'] =
                                   result['list_price'] ?? 0.0;
                             });
@@ -2724,19 +2679,24 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
                           fillColor: Colors.grey[50],
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(6),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 0.8),
+                            borderSide: BorderSide(
+                                color: Colors.grey[300]!, width: 0.8),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(6),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 0.8),
+                            borderSide: BorderSide(
+                                color: Colors.grey[300]!, width: 0.8),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(6),
-                            borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1),
+                            borderSide: const BorderSide(
+                                color: AppTheme.primaryColor, width: 1),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8),
                         ),
-                        style: const TextStyle(fontSize: 12, color: Colors.black87),
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.black87),
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           _ThousandsSeparatorInputFormatter(),
@@ -2774,19 +2734,24 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
                           fillColor: Colors.grey[50],
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(6),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 0.8),
+                            borderSide: BorderSide(
+                                color: Colors.grey[300]!, width: 0.8),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(6),
-                            borderSide: BorderSide(color: Colors.grey[300]!, width: 0.8),
+                            borderSide: BorderSide(
+                                color: Colors.grey[300]!, width: 0.8),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(6),
-                            borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1),
+                            borderSide: const BorderSide(
+                                color: AppTheme.primaryColor, width: 1),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8),
                         ),
-                        style: const TextStyle(fontSize: 12, color: Colors.black87),
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.black87),
                         keyboardType: TextInputType.number,
                         onChanged: (value) {
                           final qty = double.tryParse(value) ?? 1.0;
@@ -2858,7 +2823,8 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
                             _isOrderSaved
                         ? null
                         : () async {
-                            final result = await _showAnalyticAccountSearchDialog();
+                            final result =
+                                await _showAnalyticAccountSearchDialog();
                             if (result != null) {
                               setState(() {
                                 _orderLines[index]['analytic_account_id'] =
@@ -2912,13 +2878,17 @@ class _TransactionCreatePageState extends State<TransactionCreatePage> {
                           ),
                         ),
                         // Clear button
-                        if (line['analytic_account_id'] != null && !_isOrderSaved)
+                        if (line['analytic_account_id'] != null &&
+                            !_isOrderSaved)
                           GestureDetector(
                             onTap: () {
                               setState(() {
-                                _orderLines[index]['analytic_account_id'] = null;
-                                _orderLines[index]['analytic_account_name'] = '';
-                                _orderLines[index]['analytic_distribution'] = false;
+                                _orderLines[index]['analytic_account_id'] =
+                                    null;
+                                _orderLines[index]['analytic_account_name'] =
+                                    '';
+                                _orderLines[index]['analytic_distribution'] =
+                                    false;
                               });
                             },
                             child: Icon(
