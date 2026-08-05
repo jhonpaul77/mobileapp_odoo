@@ -27,11 +27,15 @@ void main() async {
   final auth = AuthService();
   await auth.initialize();
   
-  // Track app open for pixel tracking
-  print('🚀 [MAIN] Starting pixel tracking...');
+  // Track app open for pixel tracking (async, non-blocking)
+  print('🚀 [MAIN] Starting pixel tracking (background)...');
   final pixelTracking = PixelTrackingService();
-  await pixelTracking.trackAppOpen();
-  print('🚀 [MAIN] Pixel tracking completed');
+  // Fire and forget - don't wait for it
+  pixelTracking.trackAppOpen().then((_) {
+    print('✅ [MAIN] Pixel tracking completed');
+  }).catchError((e) {
+    print('❌ [MAIN] Pixel tracking error: $e');
+  });
 
   runApp(const MyApp());
 }

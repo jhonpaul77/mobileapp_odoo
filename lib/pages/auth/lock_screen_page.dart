@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import '../../services/auth_service.dart';
 import '../../services/biometric_service.dart';
 import '../../services/secure_storage_service.dart';
-import '../home/home_page.dart';
 import 'login_page.dart';
+import 'sync_splash_page.dart';
 
 class LockScreenPage extends StatefulWidget {
   const LockScreenPage({super.key});
@@ -307,7 +307,7 @@ class _LockScreenPageState extends State<LockScreenPage>
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const HomePage()),
+      MaterialPageRoute(builder: (_) => const SyncSplashPage()),
     );
   }
 

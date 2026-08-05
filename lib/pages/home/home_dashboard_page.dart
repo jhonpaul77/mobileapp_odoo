@@ -5,6 +5,7 @@ import 'package:nextpsa/pages/home/widgets/dashboard_stats_card.dart';
 import 'package:nextpsa/services/secure_storage_service.dart';
 import 'package:nextpsa/services/status_bar_service.dart';
 import 'package:nextpsa/config/sales_quotes.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 /// Home Dashboard Page
@@ -106,6 +107,10 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // APP VERSION INFO CARD
+                  _buildVersionInfoCard(theme),
+                  const SizedBox(height: 16),
+
                   // DEBUG INFO CARD - Show API Key and Username
                   _buildDebugInfoCard(theme),
                   const SizedBox(height: 16),
@@ -123,6 +128,85 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   }
 
   // 7 Motivational quotes for CS - rotated daily
+  Widget _buildVersionInfoCard(ThemeData theme) {
+    return FutureBuilder<String>(
+      future: _getAppVersion(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+
+        final version = snapshot.data ?? 'Unknown';
+
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                theme.primaryColor.withValues(alpha: 0.08),
+                theme.primaryColor.withValues(alpha: 0.02),
+              ],
+            ),
+            border: Border.all(
+              color: theme.primaryColor.withValues(alpha: 0.2),
+              width: 1,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: theme.primaryColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'App Version',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: theme.textTheme.bodySmall?.color,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: theme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  version,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: theme.primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<String> _getAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      return 'V ${packageInfo.version} (${packageInfo.buildNumber})';
+    } catch (e) {
+      return 'V Unknown';
+    }
+  }
+
   Widget _buildDebugInfoCard(ThemeData theme) {
     return FutureBuilder<Map<String, String>>(
       future: _getMotivationData(),

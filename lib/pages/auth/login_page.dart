@@ -8,7 +8,6 @@ import '../../services/auth_service.dart';
 import '../../services/config_service.dart';
 import '../../services/pixel_tracking_service.dart';
 import '../../services/secure_storage_service.dart';
-import '../home/home_page.dart';
 import 'intro_page.dart';
 import 'setup_pin_page.dart';
 import 'sync_splash_page.dart';
