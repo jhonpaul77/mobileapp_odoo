@@ -153,7 +153,7 @@ class SalesOrder {
     final paymentTermRaw = json['payment_term_id'];
     if (paymentTermRaw is int) {
       paymentTermIdParsed = paymentTermRaw;
-    } else if (paymentTermRaw is List && paymentTermRaw.length > 0) {
+    } else if (paymentTermRaw is List && paymentTermRaw.isNotEmpty) {
       paymentTermIdParsed = paymentTermRaw[0] as int?;
       if (paymentTermRaw.length > 1) {
         paymentTermNameParsed = paymentTermRaw[1] as String?;
@@ -180,7 +180,8 @@ class SalesOrder {
       awb: awbParsed,
       state: json['state'] as String? ?? 'draft',
       orderCount: json['order_count'] as int?,
-      fuCount: json['fu_count'] as int? ?? 0, // Parse follow-up count from u_count field
+      fuCount: json['fu_count'] as int? ??
+          0, // Parse follow-up count from u_count field
       orderLines: orderLines,
       partnerPhone: partnerPhoneParsed,
       partnerStreet: partnerStreetParsed,

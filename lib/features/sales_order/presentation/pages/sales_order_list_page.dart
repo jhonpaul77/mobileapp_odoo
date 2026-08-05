@@ -590,19 +590,6 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
     }
   }
 
-  /// Increment WA message count untuk order
-  static Future<void> incrementWAMessageCount(int orderId, String type) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final key = 'wa_count_${orderId}_$type';
-      final currentCount = prefs.getInt(key) ?? 0;
-      await prefs.setInt(key, currentCount + 1);
-      print('✅ WA counter incremented: $type for Order #$orderId = ${currentCount + 1}');
-    } catch (e) {
-      print('❌ Error incrementing WA count: $e');
-    }
-  }
-
   /// Build status filter chip (same as original transaction_list_page.dart)
   Widget _buildStatusChip(SalesOrderProvider provider, String label) {
     final theme = Theme.of(context);

@@ -37,8 +37,7 @@ class SyncResult {
 /// 4. Update local DB with sync flags
 /// 5. Log sync event
 class CustomerSyncManager {
-  static final CustomerSyncManager _instance =
-      CustomerSyncManager._internal();
+  static final CustomerSyncManager _instance = CustomerSyncManager._internal();
   final CustomerLocalDatabase _localDb = CustomerLocalDatabase();
 
   factory CustomerSyncManager() {
@@ -64,10 +63,8 @@ class CustomerSyncManager {
       print('   [SYNC_MANAGER] Local customers: ${localCustomers.length}');
 
       // Create maps for quick lookup
-      final localMap =
-          {for (final c in localCustomers) c.id: c};
-      final remoteMap =
-          {for (final c in remoteCustomers) c.id: c};
+      final localMap = {for (final c in localCustomers) c.id: c};
+      final remoteMap = {for (final c in remoteCustomers) c.id: c};
 
       int newCount = 0;
       int updatedCount = 0;
@@ -77,12 +74,11 @@ class CustomerSyncManager {
       // STEP 1: Identify NEW customers (in remote but not in local)
       for (final remoteCustomer in remoteCustomers) {
         if (!localMap.containsKey(remoteCustomer.id)) {
-          print(
-              '   🆕 NEW: ${remoteCustomer.name} (ID: ${remoteCustomer.id})');
+          print('   🆕 NEW: ${remoteCustomer.name} (ID: ${remoteCustomer.id})');
 
           final newLocalCustomer = CustomerLocalModel.fromEntity(
             remoteCustomer,
-            syncStatus: SyncStatus.SYNCED,
+            syncStatus: SyncStatus.synced,
             remoteUpdatedAt: DateTime.now(),
           );
 
@@ -112,7 +108,7 @@ class CustomerSyncManager {
             stateId: remoteCustomer.stateId,
             zip: remoteCustomer.zip,
             countryId: remoteCustomer.countryId,
-            syncStatus: SyncStatus.SYNCED,
+            syncStatus: SyncStatus.synced,
             remoteUpdatedAt: DateTime.now(),
             localCreatedAt: local.localCreatedAt,
             localUpdatedAt: DateTime.now(),
@@ -132,15 +128,14 @@ class CustomerSyncManager {
               '   🗑️ DELETED: ${localCustomer.name} (ID: ${localCustomer.id})');
 
           // Mark as deleted instead of removing (soft delete for history)
-          await _localDb.updateSyncStatus(localCustomer.id, SyncStatus.DELETED);
+          await _localDb.updateSyncStatus(localCustomer.id, SyncStatus.deleted);
           deletedCount++;
           messages.add('🗑️ Deleted: ${localCustomer.name}');
         }
       }
 
       // Log sync event
-      final durationMs =
-          DateTime.now().difference(startTime).inMilliseconds;
+      final durationMs = DateTime.now().difference(startTime).inMilliseconds;
       await _localDb.insertSyncLog(
         entityType: 'customer',
         totalCount: remoteCustomers.length,
@@ -202,7 +197,9 @@ class CustomerSyncManager {
         'updated': counts['updated'],
         'deleted': counts['deleted'],
         'lastSync': lastSync?.toIso8601String(),
-        'needsSync': (counts['new'] ?? 0) + (counts['updated'] ?? 0) + (counts['deleted'] ?? 0),
+        'needsSync': (counts['new'] ?? 0) +
+            (counts['updated'] ?? 0) +
+            (counts['deleted'] ?? 0),
       };
     } catch (e) {
       print('❌ [SYNC_MANAGER] Error getting sync stats: $e');

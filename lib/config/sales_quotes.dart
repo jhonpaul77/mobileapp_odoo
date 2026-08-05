@@ -1,8 +1,3 @@
-/// Sales & Motivation Quotes
-/// 80+ quotes dari top sales leaders dan entrepreneurs
-/// ATTRIBUTION LENGKAP: Setiap quote memiliki nama pembicara/penulis di akhir
-/// Random selection setiap login
-
 class SalesQuotes {
   static const List<String> quotes = [
     "Jangan fokus pada produk, fokus pada solusi untuk masalah pelanggan. - James Gwee",
