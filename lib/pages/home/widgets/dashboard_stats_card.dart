@@ -18,7 +18,12 @@ import './sync_progress_dialog.dart';
 /// - Last sync time
 /// - Single "Sync All" button that syncs everything at once
 class DashboardStatsCard extends StatefulWidget {
-  const DashboardStatsCard({super.key});
+  final bool isFirstLoadDisabled;
+  
+  const DashboardStatsCard({
+    super.key,
+    this.isFirstLoadDisabled = true,
+  });
 
   @override
   State<DashboardStatsCard> createState() => _DashboardStatsCardState();
@@ -153,7 +158,7 @@ class _DashboardStatsCardState extends State<DashboardStatsCard> {
                     icon: _isSyncing ? Icons.hourglass_bottom : Icons.cloud_download,
                     color: Colors.deepPurple,
                     isLoading: _isSyncing,
-                    onTap: _isSyncing ? null : () => _handleSyncAll(context, provider),
+                    onTap: (_isSyncing || widget.isFirstLoadDisabled) ? null : () => _handleSyncAll(context, provider),
                     theme: theme,
                   ),
                 ],

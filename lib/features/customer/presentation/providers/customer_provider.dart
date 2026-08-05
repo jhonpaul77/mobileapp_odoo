@@ -135,7 +135,7 @@ class CustomerProvider extends ChangeNotifier {
         for (final customer in fetchedCustomers) {
           final localModel = CustomerLocalModel.fromEntity(
             customer,
-            syncStatus: SyncStatus.synced,
+            syncStatus: SyncStatus.SYNCED,
           );
           await _localDb.insertOrReplace(localModel);
         }
@@ -202,7 +202,7 @@ class CustomerProvider extends ChangeNotifier {
       print('   [CUSTOMER_PROVIDER] Checking for pending local updates...');
       try {
         final pendingCustomers =
-            await _localDb.getCustomersByStatus(SyncStatus.updated);
+            await _localDb.getCustomersByStatus(SyncStatus.UPDATED);
 
         if (pendingCustomers.isNotEmpty) {
           print(
@@ -234,7 +234,7 @@ class CustomerProvider extends ChangeNotifier {
               );
 
               // Mark as synced
-              await _localDb.updateSyncStatus(entity.id, SyncStatus.synced);
+              await _localDb.updateSyncStatus(entity.id, SyncStatus.SYNCED);
               syncedPendingCount++;
               print(
                   '   ✅ [CUSTOMER_PROVIDER] Pushed pending update: ${entity.name}');
@@ -427,7 +427,7 @@ class CustomerProvider extends ChangeNotifier {
       // Save to local database
       final localModel = CustomerLocalModel.fromEntity(
         newCustomer,
-        syncStatus: SyncStatus.synced,
+        syncStatus: SyncStatus.SYNCED,
       );
       await _localDb.insertOrReplace(localModel);
 
@@ -533,7 +533,7 @@ class CustomerProvider extends ChangeNotifier {
       // Save ke lokal dengan status SYNCED
       final localModel = CustomerLocalModel.fromEntity(
         updatedCustomer,
-        syncStatus: SyncStatus.synced,
+        syncStatus: SyncStatus.SYNCED,
       );
       await _localDb.insertOrReplace(localModel);
       print('✅ [CUSTOMER_PROVIDER] Tersimpan lokal (SYNCED)');

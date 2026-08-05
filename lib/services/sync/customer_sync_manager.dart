@@ -78,7 +78,7 @@ class CustomerSyncManager {
 
           final newLocalCustomer = CustomerLocalModel.fromEntity(
             remoteCustomer,
-            syncStatus: SyncStatus.synced,
+            syncStatus: SyncStatus.SYNCED,
             remoteUpdatedAt: DateTime.now(),
           );
 
@@ -108,7 +108,7 @@ class CustomerSyncManager {
             stateId: remoteCustomer.stateId,
             zip: remoteCustomer.zip,
             countryId: remoteCustomer.countryId,
-            syncStatus: SyncStatus.synced,
+            syncStatus: SyncStatus.SYNCED,
             remoteUpdatedAt: DateTime.now(),
             localCreatedAt: local.localCreatedAt,
             localUpdatedAt: DateTime.now(),
@@ -128,7 +128,7 @@ class CustomerSyncManager {
               '   🗑️ DELETED: ${localCustomer.name} (ID: ${localCustomer.id})');
 
           // Mark as deleted instead of removing (soft delete for history)
-          await _localDb.updateSyncStatus(localCustomer.id, SyncStatus.deleted);
+          await _localDb.updateSyncStatus(localCustomer.id, SyncStatus.DELETED);
           deletedCount++;
           messages.add('🗑️ Deleted: ${localCustomer.name}');
         }

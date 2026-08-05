@@ -163,7 +163,7 @@ class CustomerLocalDatabase {
         'customers',
         {
           'sync_status': statusStr,
-          'synced_at': status == SyncStatus.synced
+          'synced_at': status == SyncStatus.SYNCED
               ? DateTime.now().toIso8601String()
               : null,
         },

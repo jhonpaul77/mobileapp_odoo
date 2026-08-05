@@ -22,6 +22,7 @@ class HomeDashboardPage extends StatefulWidget {
 }
 
 class _HomeDashboardPageState extends State<HomeDashboardPage> {
+  bool _isSyncButtonDisabledOnFirstLoad = true; // Disable tombol sync setelah pertama kali load
 
   @override
   void initState() {
@@ -34,6 +35,16 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
       provider.loadSyncStats();
       provider.syncLocations(); // Sync locations (States, Cities, Districts) to local DB
       provider.loadLocationStats(); // Load stats after sync
+      
+      // Auto-enable sync button after 3 seconds (allow user to see fresh data first)
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            _isSyncButtonDisabledOnFirstLoad = false;
+          });
+          print('✅ [DASHBOARD] Sync button enabled');
+        }
+      });
     });
   }
 
@@ -116,7 +127,7 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                   const SizedBox(height: 16),
                   
                   // DATABASE STATS CARD
-                  const DashboardStatsCard(),
+                  DashboardStatsCard(isFirstLoadDisabled: _isSyncButtonDisabledOnFirstLoad),
                   const SizedBox(height: 8),
                 ],
               ),

@@ -496,7 +496,7 @@ class _CustomerEditPageState extends State<CustomerEditPage> {
       final localDb = CustomerLocalDatabase();
       final localModel = CustomerLocalModel.fromEntity(
         updatedCustomer,
-        syncStatus: SyncStatus.updated,
+        syncStatus: SyncStatus.UPDATED,
       );
       await localDb.insertOrReplace(localModel);
       print('✅ [EDIT CUSTOMER] Tersimpan lokal (UPDATED) - akan di-sync nanti');
