@@ -399,7 +399,7 @@ class _LockScreenPageState extends State<LockScreenPage>
           ),
           const SizedBox(height: 24),
           const Text(
-            'Pintar X',
+            'Next PSA',
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
@@ -435,7 +435,7 @@ class _LockScreenPageState extends State<LockScreenPage>
         ),
         const SizedBox(height: 24),
         Text(
-          'Pintar X',
+          'Next PSA',
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,

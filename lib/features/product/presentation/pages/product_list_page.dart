@@ -9,7 +9,7 @@ import '../widgets/product_search_bar.dart';
 
 /// Product List Page
 ///
-/// Displays list of products with search functionality.
+/// Displays list of products with search and advanced filter functionality.
 class ProductListPage extends StatefulWidget {
   const ProductListPage({super.key});
 
@@ -56,8 +56,8 @@ class _ProductListPageState extends State<ProductListPage> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: Column(
               children: [
-                // Search Bar
-                const ProductSearchBar(),
+                // Search Bar with Filter Button
+                _buildSearchWithFilterBar(provider, theme),
                 const SizedBox(height: 14),
 
                 // Product List
@@ -69,6 +69,178 @@ class _ProductListPageState extends State<ProductListPage> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildSearchWithFilterBar(ProductProvider provider, ThemeData theme) {
+    return Row(
+      children: [
+        // Search Bar (expanded)
+        Expanded(
+          child: const ProductSearchBar(),
+        ),
+        const SizedBox(width: 8),
+        // Filter Button (corong icon)
+        _buildFilterButton(provider, theme),
+      ],
+    );
+  }
+
+  Widget _buildFilterButton(ProductProvider provider, ThemeData theme) {
+    final hasActiveFilter = provider.selectedType != null;
+    
+    return GestureDetector(
+      onTap: () => _showAdvancedFilterDialog(provider),
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: hasActiveFilter
+              ? AppTheme.primaryColor
+              : (theme.brightness == Brightness.dark
+                  ? Colors.grey[800]
+                  : Colors.grey[200]),
+          borderRadius: BorderRadius.circular(8),
+          border: hasActiveFilter
+              ? Border.all(color: AppTheme.primaryColor, width: 2)
+              : null,
+        ),
+        child: Icon(
+          Icons.tune,
+          color: hasActiveFilter ? Colors.white : Colors.grey[600],
+          size: 20,
+        ),
+      ),
+    );
+  }
+
+  void _showAdvancedFilterDialog(ProductProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Advanced Filter',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Filter: Jenis Barang
+            const Text(
+              'Jenis Barang',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildFilterOptions(provider),
+            const SizedBox(height: 16),
+
+            // Clear Filter Button
+            if (provider.selectedType != null)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    provider.clearAllFilters();
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.clear),
+                  label: const Text('Clear Filter'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade600,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterOptions(ProductProvider provider) {
+    final types = ['All', ...provider.availableTypes];
+    
+    return Column(
+      children: types.map((type) {
+        final label = type == 'All' 
+            ? 'Semua' 
+            : (type == 'jasa' ? 'Jasa' : 'Stok');
+        final isSelected = (type == 'All' && provider.selectedType == null) ||
+            (type != 'All' && provider.selectedType == type);
+        
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: GestureDetector(
+            onTap: () {
+              provider.setTypeFilter(type == 'All' ? null : type);
+              Navigator.pop(context);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isSelected
+                      ? AppTheme.primaryColor
+                      : Colors.grey.shade300,
+                  width: isSelected ? 2 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Radio<bool>(
+                    value: true,
+                    groupValue: isSelected,
+                    onChanged: (_) {},
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      color: isSelected
+                          ? AppTheme.primaryColor
+                          : Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 

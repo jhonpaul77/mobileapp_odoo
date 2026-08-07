@@ -139,6 +139,8 @@ class DatabaseHelper {
         CREATE TABLE products (
           id INTEGER PRIMARY KEY,
           name TEXT NOT NULL,
+          type TEXT DEFAULT 'product',
+          is_storable INTEGER DEFAULT 1,
           default_code TEXT,
           list_price REAL,
           qty_available REAL,
@@ -356,6 +358,8 @@ class DatabaseHelper {
           CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
+            type TEXT DEFAULT 'product',
+            is_storable INTEGER DEFAULT 1,
             default_code TEXT,
             list_price REAL,
             qty_available REAL,
@@ -368,6 +372,22 @@ class DatabaseHelper {
         print('   ✅ Created products table');
       } else {
         print('   ✅ products table already exists');
+        
+        // Check if type and is_storable columns exist, add if missing
+        final columns = await db.rawQuery('PRAGMA table_info(products)');
+        final columnNames = columns.map((col) => col['name'] as String).toList();
+        
+        if (!columnNames.contains('type')) {
+          print('   [DB_HELPER] Adding missing type column...');
+          await db.execute('ALTER TABLE products ADD COLUMN type TEXT DEFAULT \'product\'');
+          print('   ✅ Added type column');
+        }
+        
+        if (!columnNames.contains('is_storable')) {
+          print('   [DB_HELPER] Adding missing is_storable column...');
+          await db.execute('ALTER TABLE products ADD COLUMN is_storable INTEGER DEFAULT 1');
+          print('   ✅ Added is_storable column');
+        }
       }
     } catch (e) {
       print('❌ [DB_HELPER] Error ensuring products table: $e');

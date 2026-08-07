@@ -95,39 +95,43 @@ class ProductCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          currencyFormatter.format(product.listPrice),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.green,
+                        Expanded(
+                          child: Text(
+                            currencyFormatter.format(product.listPrice),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.green,
+                            ),
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        // Type badge: Jasa atau Stok (hanya 1 badge)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 3,
+                            horizontal: 8,
+                            vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: product.isStorable
-                                ? Colors.green.shade50
-                                : Colors.orange.shade50,
+                            color: product.type.toLowerCase() == 'service'
+                                ? Colors.purple.shade50
+                                : Colors.green.shade50,
                             borderRadius: BorderRadius.circular(4),
                             border: Border.all(
-                              color: product.isStorable
-                                  ? Colors.green.shade200
-                                  : Colors.orange.shade200,
+                              color: product.type.toLowerCase() == 'service'
+                                  ? Colors.purple.shade200
+                                  : Colors.green.shade200,
                               width: 1,
                             ),
                           ),
                           child: Text(
-                            product.isStorable ? 'Stok' : 'Jasa',
+                            product.type.toLowerCase() == 'service' ? 'Jasa' : 'Stok',
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: product.isStorable
-                                  ? Colors.green.shade700
-                                  : Colors.orange.shade700,
+                              color: product.type.toLowerCase() == 'service'
+                                  ? Colors.purple.shade700
+                                  : Colors.green.shade700,
                             ),
                           ),
                         ),

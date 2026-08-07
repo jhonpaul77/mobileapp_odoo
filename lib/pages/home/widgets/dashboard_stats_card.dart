@@ -31,6 +31,13 @@ class DashboardStatsCard extends StatefulWidget {
 
 class _DashboardStatsCardState extends State<DashboardStatsCard> {
   bool _isSyncing = false;
+  late Future<Map<String, int>> _dbStatsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _dbStatsFuture = _getDbStats();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +76,7 @@ class _DashboardStatsCardState extends State<DashboardStatsCard> {
         }
 
         return FutureBuilder<Map<String, int>>(
-          future: _getDbStats(),
+          future: _dbStatsFuture,
           builder: (context, snapshot) {
             final stats = snapshot.data ?? {};
             final totalProducts = stats['products'] ?? 0;
@@ -636,6 +643,13 @@ class _DashboardStatsCardState extends State<DashboardStatsCard> {
 
       // Refresh provider & UI
       await provider.loadLocationStats();
+      
+      // Refresh database stats FutureBuilder
+      if (mounted) {
+        setState(() {
+          _dbStatsFuture = _getDbStats();
+        });
+      }
       if (mounted) {
         setState(() {});
       }

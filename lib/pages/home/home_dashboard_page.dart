@@ -29,12 +29,10 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       StatusBarService.setDarkStatusBar();
-      // Load stats
+      // Load stats dari local database (data sudah di-sync saat login di SyncSplashPage)
       final provider = context.read<CustomerProvider>();
-      provider.fetchCustomers();
-      provider.loadSyncStats();
-      provider.syncLocations(); // Sync locations (States, Cities, Districts) to local DB
-      provider.loadLocationStats(); // Load stats after sync
+      provider.loadLocationStats(); // Load locations from local DB
+      provider.loadSyncStats(); // Load sync timestamp
       
       // Auto-enable sync button after 3 seconds (allow user to see fresh data first)
       Future.delayed(const Duration(seconds: 3), () {

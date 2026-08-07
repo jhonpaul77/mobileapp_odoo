@@ -27,6 +27,8 @@ class ProductLocalDatabase {
         try {
           final id = product['id'] as int;
           final name = product['name'] as String?;
+          final type = product['type'] as String? ?? 'product';
+          final isStorable = product['is_storable'] as bool? ?? false;
           final defaultCode = product['default_code'];
           final listPrice = (product['list_price'] as num?)?.toDouble() ?? 0.0;
           final qtyAvailable = (product['qty_available'] as num?)?.toDouble() ?? 0.0;
@@ -46,6 +48,8 @@ class ProductLocalDatabase {
             await db.insert('products', {
               'id': id,
               'name': name,
+              'type': type,
+              'is_storable': isStorable ? 1 : 0,
               'default_code': defaultCode,
               'list_price': listPrice,
               'qty_available': qtyAvailable,
@@ -61,6 +65,8 @@ class ProductLocalDatabase {
               'products',
               {
                 'name': name,
+                'type': type,
+                'is_storable': isStorable ? 1 : 0,
                 'default_code': defaultCode,
                 'list_price': listPrice,
                 'qty_available': qtyAvailable,
