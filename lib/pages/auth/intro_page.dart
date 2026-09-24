@@ -144,60 +144,67 @@ class _IntroPageState extends State<IntroPage>
             builder: (context, child) {
               return FadeTransition(
                 opacity: _fadeAnimation,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.paddingLarge,
-                    vertical: AppTheme.paddingXLarge,
-                  ),
-                  child: Column(
-                    children: [
-                      const Spacer(flex: 1),
-
-                      // ✅ LOGO SECTION (Animated)
-                      ScaleTransition(
-                        scale: _scaleAnimation,
-                        child: _buildLogo(),
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.paddingLarge,
+                      vertical: AppTheme.paddingXLarge,
+                    ),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: MediaQuery.of(context).size.height - 
+                            MediaQuery.of(context).padding.top - 
+                            MediaQuery.of(context).padding.bottom - 
+                            AppTheme.paddingXLarge * 2,
                       ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // ✅ LOGO SECTION (Animated)
+                          ScaleTransition(
+                            scale: _scaleAnimation,
+                            child: _buildLogo(),
+                          ),
 
-                      const SizedBox(height: AppTheme.paddingXLarge),
+                          const SizedBox(height: AppTheme.paddingXLarge),
 
-                      // ✅ TITLE SECTION (Animated)
-                      SlideTransition(
-                        position: _slideAnimation,
-                        child: _buildTitle(),
+                          // ✅ TITLE SECTION (Animated)
+                          SlideTransition(
+                            position: _slideAnimation,
+                            child: _buildTitle(),
+                          ),
+
+                          const SizedBox(height: AppTheme.paddingMedium),
+
+                          // ✅ DESCRIPTION (Animated)
+                          SlideTransition(
+                            position: _slideAnimation,
+                            child: _buildDescription(),
+                          ),
+
+                          const SizedBox(height: AppTheme.paddingXLarge + 8),
+
+                          // ✅ FEATURES (Animated)
+                          SlideTransition(
+                            position: _slideAnimation,
+                            child: _buildFeatures(),
+                          ),
+
+                          const SizedBox(height: AppTheme.paddingXLarge),
+
+                          // ✅ BUTTON (Animated)
+                          SlideTransition(
+                            position: _slideAnimation,
+                            child: _buildStartButton(),
+                          ),
+
+                          const SizedBox(height: AppTheme.paddingMedium),
+
+                          // ✅ FOOTER
+                          _buildFooter(),
+                        ],
                       ),
-
-                      const SizedBox(height: AppTheme.paddingMedium),
-
-                      // ✅ DESCRIPTION (Animated)
-                      SlideTransition(
-                        position: _slideAnimation,
-                        child: _buildDescription(),
-                      ),
-
-                      const SizedBox(height: AppTheme.paddingXLarge + 8),
-
-                      // ✅ FEATURES (Animated)
-                      SlideTransition(
-                        position: _slideAnimation,
-                        child: _buildFeatures(),
-                      ),
-
-                      const Spacer(flex: 2),
-
-                      // ✅ BUTTON (Animated)
-                      SlideTransition(
-                        position: _slideAnimation,
-                        child: _buildStartButton(),
-                      ),
-
-                      const SizedBox(height: AppTheme.paddingMedium),
-
-                      // ✅ FOOTER
-                      _buildFooter(),
-
-                      const SizedBox(height: AppTheme.paddingSmall),
-                    ],
+                    ),
                   ),
                 ),
               );

@@ -571,11 +571,33 @@ class SalesService {
       print('❌ [SALES] Confirm error: ${e.message}');
       print('❌ [SALES] Response: ${e.response?.data}');
 
+      // Extract error message dari berbagai format response
+      String errorMessage = 'Failed to confirm order';
+      
+      if (e.response?.data != null) {
+        final data = e.response?.data;
+        
+        // Format 1: JSON object dengan Message field
+        if (data is Map && data['Message'] != null) {
+          errorMessage = data['Message'];
+        }
+        // Format 2: JSON object dengan message field (lowercase)
+        else if (data is Map && data['message'] != null) {
+          errorMessage = data['message'];
+        }
+        // Format 3: Plain string (error message langsung)
+        else if (data is String) {
+          errorMessage = data;
+        }
+        // Format 4: JSON string
+        else if (data is Map && data.containsKey('data')) {
+          errorMessage = data['data']?.toString() ?? errorMessage;
+        }
+      }
+
       return {
         'Success': false,
-        'Message': e.response?.data['Message'] ??
-            e.response?.data['message'] ??
-            'Failed to confirm order: ${e.message}',
+        'Message': errorMessage,
       };
     } catch (e) {
       print('❌ [SALES] Unexpected error: $e');

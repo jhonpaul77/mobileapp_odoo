@@ -974,12 +974,44 @@ TERIMA KASIH''';
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            order.name,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: theme.textTheme.bodyLarge?.color,
+                          GestureDetector(
+                            onTap: () {
+                              // Copy to clipboard
+                              Clipboard.setData(ClipboardData(text: order.name));
+                              
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Row(
+                                    children: [
+                                      Icon(Icons.check_circle,
+                                          color: Colors.white, size: 18),
+                                      SizedBox(width: 8),
+                                      Text('Nomor SO disalin ke clipboard'),
+                                    ],
+                                  ),
+                                  backgroundColor: Colors.green,
+                                  duration: const Duration(seconds: 2),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                            child: Row(
+                              children: [
+                                Text(
+                                  order.name,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: theme.textTheme.bodyLarge?.color,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  Icons.content_copy,
+                                  size: 14,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -1151,47 +1183,17 @@ TERIMA KASIH''';
                   if (order.partnerPhone != null && order.partnerPhone!.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Phone',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            order.partnerPhone!,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: theme.textTheme.bodyMedium?.color,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: _buildCopyableInfoRow('Phone', order.partnerPhone!),
                     ),
                   
                   // Address Information (above Warehouse)
                   if (order.partnerStreet != null || order.partnerDistrict != null || order.partnerCity != null || order.partnerState != null)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (order.partnerStreet != null)
-                          _buildInfoRow('Alamat', order.partnerStreet!),
-                        // Compact line for Kecamatan, Kota, Provinsi
-                        if (order.partnerDistrict != null || order.partnerCity != null || order.partnerState != null)
-                          Text(
-                            '${order.partnerDistrict ?? ''} ${order.partnerCity ?? ''} ${order.partnerState ?? ''}'.trim(),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: theme.textTheme.bodyMedium?.color,
-                            ),
-                          ),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _buildCopyableInfoRow(
+                        'Alamat',
+                        '${order.partnerStreet ?? ''}\n${[order.partnerDistrict, order.partnerCity, order.partnerState].where((e) => e != null && e.isNotEmpty).join(', ')}'.trim(),
+                      ),
                     ),
                   
                   const SizedBox(height: 12),

@@ -446,6 +446,31 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
   }
 
   Future<void> _confirmOrder() async {
+    // ✅ Validate required address fields before confirming
+    if (_addressController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Alamat pengiriman harus diisi lengkap'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (_districtController.text.trim().isEmpty || 
+        _cityController.text.trim().isEmpty ||
+        _stateController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Kota, Kabupaten, dan Provinsi harus diisi'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -487,6 +512,14 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
       } else {
         logger.e('❌ Failed to confirm sales order: ${result['Message']}');
 
+        // Parse error message untuk display yang lebih baik
+        String errorMsg = result['Message']?.toString() ?? 'Unknown error';
+        
+        // Clean up error message jika mengandung "Error confirming sale order:"
+        if (errorMsg.contains('Error confirming sale order:')) {
+          errorMsg = errorMsg.replaceFirst('Error confirming sale order:', '').trim();
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -494,13 +527,17 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
                 const Icon(Icons.error_outline, color: Colors.white),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text('❌ Error: ${result['Message']}'),
+                  child: Text(
+                    errorMsg,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -522,6 +559,7 @@ class _SalesOrderEditPageState extends State<SalesOrderEditPage> {
           ),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
         ),
       );
     }
