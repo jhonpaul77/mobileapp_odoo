@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../config/theme.dart';
 import '../providers/sales_order_provider.dart';
+import 'advanced_search_modal.dart';
 import 'sales_order_detail_page.dart';
 
 /// SalesOrderListPage - Presentation Layer
@@ -67,83 +68,88 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: Column(
               children: [
-                // Status Filter Chips
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildStatusChip(provider, 'All'),
-                      const SizedBox(width: 7),
-                      _buildStatusChip(provider, 'Open'),
-                      const SizedBox(width: 7),
-                      _buildStatusChip(provider, 'Confirm'),
-                      const SizedBox(width: 7),
-                      _buildStatusChip(provider, 'Sale'),
-                      const SizedBox(width: 7),
-                      _buildStatusChip(provider, 'Cancel'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                // Search Bar
-                TextField(
-                  controller: _searchController,
-                  onChanged: (value) => provider.searchOrders(value),
-                  style: TextStyle(
-                    color: theme.textTheme.bodyLarge?.color,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Cari SO atau customer...',
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: theme.textTheme.bodyMedium?.color,
-                    ),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(
-                              Icons.clear,
-                              color: theme.textTheme.bodyMedium?.color,
+                // Search Bar + Advanced Filter Button Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) => provider.searchOrders(value),
+                        style: TextStyle(
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Cari SO atau customer...',
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: theme.textTheme.bodyMedium?.color,
+                          ),
+                          suffixIcon: _searchController.text.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(
+                                    Icons.clear,
+                                    color: theme.textTheme.bodyMedium?.color,
+                                  ),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    provider.clearSearch();
+                                  },
+                                )
+                              : null,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: theme.brightness == Brightness.dark
+                                  ? Colors.grey[700]!
+                                  : Colors.grey,
                             ),
-                            onPressed: () {
-                              _searchController.clear();
-                              provider.clearSearch();
-                            },
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: theme.brightness == Brightness.dark
-                            ? Colors.grey[700]!
-                            : Colors.grey,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: theme.brightness == Brightness.dark
+                                  ? Colors.grey[700]!
+                                  : Colors.grey.shade300,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: Colors.blue),
+                          ),
+                          filled: true,
+                          fillColor: theme.brightness == Brightness.dark
+                              ? AppTheme.darkCard
+                              : Colors.grey.shade50,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
                       ),
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: theme.brightness == Brightness.dark
-                            ? Colors.grey[700]!
-                            : Colors.grey.shade300,
+                    const SizedBox(width: 8),
+                    // Advanced Filter Button
+                    GestureDetector(
+                      onTap: () => _showAdvancedSearch(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.tune,
+                          size: 20,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Colors.blue),
-                    ),
-                    filled: true,
-                    fillColor: theme.brightness == Brightness.dark
-                        ? AppTheme.darkCard
-                        : Colors.grey.shade50,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
+                  ],
                 ),
                 const SizedBox(height: 14),
-
-                // Sales Order List
                 Expanded(
                   child: _buildBody(provider),
                 ),
@@ -590,64 +596,27 @@ class _SalesOrderListPageState extends State<SalesOrderListPage> {
     }
   }
 
-  /// Build status filter chip (same as original transaction_list_page.dart)
-  Widget _buildStatusChip(SalesOrderProvider provider, String label) {
-    final theme = Theme.of(context);
-    final isAll = label == 'All';
-    final selected = provider.statusFilter == null
-        ? isAll
-        : provider.statusFilter?.toLowerCase() == label.toLowerCase();
-
-    // Get color based on status (same as SalesOrder.stateColor)
-    Color getStatusColor(String status) {
-      switch (status.toLowerCase()) {
-        case 'open':
-          return const Color(0xFFFFA726); // Orange - for draft
-        case 'sale':
-          return const Color(0xFF42A5F5); // Blue
-        case 'confirm':
-          return const Color(0xFF66BB6A); // Green
-        case 'cancel':
-          return const Color(0xFFEF5350); // Red
-        default:
-          return AppTheme.primaryColor; // Primary blue for 'All'
-      }
-    }
-
-    final statusColor = isAll ? AppTheme.primaryColor : getStatusColor(label);
-
-    return GestureDetector(
-      onTap: () {
-        provider.setStatusFilter(isAll ? null : label);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected
-              ? statusColor.withValues(alpha: 0.15)
-              : theme.brightness == Brightness.dark
-                  ? AppTheme.darkCard
-                  : Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: selected
-                ? statusColor
-                : theme.brightness == Brightness.dark
-                    ? Colors.grey[700]!
-                    : Colors.grey[300]!,
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? statusColor : theme.textTheme.bodyMedium?.color,
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
-          ),
-        ),
+  /// Show Advanced Search Modal
+  void _showAdvancedSearch(BuildContext context) {
+    final provider = context.read<SalesOrderProvider>();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AdvancedSearchModal(
+        initialWAStatus: provider.advancedWAStatus,
+        initialDateFilter: provider.dateFilter,
+        initialStatusFilter: provider.statusFilter,
       ),
-    );
+    ).then((result) {
+      if (result != null && result is Map) {
+        // Apply filters from modal result
+        provider.setStatusFilter(result['statusFilter']);
+        provider.setDateFilter(result['dateFilter']);
+        provider.setAdvancedFilters(
+          waStatus: result['waStatus'] ?? {},
+        );
+      }
+    });
   }
 
   /// Build info row with icon, label, and value

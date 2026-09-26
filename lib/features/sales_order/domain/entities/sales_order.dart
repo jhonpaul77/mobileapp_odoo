@@ -333,6 +333,61 @@ class SalesOrder {
     return '$day/$month/$year $hour:$minute';
   }
 
+  /// Create a copy with updated fields
+  SalesOrder copyWith({
+    int? id,
+    String? name,
+    dynamic partnerId,
+    String? partnerName,
+    String? dateOrder,
+    double? amountTotal,
+    dynamic warehouseId,
+    String? warehouseName,
+    dynamic kurirId,
+    String? kurirName,
+    dynamic awb,
+    String? state,
+    int? orderCount,
+    int? fuCount,
+    List<OrderLine>? orderLines,
+    String? partnerPhone,
+    String? partnerStreet,
+    String? partnerStreet2,
+    String? partnerDistrict,
+    String? partnerCity,
+    String? partnerState,
+    String? notes,
+    int? paymentTermId,
+    String? paymentTermName,
+  }) {
+    return SalesOrder(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      partnerId: partnerId ?? this.partnerId,
+      partnerName: partnerName ?? this.partnerName,
+      dateOrder: dateOrder ?? this.dateOrder,
+      amountTotal: amountTotal ?? this.amountTotal,
+      warehouseId: warehouseId ?? this.warehouseId,
+      warehouseName: warehouseName ?? this.warehouseName,
+      kurirId: kurirId ?? this.kurirId,
+      kurirName: kurirName ?? this.kurirName,
+      awb: awb ?? this.awb,
+      state: state ?? this.state,
+      orderCount: orderCount ?? this.orderCount,
+      fuCount: fuCount ?? this.fuCount,
+      orderLines: orderLines ?? this.orderLines,
+      partnerPhone: partnerPhone ?? this.partnerPhone,
+      partnerStreet: partnerStreet ?? this.partnerStreet,
+      partnerStreet2: partnerStreet2 ?? this.partnerStreet2,
+      partnerDistrict: partnerDistrict ?? this.partnerDistrict,
+      partnerCity: partnerCity ?? this.partnerCity,
+      partnerState: partnerState ?? this.partnerState,
+      notes: notes ?? this.notes,
+      paymentTermId: paymentTermId ?? this.paymentTermId,
+      paymentTermName: paymentTermName ?? this.paymentTermName,
+    );
+  }
+
   /// Convert to JSON
   Map<String, dynamic> toJson() {
     return {

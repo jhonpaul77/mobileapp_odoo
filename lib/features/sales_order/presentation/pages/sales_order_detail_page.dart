@@ -8,9 +8,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../config/theme.dart';
 import '../../../../services/sales_service.dart';
 import '../../../../services/secure_storage_service.dart';
+import '../../../../services/local_database/location_local_database.dart';
 import '../../domain/entities/order_line.dart';
 import '../../domain/entities/sales_order.dart';
 import 'sales_order_edit_page.dart';
+import '../../../customer/domain/entities/customer.dart';
+import '../../../customer/presentation/pages/customer_edit_page.dart';
 
 /// SalesOrderDetailPage - Detail Transaksi Penjualan
 ///
@@ -58,10 +61,213 @@ class _SalesOrderDetailPageState extends State<SalesOrderDetailPage> {
     return value.toString();
   }
 
-  /// Get customer name - use API value from order
+  /// Show customer detail dialog
+  void _showCustomerDetailDialog(SalesOrder order) {
+    final isEditable = order.state.toLowerCase() == 'draft' ||
+        order.state.toLowerCase() == 'sent';
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: const BoxConstraints(maxHeight: 500),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Detail Customer',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDetailRow('Nama', order.customerName),
+                      const SizedBox(height: 12),
+                      _buildDetailRow('Telepon', order.partnerPhone ?? '-'),
+                      const SizedBox(height: 12),
+                      _buildDetailRow('Alamat', order.partnerStreet ?? '-'),
+                      const SizedBox(height: 12),
+                      if (order.partnerCity != null)
+                        _buildDetailRow('Kota', order.partnerCity!),
+                      if (order.partnerCity != null)
+                        const SizedBox(height: 12),
+                      if (order.partnerState != null)
+                        _buildDetailRow('Provinsi', order.partnerState!),
+                    ],
+                  ),
+                ),
+              ),
+              // Footer - Edit Button (only for Open status)
+              if (isEditable)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[800]!
+                            : Colors.grey[200]!,
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        Navigator.pop(context); // Close dialog first
+                        print('🔄 [DETAIL_PAGE] Opening customer edit page...');
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                CustomerEditPage(customer: Customer(
+                                  id: order.partnerId is List 
+                                    ? (order.partnerId as List)[0] as int
+                                    : order.partnerId as int,
+                                  name: order.customerName,
+                                  email: null,
+                                  phone: order.partnerPhone,
+                                  street: order.partnerStreet,
+                                  street2: order.partnerStreet2,
+                                  districtId: null,
+                                  cityId: null,
+                                  stateId: null,
+                                  zip: null,
+                                )),
+                          ),
+                        );
+
+                        print('✅ [DETAIL_PAGE] Returned from customer edit. Result: $result');
+                        
+                        // ✅ Update state dengan data terbaru dari customer edit
+                        if (result != null && result is Customer) {
+                          print('📝 [DETAIL_PAGE] Updating order with new customer data');
+                          
+                          // Load nama kota dan provinsi dari lokal database
+                          String? cityName = result.cityId?.toString();
+                          String? stateName = result.stateId?.toString();
+                          
+                          try {
+                            final locationDb = LocationLocalDatabase();
+                            if (result.cityId != null) {
+                              final city = await locationDb.getCityById(result.cityId!);
+                              if (city != null) cityName = city.name;
+                            }
+                            if (result.stateId != null) {
+                              final state = await locationDb.getStateById(result.stateId!);
+                              if (state != null) stateName = state.name;
+                            }
+                          } catch (e) {
+                            print('⚠️ [DETAIL_PAGE] Error loading location names: $e');
+                          }
+                          
+                          setState(() {
+                            // Update current order dengan data customer terbaru
+                            _currentOrder = _currentOrder?.copyWith(
+                              partnerPhone: result.phone,
+                              partnerStreet: result.street,
+                              partnerStreet2: result.street2,
+                              partnerCity: cityName,
+                              partnerState: stateName,
+                            );
+                          });
+                          
+                          // Buka dialog customer detail lagi dengan data terbaru
+                          _showCustomerDetailDialog(_currentOrder!);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.edit_rounded, size: 18),
+                      label: const Text(
+                        'Edit Customer',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Build detail row for customer dialog
+  Widget _buildDetailRow(String label, String value) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.primaryColor,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: theme.textTheme.bodyLarge?.color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Get customer name
   String _getCustomerName(int? customerId) {
     return widget.order.customerName;
   }
+
 
   /// Get product name - use API value from order line
   String _getProductName(dynamic productId, OrderLine line) {
@@ -1053,14 +1259,26 @@ TERIMA KASIH''';
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Customer Info (left side)
+                      // Customer Info (left side) - CLICKABLE
                       Expanded(
-                        child: _buildInfoGrid([
-                          {
-                            'label': 'Customer',
-                            'value': _getCustomerName(order.customerId),
+                        child: GestureDetector(
+                          onTap: () {
+                            _showCustomerDetailDialog(order);
                           },
-                        ]),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: _buildInfoGrid([
+                              {
+                                'label': 'Customer',
+                                'value': _getCustomerName(order.customerId),
+                              },
+                            ]),
+                          ),
+                        ),
                       ),
                       // Status Badge & WhatsApp Button (right side, stacked)
                       Column(
@@ -1105,8 +1323,6 @@ TERIMA KASIH''';
                             ),
                           
                           const SizedBox(height: 6),
-                          
-                          // WhatsApp Button
                           if (isEditable)
                             GestureDetector(
                               onTap: _sendWhatsAppReminder,
@@ -1505,35 +1721,6 @@ TERIMA KASIH''';
           ),
         );
       }).toList(),
-    );
-  }
-
-  /// Build a single info row (label + value)
-  Widget _buildInfoRow(String label, String value) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: theme.textTheme.bodySmall?.color,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w400,
-            color: theme.textTheme.bodyLarge?.color,
-          ),
-        ),
-        const SizedBox(height: 8),
-      ],
     );
   }
 
