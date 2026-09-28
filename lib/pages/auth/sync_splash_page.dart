@@ -242,194 +242,121 @@ class _SyncSplashPageState extends State<SyncSplashPage> {
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackground : AppTheme.surfaceColor,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Logo / Icon
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                ),
-                child: const Icon(
-                  Icons.cloud_download_rounded,
-                  size: 40,
-                  color: AppTheme.primaryColor,
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Main content - centered
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 48),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Icon
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      ),
+                      child: const Icon(
+                        Icons.sync_rounded,
+                        size: 40,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Title
+                    Text(
+                      'Menyinkronisasi Data',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: isDark
+                            ? AppTheme.darkTextPrimary
+                            : AppTheme.textPrimary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    
+                    // Status message
+                    Text(
+                      _getStatusMessage(),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark
+                            ? AppTheme.darkTextSecondary
+                            : AppTheme.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
-
-              const SizedBox(height: 24),
-
-              // Title
-              Text(
-                'Syncing Data',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: isDark
-                      ? AppTheme.darkTextPrimary
-                      : AppTheme.textPrimary,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Subtitle
-              Text(
-                'Mengunduh data terbaru dari server...',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark
-                      ? AppTheme.darkTextSecondary
-                      : AppTheme.textSecondary,
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // Sync Items List
-              ..._buildSyncItems(isDark),
-
-              const SizedBox(height: 40),
-
-              // Overall progress indicator
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: (_currentSyncIndex + 1) / _syncItems.length,
-                  minHeight: 8,
-                  backgroundColor: isDark
-                      ? AppTheme.darkSurface
-                      : Colors.grey[200],
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    AppTheme.primaryColor,
+            ),
+          ),
+          
+          // Progress bar at bottom
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 48),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Linear progress
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: (_currentSyncIndex + 1) / _syncItems.length,
+                    minHeight: 6,
+                    backgroundColor: isDark
+                        ? AppTheme.darkSurface
+                        : Colors.grey[200],
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppTheme.primaryColor,
+                    ),
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Progress text
-              Text(
-                '${_currentSyncIndex + 1} / ${_syncItems.length}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark
-                      ? AppTheme.darkTextSecondary
-                      : AppTheme.textSecondary,
+                const SizedBox(height: 12),
+                
+                // Progress text
+                Text(
+                  'Proses ${_currentSyncIndex + 1} dari ${_syncItems.length}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark
+                        ? AppTheme.darkTextSecondary
+                        : AppTheme.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  List<Widget> _buildSyncItems(bool isDark) {
-    return List.generate(
-      _syncItems.length,
-      (index) {
-        final item = _syncItems[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _buildSyncItemRow(item, isDark),
-        );
-      },
-    );
-  }
-
-  Widget _buildSyncItemRow(SyncItem item, bool isDark) {
-    IconData icon;
-    Color color;
-
-    switch (item.status) {
-      case SyncStatus.pending:
-        icon = Icons.radio_button_unchecked;
-        color = isDark ? AppTheme.darkTextSecondary : Colors.grey;
-        break;
-      case SyncStatus.loading:
-        icon = Icons.sync;
-        color = AppTheme.primaryColor;
-        break;
-      case SyncStatus.success:
-        icon = Icons.check_circle;
-        color = AppTheme.successColor;
-        break;
-      case SyncStatus.error:
-        icon = Icons.error;
-        color = AppTheme.errorColor;
-        break;
+  String _getStatusMessage() {
+    final item = _syncItems[_currentSyncIndex];
+    switch (item.label) {
+      case 'Customer Data':
+        return 'Memuat data pelanggan...';
+      case 'Payment Terms':
+        return 'Memuat syarat pembayaran...';
+      case 'States & Cities':
+        return 'Memuat data lokasi...';
+      case 'Products':
+        return 'Memuat data produk...';
+      case 'Sales Orders':
+        return 'Memuat data transaksi...';
+      default:
+        return 'Memuat data...';
     }
-
-    return Row(
-      children: [
-        // Icon with animation for loading state
-        if (item.status == SyncStatus.loading)
-          SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-            ),
-          )
-        else
-          Icon(icon, color: color, size: 24),
-
-        const SizedBox(width: 12),
-
-        // Label
-        Expanded(
-          child: Text(
-            item.label,
-            style: TextStyle(
-              fontSize: 14,
-              color: isDark
-                  ? AppTheme.darkTextPrimary
-                  : AppTheme.textPrimary,
-              fontWeight: item.status == SyncStatus.loading
-                  ? FontWeight.w600
-                  : FontWeight.w500,
-            ),
-          ),
-        ),
-
-        // Status text / Count
-        if (item.status == SyncStatus.success && item.count > 0)
-          Text(
-            '✅ ${item.count}',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppTheme.successColor,
-              fontWeight: FontWeight.w600,
-            ),
-          )
-        else if (item.status == SyncStatus.success)
-          Text(
-            'Done',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppTheme.successColor,
-              fontWeight: FontWeight.w600,
-            ),
-          )
-        else if (item.message != null && (item.status == SyncStatus.loading || item.status == SyncStatus.error))
-          Text(
-            item.message!,
-            style: TextStyle(
-              fontSize: 12,
-              color: item.status == SyncStatus.error ? AppTheme.errorColor : AppTheme.primaryColor,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-      ],
-    );
   }
 }
 
